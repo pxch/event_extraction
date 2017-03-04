@@ -47,9 +47,10 @@ def read_coref_bank(coref_bank):
     all_corefs = []
     coref_idx = 0
     for coref_chain in coref_bank:
-        coref = read_coref_chain(coref_idx, coref_chain)
-        all_corefs.append(deepcopy(coref))
-        coref_idx += 1
+        if coref_chain.type == 'IDENT':
+            coref = read_coref_chain(coref_idx, coref_chain)
+            all_corefs.append(deepcopy(coref))
+            coref_idx += 1
     return all_corefs
 
 
@@ -115,4 +116,4 @@ def read_doc_from_ontonotes(coref_bank):
     doc.preprocessing()
     doc.extract_event_script()
 
-    return doc_id, doc
+    return doc_id.split('/')[-1], doc
