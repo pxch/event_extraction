@@ -3,9 +3,12 @@ from coref import *
 from dep import *
 from sent import *
 from tok import *
+from document import Doc
 
 from os.path import join
 import on
+
+ontonotes_source = '/Users/pengxiang/corpora/ontonotes-release-5.0/data/files/data/english/annotations/'
 
 
 def load_ontonotes(cfg_file):
@@ -94,3 +97,22 @@ def read_conll_depparse(input_path):
                     sent.add_dep(Dep(e_dep_label, e_dep_head_idx - 1, token_idx - 1, extra=True))
 
     return all_sents
+
+
+def read_doc_from_ontonotes(coref_bank):
+    doc_id = coref_bank.document_id.split('@')[0]
+    print 'Processing document {}'.format(doc_id)
+
+    conll_file_path = join(ontonotes_source, doc_id + '.depparse')
+
+    all_sents = read_conll_depparse(conll_file_path)
+    all_corefs = read_coref_bank(coref_bank)
+
+    doc = Doc.construct(all_sents, all_corefs)
+
+    doc.fix_ontonotes_coref_info()
+
+    doc.preprocessing()
+    doc.extract_event_script()
+
+    return doc_id, doc

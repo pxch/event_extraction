@@ -50,10 +50,10 @@ class Sent:
     def get_head_token_idx(self, start_token_idx, end_token_idx):
         assert 0 <= start_token_idx < len(self.tokens), \
             'Start token idx {} out of range'.format(start_token_idx)
-        assert 0 <= end_token_idx < len(self.tokens), \
+        assert 0 < end_token_idx <= len(self.tokens), \
             'End token idx {} out of range'.format(end_token_idx)
-        assert start_token_idx <= end_token_idx, \
-            'Start token idx {} larger than end token idx {}'.format(
+        assert start_token_idx < end_token_idx, \
+            'Start token idx {} not smaller than end token idx {}'.format(
                 start_token_idx, end_token_idx)
         head_idx_map = []
         for token_idx in range(start_token_idx, end_token_idx):

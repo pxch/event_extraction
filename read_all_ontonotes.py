@@ -4,9 +4,6 @@ import pickle as pkl
 import sys
 from os.path import isdir, join
 from os import makedirs
-from document import Doc
-
-ontonotes_source = '/Users/pengxiang/corpora/ontonotes-release-5.0/data/files/data/english/annotations/'
 
 cfg_file = sys.argv[1]
 
@@ -26,22 +23,7 @@ if not isdir(plain_text_dir):
 
 for subcorp in cnn_all:
     for coref_bank in subcorp['coref']:
-        doc_id = coref_bank.document_id.split('@')[0]
-        print 'Processing document {}'.format(doc_id)
-
-        conll_file_path = join(ontonotes_source, doc_id + '.depparse')
-
-        all_sents = read_conll_depparse(conll_file_path)
-        all_corefs = read_coref_bank(coref_bank)
-
-        doc = Doc.construct(all_sents, all_corefs)
-
-        doc.fix_ontonotes_coref_info()
-
-        doc.preprocessing()
-        doc.extract_event_script()
-
-        doc_id = doc_id.split('/')[-1]
+        doc_id, doc = read_doc_from_ontonotes(coref_bank)
         all_docs.append((doc_id, doc))
 
         fout = open(join(script_dir, doc_id + '.script'), 'w')
