@@ -1,5 +1,4 @@
 from copy import deepcopy
-from document import *
 from coref import *
 from dep import *
 from sent import *

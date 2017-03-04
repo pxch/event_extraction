@@ -4,6 +4,7 @@ import pickle as pkl
 import sys
 from os.path import isdir, join
 from os import makedirs
+from document import Doc
 
 ontonotes_source = '/Users/pengxiang/corpora/ontonotes-release-5.0/data/files/data/english/annotations/'
 
