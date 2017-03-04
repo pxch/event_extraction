@@ -20,7 +20,7 @@ def load_ontonotes(cfg_file):
 def read_coref_link(coref_link):
     sent_idx = coref_link.sentence_index
     start_token_idx = coref_link.start_word_index
-    end_token_idx = coref_link.end_word_index
+    end_token_idx = coref_link.end_word_index + 1
     # find head token index in Doc.fix_ontonotes_coref_info and Sent.get_head_token_idx
     head_token_idx = -1
     # find rep mention in Doc.fix_ontonotes_coref_info

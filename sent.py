@@ -56,9 +56,9 @@ class Sent:
             'Start token idx {} larger than end token idx {}'.format(
                 start_token_idx, end_token_idx)
         head_idx_map = []
-        for token_idx in range(start_token_idx, end_token_idx + 1):
+        for token_idx in range(start_token_idx, end_token_idx):
             head_trace = [token_idx]
-            while start_token_idx <= head_trace[-1] <= end_token_idx:
+            while start_token_idx <= head_trace[-1] < end_token_idx:
                 _, head_idx = self.dep_graph.get_parent(head_trace[-1])
                 if head_idx in head_trace:
                     print 'Warning: In sentence #{}, token #{} has loop in its head trace list.'.format(
