@@ -30,9 +30,11 @@ class EvalInstance:
         sim_scores = []
         for coref in corefs:
             if syntax_suffix:
-                coref_embedding = coref.get_embedding(model, '-' + self.arg_label, head_only, rep_only)
+                coref_embedding = model.get_coref_embedding(
+                    coref, '-' + self.arg_label, head_only, rep_only)
             else:
-                coref_embedding = coref.get_embedding(model, '', head_only, rep_only)
+                coref_embedding = model.get_coref_embedding(
+                    coref, '', head_only, rep_only)
             sim_scores.append(cos_sim(target_embedding, coref_embedding))
         most_similar_idx = sim_scores.index(max(sim_scores))
         return most_similar_idx == self.arg_coref_idx
@@ -47,9 +49,11 @@ class EvalInstance:
         sim_scores = []
         for coref in corefs:
             if syntax_suffix:
-                coref_embedding = coref.get_embedding(model, '-' + self.arg_label, head_only, rep_only)
+                coref_embedding = model.get_coref_embedding(
+                    coref, '-' + self.arg_label, head_only, rep_only)
             else:
-                coref_embedding = coref.get_embedding(model, '', head_only, rep_only)
+                coref_embedding = model.get_coref_embedding(
+                    coref, '', head_only, rep_only)
             if use_max_score:
                 sim_scores.append(max(
                     [cos_sim(target_embedding + coref_embedding, event_embedding)

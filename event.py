@@ -43,6 +43,7 @@ class Event:
         self.subj = None
         self.obj = None
         self.pobj_list = []
+        self.neg = False
         self.embedding_state = EmbeddingState()
         self.pred_embedding = None
         self.subj_embedding = None
@@ -78,10 +79,10 @@ class Event:
         return [arg for arg in
                 [('SUBJ', self.subj), ('OBJ', self.obj)] +
                 [('PREP_' + prep, pobj) for prep, pobj in self.pobj_list]
-                if arg[1] is not None and arg[1].coref_idx != -1]
+                if arg[1] is not None and arg[1].coref is not None]
 
     def get_all_arg_coref_idx(self):
-        return [arg[1].coref_idx for arg in self.get_all_arg()]
+        return [arg[1].coref.idx for arg in self.get_all_arg()]
 
     def idx_key(self):
         return '{:0>4d}{:0>4d}'.format(self.pred.sent_idx, self.pred.token_idx)
@@ -133,51 +134,60 @@ class Event:
 
     def get_pred_embedding(self, model, syntax_suffix=False):
         if syntax_suffix:
-            self.pred_embedding = self.pred.get_embedding(model, '-PRED')
+            self.pred_embedding = model.get_token_embedding(self.pred, '-PRED')
         else:
-            self.pred_embedding = self.pred.get_embedding(model, '')
+            self.pred_embedding = model.get_token_embedding(self.pred, '')
 
-    def get_subj_embedding(self, model, syntax_suffix=False, head_only=False, rep_only=False):
+    def get_subj_embedding(
+            self, model, syntax_suffix=False, head_only=False, rep_only=False):
         if self.subj is None or self.subj.coref is None:
             self.subj_embedding = None
             return
         if syntax_suffix:
-            self.subj_embedding = self.subj.coref.get_embedding(model, '-SUBJ', head_only, rep_only)
+            self.subj_embedding = model.get_coref_embedding(
+                self.subj.coref, '-SUBJ', head_only, rep_only)
         else:
-            self.subj_embedding = self.subj.coref.get_embedding(model, '', head_only, rep_only)
+            self.subj_embedding = model.get_coref_embedding(
+                self.subj.coref, '', head_only, rep_only)
 
-    def get_obj_embedding(self, model, syntax_suffix=False, head_only=False, rep_only=False):
+    def get_obj_embedding(
+            self, model, syntax_suffix=False, head_only=False, rep_only=False):
         if self.obj is None or self.obj.coref is None:
             self.obj_embedding = None
             return
         if syntax_suffix:
-            self.obj_embedding = self.obj.coref.get_embedding(model, '-OBJ', head_only, rep_only)
+            self.obj_embedding = model.get_coref_embedding(
+                self.obj.coref, '-OBJ', head_only, rep_only)
         else:
-            self.obj_embedding = self.obj.coref.get_embedding(model, '', head_only, rep_only)
+            self.obj_embedding = model.get_coref_embedding(
+                self.obj.coref, '', head_only, rep_only)
 
-    def get_pobj_embedding_list(self, model, syntax_suffix=False, head_only=False, rep_only=False):
+    def get_pobj_embedding_list(
+            self, model, syntax_suffix=False, head_only=False, rep_only=False):
         self.pobj_embedding_list = []
         for prep, pobj in self.pobj_list:
             if pobj.coref is None:
                 self.pobj_embedding_list.append(None)
                 continue
             if syntax_suffix:
-                self.pobj_embedding_list.append(pobj.coref.get_embedding(model, '-PREP_' + prep, head_only, rep_only))
-                '''
-                # backoff case, seemed of no use under current model
-                if embedding is None:
-                  embedding = pobj.coref.get_embedding(model, '-PREP', head_only, rep_only)
-                '''
+                self.pobj_embedding_list.append(
+                    model.get_coref_embedding(
+                        pobj.coref, '-PREP_' + prep, head_only, rep_only))
             else:
-                self.pobj_embedding_list.append(pobj.coref.get_embedding(model, '', head_only, rep_only))
+                self.pobj_embedding_list.append(
+                    model.get_coref_embedding(
+                        pobj.coref, '', head_only, rep_only))
 
         assert len(self.pobj_list) == len(self.pobj_embedding_list), \
             'Number of pobj embeddings mismatch with number of pobjs!'
 
-    def get_all_embeddings(self, model, syntax_suffix=False, head_only=False, rep_only=False):
-        # check if current setting match previous settings, if so return previous embedding directly
+    def get_all_embeddings(
+            self, model, syntax_suffix=False, head_only=False, rep_only=False):
+        # check if current setting match previous settings,
+        # if so return previous embedding directly
         '''
-        if self.embedding_state.check_consistency(syntax_suffix, head_only, rep_only):
+        if self.embedding_state.check_consistency(
+                syntax_suffix, head_only, rep_only):
             print 'Embedding already exists with same configuration, ' + \
                 'syntax_suffix = {}, head_only = {}, rep_only = {}'.format(
                     syntax_suffix, head_only, rep_only)
@@ -222,14 +232,14 @@ class Event:
         idx_label_token_list = []
         if self.subj_embedding is not None:
             idx_label_token_list.append((
-                self.subj.coref_idx, 'SUBJ', self.subj_embedding))
+                self.subj.coref.idx, 'SUBJ', self.subj_embedding))
         if self.obj_embedding is not None:
             idx_label_token_list.append((
-                self.obj.coref_idx, 'OBJ', self.obj_embedding))
+                self.obj.coref.idx, 'OBJ', self.obj_embedding))
         for pobj_idx in range(len(self.pobj_list)):
             if self.pobj_embedding_list[pobj_idx] is not None:
                 idx_label_token_list.append((
-                    self.pobj_list[pobj_idx][1].coref_idx,
+                    self.pobj_list[pobj_idx][1].coref.idx,
                     'PREP_' + self.pobj_list[pobj_idx][0],
                     self.pobj_embedding_list[pobj_idx]))
 

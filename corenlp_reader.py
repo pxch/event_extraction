@@ -1,9 +1,7 @@
 from copy import deepcopy
 from document import *
-from coref import *
-from dep import *
-from sent import *
-from tok import *
+from sentence import *
+from coreference import *
 from lxml import etree
 
 # dependency_type = 'collapsed-ccprocessed-dependencies'
@@ -100,7 +98,10 @@ class CoreNLPTarget(object):
                     self.sents.append(deepcopy(self.sent))
                     self.sent = None
         elif tag == 'token':
-            self.sent.add_token(Token(self.word, self.lemma, self.pos, self.ner))
+            token = Token(self.word, self.lemma, self.pos)
+            # TODO: map fine grained ner tags to coerse grained tags
+            token.set_attrib('ner', self.ner)
+            self.sent.add_token(deepcopy(token))
             self.word = ''
             self.lemma = ''
             self.pos = ''
@@ -111,7 +112,9 @@ class CoreNLPTarget(object):
         elif tag == 'dep':
             if self.parse_dep:
                 if self.dep_label != 'root':
-                    self.sent.add_dep(Dep(self.dep_label, self.gov_idx, self.dep_idx, self.extra))
+                    dep = Dep(self.dep_label, self.gov_idx,
+                              self.dep_idx, self.extra)
+                    self.sent.add_dep(deepcopy(dep))
                 self.dep_label = ''
                 self.gov_idx = -1
                 self.dep_idx = -1
@@ -124,9 +127,12 @@ class CoreNLPTarget(object):
                 else:
                     self.parse_coref = False
         elif tag == 'mention':
-            self.coref.add_mention(
-                Mention(self.sent_idx, self.start_token_idx, self.end_token_idx,
-                        self.head_token_idx, self.rep, self.text))
+            mention = Mention(self.sent_idx, self.start_token_idx,
+                              self.end_token_idx)
+            mention.set_attrib('head_token_idx', self.head_token_idx)
+            mention.set_attrib('rep', self.rep)
+            mention.set_attrib('text', self.text)
+            self.coref.add_mention(deepcopy(mention))
             self.sent_idx = -1
             self.start_token_idx = -1
             self.end_token_idx = -1
@@ -138,8 +144,9 @@ class CoreNLPTarget(object):
         return 'success'
 
 
-def read_doc(input_xml):
+def read_doc_from_corenlp(input_xml):
+    print 'Reading document from {}'.format(input_xml.name)
     xml_parser = etree.XMLParser(target=CoreNLPTarget())
     etree.parse(input_xml, xml_parser)
-    doc = Doc.construct(xml_parser.target.sents, xml_parser.target.corefs)
+    doc = Document.construct(xml_parser.target.sents, xml_parser.target.corefs)
     return doc
