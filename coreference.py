@@ -31,7 +31,6 @@ class Mention:
         # word form of the head token of the mention
         # set in self.add_token_info() method
         self.head_text = ''
-        # TODO: add an attrib pointing to the coreference object it belongs to
 
     def __str__(self):
         return '{}-{}-{}-{}-{}-{}'.format(
@@ -75,8 +74,6 @@ class Coref:
         self.mentions = []
         # pointer to the representative mention
         self.rep_mention = None
-        # TODO: either remove the attribute or figure out where it is used
-        self.occ_count = 0
 
     def add_mention(self, mention):
         # set the coref_idx attrib of the mention

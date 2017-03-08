@@ -83,7 +83,6 @@ def read_conll_depparse(input_path):
             word = items[1]
             lemma = items[2]
             pos = items[4]
-            # TODO: add ner info from *.name files
             sent.add_token(Token(word, lemma, pos))
             try:
                 head_idx = int(items[6])
