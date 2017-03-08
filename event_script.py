@@ -49,10 +49,10 @@ class EventScript:
 
                 for arg_tuple in product(subj_list, obj_list):
                     self.add_event(Event.construct(
-                        pred_token, # predicate
-                        arg_tuple[0], # subject
-                        arg_tuple[1], # object
-                        pobj_list # prepositional object list
+                        pred_token,  # predicate
+                        arg_tuple[0],  # subject
+                        arg_tuple[1],  # object
+                        pobj_list  # prepositional object list
                     ))
 
     def read_from_document(self, doc):

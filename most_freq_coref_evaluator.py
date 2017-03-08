@@ -12,6 +12,9 @@ class MostFreqCorefEvaluator(BaseEvaluator):
         coref_freqs[coref_idx] += 1
         return coref_idx == most_freq_coref_idx
 
+    def print_debug_message(self):
+        return 'Evaluation based on most frequent coreference chain:'
+
     def evaluate_script(self, script):
         num_choices = len(script.corefs)
         coref_freqs = [len(coref.mentions) for coref in script.corefs]

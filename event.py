@@ -53,6 +53,26 @@ class Event:
             'Prepositional object must be an instance of Token'
         self.pobj_list.append((prep, pobj))
 
+    def get_subj(self):
+        return self.subj
+
+    def get_obj(self):
+        return self.obj
+
+    def get_pobj(self, pobj_idx):
+        assert 0 <= pobj_idx < len(self.pobj_list), \
+            'PObj index {} out of range'.format(pobj_idx)
+        return self.pobj_list[pobj_idx]
+
+    def subj_has_coref(self):
+        return self.subj is not None and self.subj.coref is not None
+
+    def obj_has_coref(self):
+        return self.obj is not None and self.obj.coref is not None
+
+    def pobj_has_coref(self, pobj_idx):
+        return self.pobj_list[pobj_idx][1].coref is not None
+
     def __str__(self):
         result = '{} ( {}, {}'.format(
             str(self.pred),

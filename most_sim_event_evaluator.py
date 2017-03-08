@@ -23,6 +23,11 @@ class MostSimEventEvaluator(BaseEvaluator):
     def set_use_max_score(self, use_max_score):
         self.use_max_score = use_max_score
 
+    def print_debug_message(self):
+        return 'Evaluation based on most similar event, model = {}, ' \
+              'use_max_score = {}, head_only = {}, rep_only = {}:'.format(
+            self.model.name, self.use_max_score, self.head_only, self.rep_only)
+
     def is_most_sim_event(self, arg_label, arg_coref_idx, corefs,
                           embedding_wo_arg, event_embeddings):
         sim_scores = []
@@ -69,7 +74,7 @@ class MostSimEventEvaluator(BaseEvaluator):
 
             # evaluate the subject argument if it is not None
             # and is pointed a coreference mention
-            if event_embedding.get_subj_embedding() is not None:
+            if event_embedding.event.subj_has_coref():
                 # label of the missing argument
                 arg_label = 'SUBJ'
                 # coreference index of the missing argument
@@ -86,7 +91,7 @@ class MostSimEventEvaluator(BaseEvaluator):
 
             # evaluate the object argument if it is not None
             # and is pointed a coreference mention
-            if event_embedding.get_obj_embedding() is not None:
+            if event_embedding.event.obj_has_coref():
                 # label of the missing argument
                 arg_label = 'OBJ'
                 # coreference index of the missing argument
@@ -104,7 +109,7 @@ class MostSimEventEvaluator(BaseEvaluator):
             for pobj_idx in range(len(event_embedding.event.pobj_list)):
                 # evaluate the prepositional object argument
                 # if it is pointed a coreference mention
-                if event_embedding.get_pobj_embedding(pobj_idx) is not None:
+                if event_embedding.event.pobj_has_coref(pobj_idx):
                     # label of the missing argument
                     arg_label = \
                         'PREP_' + event_embedding.event.pobj_list[pobj_idx][0]

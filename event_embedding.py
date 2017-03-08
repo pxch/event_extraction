@@ -95,8 +95,13 @@ class EventEmbedding:
             return None
 
         # set subject embedding
-        if event.subj is None or event.subj.coref is None:
+        if event.subj is None:
             subj_embedding = None
+        elif event.subj.coref is None:
+            if model.syntax_label:
+                subj_embedding = model.get_token_embedding(event.subj, '-SUBJ')
+            else:
+                subj_embedding = model.get_token_embedding(event.subj)
         else:
             if model.syntax_label:
                 subj_embedding = model.get_coref_embedding(
@@ -107,8 +112,13 @@ class EventEmbedding:
         event_embedding.set_subj_embedding(subj_embedding)
 
         # set object embedding
-        if event.obj is None or event.obj.coref is None:
+        if event.obj is None:
             obj_embedding = None
+        elif event.obj.coref is None:
+            if model.syntax_label:
+                obj_embedding = model.get_token_embedding(event.obj, '-OBJ')
+            else:
+                obj_embedding = model.get_token_embedding(event.obj)
         else:
             if model.syntax_label:
                 obj_embedding = model.get_coref_embedding(
@@ -121,7 +131,11 @@ class EventEmbedding:
         # set list of pobj embeddings
         for prep, pobj in event.pobj_list:
             if pobj.coref is None:
-                pobj_embedding = None
+                if model.syntax_label:
+                    pobj_embedding = model.get_token_embedding(
+                        pobj, '-PREP_' + prep)
+                else:
+                    pobj_embedding = model.get_token_embedding(pobj)
             else:
                 if model.syntax_label:
                     pobj_embedding = model.get_coref_embedding(

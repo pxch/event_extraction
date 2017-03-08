@@ -9,10 +9,15 @@ class BaseEvaluator(object):
         self.eval_stats = EvalStats()
 
     @abc.abstractmethod
+    def print_debug_message(self):
+        return
+
+    @abc.abstractmethod
     def evaluate_script(self, script):
         return
 
     def evaluate(self, all_scripts):
+        print self.print_debug_message()
         self.eval_stats = EvalStats()
         for script in all_scripts:
             self.evaluate_script(script)
