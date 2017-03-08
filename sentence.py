@@ -86,8 +86,6 @@ class Token:
         self.__dict__[attrib] = value
 
     def add_coref_info(self, coref, mention):
-        # TODO: switch to the following logic
-        '''
         if self.mention is not None:
             warn('Token {} has existing mention {}'.format(self, self.mention))
             if self.mention.end_token_idx - self.mention.start_token_idx > \
@@ -99,13 +97,6 @@ class Token:
             else:
                 warn('Thew new mention {} has longer span than the existing '
                      'mention, override the existing mention'.format(mention))
-        '''
-        if self.coref is not None:
-            warn('Overriding existing coref {} for token {} with {}'.format(
-                self.coref, self, coref))
-        if self.mention is not None:
-            warn('Overriding existing mention {} for token {} with {}'.format(
-                self.mention, self, mention))
         self.coref = coref
         self.mention = mention
 
