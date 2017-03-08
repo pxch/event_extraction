@@ -5,9 +5,11 @@ word2vec_path = './GoogleNews-vectors-negative300.bin.gz'
 
 
 class Embedding:
-    def __init__(self):
+    def __init__(self, name, syntax_label):
         self.model = None
+        self.name = name
         self.dimension = 0
+        self.syntax_label = syntax_label
 
     def load_model(self, path=word2vec_path, zipped=True, ue='strict'):
         print 'Loading word2vec model from: {}, zipped = {}'.format(path, zipped)
@@ -22,10 +24,15 @@ class Embedding:
         try:
             return self.model[string]
         except KeyError:
+            # returns None if out of vocabulary
             return None
 
     # TODO: add variant of whether or not to use ner and include compounds
     def get_token_embedding(self, token, suffix=''):
+        if self.syntax_label:
+            assert suffix != '', \
+                'Words in the embedding model have syntactic labels, ' \
+                'must provide suffix to the token'
         if token.is_noun() or token.is_verb():
             try:
                 return self.get_embedding(token.word + suffix)
@@ -34,10 +41,15 @@ class Embedding:
                     return self.get_embedding(token.lemma + suffix)
                 except KeyError:
                     pass
+        # returns None if out of vocabulary
         return None
 
     def get_mention_embedding(
-            self, mention, suffix, head_only=False):
+            self, mention, suffix='', head_only=False):
+        if self.syntax_label:
+            assert suffix != '', \
+                'Words in the embedding model have syntactic labels, ' \
+                'must provide suffix to the mention'
         embedding = self.zeros()
         if head_only:
             head_embedding = self.get_token_embedding(
@@ -52,7 +64,11 @@ class Embedding:
         return embedding
 
     def get_coref_embedding(
-            self, coref, suffix, head_only=False, rep_only=True):
+            self, coref, suffix='', head_only=False, rep_only=True):
+        if self.syntax_label:
+            assert suffix != '', \
+                'Words in the embedding model have syntactic labels, ' \
+                'must provide suffix to the coreference'
         embedding = self.zeros()
         if rep_only:
             embedding += self.get_mention_embedding(

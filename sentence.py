@@ -51,7 +51,8 @@ class Token:
         return self.pos.startswith('VB')
 
     # string form of the token
-    def string(self, use_ner=False, use_lemma=False, include_compounds=False):
+    def string_form(
+            self, use_ner=False, use_lemma=False, include_compounds=False):
         result = ''
         # if use_ner is set, and the token has a valid ner tag, return the tag
         if use_ner and self.ner in Token.valid_ner:

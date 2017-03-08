@@ -1,4 +1,4 @@
-from event_script import EvalStats
+from eval_stats import EvalStats
 
 
 def eval_most_freq_coref(all_scripts):
