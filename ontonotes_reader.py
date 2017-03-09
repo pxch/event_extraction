@@ -4,6 +4,7 @@ from sentence import *
 from coreference import *
 from os.path import join
 from warnings import warn
+from name_entity_tag import convert_ontonotes_ner_tag
 
 ontonotes_source = '/Users/pengxiang/corpora/ontonotes-release-5.0/' \
                    'data/files/data/english/annotations/'
@@ -48,14 +49,14 @@ def read_name_doc(name_doc):
 
 
 def add_name_entity_to_doc(doc, name_entity):
-    # TODO: add mapping of ontonotes ner tags to stanford ner tags
     assert name_entity.__class__.__name__ == 'name_entity', \
         'name_entity must be a name_entity instance'
     sent = doc.get_sent(name_entity.sentence_index)
     for token_idx in range(
             name_entity.start_word_index, name_entity.end_word_index + 1):
         token = sent.get_token(token_idx)
-        token.set_attrib('ner', name_entity.type)
+        # map ontonotes ner tags to coerse grained ner tags
+        token.set_attrib('ner', convert_ontonotes_ner_tag(name_entity.type))
 
 
 def read_conll_depparse(input_path):

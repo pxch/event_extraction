@@ -3,6 +3,7 @@ from event_embedding import EventEmbedding
 import numpy as np
 
 
+
 class MostSimEventEvaluator(BaseEvaluator):
     def __init__(self):
         BaseEvaluator.__init__(self)

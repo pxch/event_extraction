@@ -16,7 +16,7 @@ for coref_doc, name_doc in zip(all_coref_docs, all_name_docs):
     doc = ontonotes_reader.read_doc_from_ontonotes(coref_doc, name_doc)
     all_docs.append(doc)
 
-all_docs_dump_name = 'all_docs_03080300.pkl'
+all_docs_dump_name = 'all_docs_03082300.pkl'
 pkl.dump(all_docs, open(all_docs_dump_name, 'w'))
 
 import event_script
@@ -26,13 +26,13 @@ for doc in all_docs:
     script.read_from_document(doc)
     all_scripts.append(script)
 
-all_scripts_dump_name = 'all_scripts_03080300.pkl'
+all_scripts_dump_name = 'all_scripts_03082300.pkl'
 pkl.dump(all_scripts, open(all_scripts_dump_name, 'w'))
 
 
 '''
 import pickle as pkl
-all_scripts = pkl.load(open('all_scripts_03080300.pkl', 'r'))
+all_scripts = pkl.load(open('all_scripts_03082300.pkl', 'r'))
 
 import embedding
 word2vec = embedding.Embedding('word2vec', False)
@@ -47,4 +47,3 @@ most_sim_event_eval = MostSimEventEvaluator()
 most_sim_event_eval.set_model(word2vec)
 most_sim_event_eval.set_use_max_score(True)
 most_sim_event_eval.evaluate(all_scripts)
-
