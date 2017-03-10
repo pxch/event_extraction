@@ -4,11 +4,10 @@ from sentence import *
 from coreference import *
 from os.path import join
 from warnings import warn
-from name_entity_tag import convert_ontonotes_ner_tag
+import consts
 
-ontonotes_source = '/Users/pengxiang/corpora/ontonotes-release-5.0/' \
+ONTONOTES_SOURCE = '/Users/pengxiang/corpora/ontonotes-release-5.0/' \
                    'data/files/data/english/annotations/'
-
 
 def read_coref_link(coref_link):
     mention = Mention(
@@ -56,7 +55,8 @@ def add_name_entity_to_doc(doc, name_entity):
             name_entity.start_word_index, name_entity.end_word_index + 1):
         token = sent.get_token(token_idx)
         # map ontonotes ner tags to coerse grained ner tags
-        token.set_attrib('ner', convert_ontonotes_ner_tag(name_entity.type))
+        token.set_attrib(
+            'ner', consts.convert_ontonotes_ner_tag(name_entity.type))
 
 
 def read_conll_depparse(input_path):
@@ -118,7 +118,7 @@ def read_doc_from_ontonotes(coref_doc, name_doc):
 
     print 'Reading document from {}'.format(doc_id)
 
-    conll_file_path = join(ontonotes_source, doc_id + '.depparse')
+    conll_file_path = join(ONTONOTES_SOURCE, doc_id + '.depparse')
 
     all_sents = read_conll_depparse(conll_file_path)
 

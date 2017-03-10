@@ -1,10 +1,9 @@
 from collections import defaultdict
 from warnings import warn
+import consts
 
 
 class Token:
-    valid_ner = ['PERSON', 'LOCATION', 'ORGANIZATION']
-
     def __init__(self, word, lemma, pos):
         # word form of the token
         self.word = word.encode('ascii', 'ignore')
@@ -55,7 +54,7 @@ class Token:
             self, use_ner=False, use_lemma=False, include_compounds=False):
         result = ''
         # if use_ner is set, and the token has a valid ner tag, return the tag
-        if use_ner and self.ner in Token.valid_ner:
+        if use_ner and self.ner in consts.VALID_NER_TAGS:
             result = self.ner
         # if the token is a noun or a verb
         elif self.is_noun() or self.is_verb():

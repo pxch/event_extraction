@@ -28,17 +28,22 @@ class Embedding:
             return None
 
     # TODO: add variant of whether or not to use ner and include compounds
-    def get_token_embedding(self, token, suffix=''):
+    def get_token_embedding(
+            self, token, use_ner=False, include_compounds=False, suffix=''):
         if self.syntax_label:
             assert suffix != '', \
                 'Words in the embedding model have syntactic labels, ' \
                 'must provide suffix to the token'
+        token_word = token.string_form(use_ner=use_ner, use_lemma=False,
+                                       include_compounds=include_compounds)
+        token_lemma = token.string_form(use_ner=use_ner, use_lemma=True,
+                                        include_compounds=include_compounds)
         if token.is_noun() or token.is_verb():
             try:
-                return self.get_embedding(token.word + suffix)
+                return self.get_embedding(token_word + suffix)
             except KeyError:
                 try:
-                    return self.get_embedding(token.lemma + suffix)
+                    return self.get_embedding(token_lemma + suffix)
                 except KeyError:
                     pass
         # returns None if out of vocabulary

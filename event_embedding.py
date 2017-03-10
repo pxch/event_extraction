@@ -85,7 +85,8 @@ class EventEmbedding:
 
         # set predicate embedding
         if model.syntax_label:
-            pred_embedding = model.get_token_embedding(event.pred, '-PRED')
+            pred_embedding = model.get_token_embedding(
+                event.pred, suffix='-PRED')
         else:
             pred_embedding = model.get_token_embedding(event.pred)
         if pred_embedding is not None:
@@ -99,7 +100,8 @@ class EventEmbedding:
             subj_embedding = None
         elif event.subj.coref is None:
             if model.syntax_label:
-                subj_embedding = model.get_token_embedding(event.subj, '-SUBJ')
+                subj_embedding = model.get_token_embedding(
+                    event.subj, suffix='-SUBJ')
             else:
                 subj_embedding = model.get_token_embedding(event.subj)
         else:
@@ -116,7 +118,8 @@ class EventEmbedding:
             obj_embedding = None
         elif event.obj.coref is None:
             if model.syntax_label:
-                obj_embedding = model.get_token_embedding(event.obj, '-OBJ')
+                obj_embedding = model.get_token_embedding(
+                    event.obj, suffix='-OBJ')
             else:
                 obj_embedding = model.get_token_embedding(event.obj)
         else:
@@ -133,7 +136,7 @@ class EventEmbedding:
             if pobj.coref is None:
                 if model.syntax_label:
                     pobj_embedding = model.get_token_embedding(
-                        pobj, '-PREP_' + prep)
+                        pobj, suffix='-PREP_' + prep)
                 else:
                     pobj_embedding = model.get_token_embedding(pobj)
             else:

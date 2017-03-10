@@ -3,7 +3,7 @@ from document import *
 from sentence import *
 from coreference import *
 from lxml import etree
-from name_entity_tag import convert_corenlp_ner_tag
+import consts
 
 # dependency_type = 'collapsed-ccprocessed-dependencies'
 dependency_type = 'enhanced-plus-plus-dependencies'
@@ -102,7 +102,8 @@ class CoreNLPTarget(object):
             token = Token(self.word, self.lemma, self.pos)
             if self.ner != '':
                 # map corenlp ner tags to coerse grained ner tags
-                token.set_attrib('ner', convert_corenlp_ner_tag(self.ner))
+                token.set_attrib(
+                    'ner', consts.convert_corenlp_ner_tag(self.ner))
             self.sent.add_token(deepcopy(token))
             self.word = ''
             self.lemma = ''

@@ -1,6 +1,10 @@
-from warnings import warn
+FREQ_PREPS = ['of', 'in', 'to', 'for', 'with',
+              'on', 'at', 'from','by', 'about']
 
-VALID_NER_TAGS = ['PER', 'ORG', 'LOC', 'TEMP', 'NUM', 'MISC']
+STOP_VERBS = ['have', 'take', 'get', 'become', 'like',
+              'want', 'seem', 'think', 'make', 'need']
+
+VALID_NER_TAGS = ['PER', 'ORG', 'LOC', 'TEMP', 'NUM']
 
 ONTONOTES_NER_TAGS = [
     'PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME',
@@ -72,21 +76,11 @@ CORENLP_TO_VALID_MAPPING = {
 
 
 def convert_ontonotes_ner_tag(tag, to_corenlp=False):
-    if tag == '':
-        return ''
-    if tag not in ONTONOTES_NER_TAGS:
-        warn('{} is not a valid NER tag from ontonotes'.format(tag))
-        return ''
     if to_corenlp:
-        return ONTONOTES_TO_CORENLP_MAPPING[tag]
+        return ONTONOTES_TO_CORENLP_MAPPING.get(tag, '')
     else:
-        return ONTONOTES_TO_VALID_MAPPING[tag]
+        return ONTONOTES_TO_VALID_MAPPING.get(tag, '')
 
 
 def convert_corenlp_ner_tag(tag):
-    if tag == '':
-        return ''
-    if tag not in CORENLP_NER_TAGS:
-        warn('{} is not a valid NER tag from Stanford CoreNLP'.format(tag))
-        return ''
-    return CORENLP_TO_VALID_MAPPING[tag]
+    return CORENLP_TO_VALID_MAPPING.get(tag, '')

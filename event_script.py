@@ -1,5 +1,6 @@
 from event import Event
 from itertools import product
+import consts
 
 
 class EventScript:
@@ -30,11 +31,17 @@ class EventScript:
                 if pred_token.lemma == 'be':
                     continue
                 # TODO: exclude stop verbs
+                if pred_token.lemma in consts.STOP_VERBS:
+                    continue
                 # TODO: exclude verbs in quotes
                 # exclude modifying verbs
                 if sent.dep_graph.lookup_label(
                         'gov', pred_token.token_idx, 'xcomp'):
                     continue
+
+                neg = False
+                if sent.dep_graph.lookup_label('gov', pred_token.token_idx, 'neg'):
+                    neg = True
 
                 subj_list = sent.get_subj_list(pred_token.token_idx)
                 obj_list = sent.get_obj_list(pred_token.token_idx)
@@ -50,6 +57,7 @@ class EventScript:
                 for arg_tuple in product(subj_list, obj_list):
                     self.add_event(Event.construct(
                         pred_token,  # predicate
+                        neg,  # negation flag
                         arg_tuple[0],  # subject
                         arg_tuple[1],  # object
                         pobj_list  # prepositional object list
@@ -61,3 +69,9 @@ class EventScript:
         for coref in doc.corefs:
             self.add_coref(coref)
         self.sort()
+
+    def get_training_seq(self):
+        sequence = []
+        for event in self.events:
+            sequence.extend(event.get_training_seq())
+        return sequence
