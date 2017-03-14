@@ -134,7 +134,7 @@ class CoreNLPTarget(object):
                               self.end_token_idx)
             mention.set_attrib('head_token_idx', self.head_token_idx)
             mention.set_attrib('rep', self.rep)
-            mention.set_attrib('text', self.text)
+            mention.set_attrib('text', self.text.encode('ascii', 'ignore'))
             self.coref.add_mention(deepcopy(mention))
             self.sent_idx = -1
             self.start_token_idx = -1
