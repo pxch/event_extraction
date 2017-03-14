@@ -28,16 +28,22 @@ class MostSimEventEvaluator(BaseEvaluator):
               'use_max_score = {}, head_only = {}, rep_only = {}:'.format(
             self.model.name, self.use_max_score, self.head_only, self.rep_only)
 
-    def is_most_sim_event(self, arg_label, arg_coref_idx, corefs,
-                          embedding_wo_arg, event_embeddings):
+    def is_most_sim_event(self, arg_label, arg_coref_idx, arg_mention_idx,
+                          corefs, embedding_wo_arg, event_embeddings):
         sim_scores = []
-        for coref in corefs:
+        for coref_idx, coref in enumerate(corefs):
+            if coref_idx == arg_coref_idx:
+                exclude_mention_idx = arg_mention_idx
+            else:
+                exclude_mention_idx = -1
             if self.model.syntax_label:
                 coref_embedding = self.model.get_coref_embedding(
-                    coref, '-' + arg_label, self.head_only, self.rep_only)
+                    coref, '-' + arg_label, self.head_only, self.rep_only,
+                    exclude_mention_idx)
             else:
                 coref_embedding = self.model.get_coref_embedding(
-                    coref, '', self.head_only, self.rep_only)
+                    coref, '', self.head_only, self.rep_only,
+                    exclude_mention_idx)
             event_sim_scores = [self.cos_sim(
                 embedding_wo_arg + coref_embedding, event_embedding)
                                 for event_embedding in event_embeddings]
@@ -73,60 +79,79 @@ class MostSimEventEvaluator(BaseEvaluator):
                 all_event_embeddings[:idx] + all_event_embeddings[idx + 1:]
 
             # evaluate the subject argument if it is not None
-            # and is pointed to a non-first coreference mention,
-            if event_embedding.event.subj_has_coref() \
-                    and event_embedding.get_subj().mention.mention_idx != 0:
+            # and is pointed to a coreference mention,
+            if event_embedding.event.subj_has_coref():
                 # label of the missing argument
                 arg_label = 'SUBJ'
+                # pointer to the argument
+                arg = event_embedding.event.get_subj()
                 # coreference index of the missing argument
-                arg_coref_idx = event_embedding.event.subj.coref.idx
+                arg_coref_idx = arg.coref.idx
+                # mention index of the missing argument
+                arg_mention_idx = arg.mention.mention_idx
                 # embedding of the target event without the missing argument
                 embedding_wo_arg = event_embedding.get_embedding_wo_subj()
-                self.eval_stats.add_eval_result(
-                    arg_label,
-                    self.is_most_sim_event(
-                        arg_label, arg_coref_idx, script.corefs,
-                        embedding_wo_arg, other_event_embeddings),
-                    num_choices
-                )
-
-            # evaluate the object argument if it is not None
-            # and is pointed to a non-first coreference mention
-            if event_embedding.event.obj_has_coref() \
-                    and event_embedding.get_obj().mention.mention_idx != 0:
-                # label of the missing argument
-                arg_label = 'OBJ'
-                # coreference index of the missing argument
-                arg_coref_idx = event_embedding.event.obj.coref.idx
-                # embedding of the target event without the missing argument
-                embedding_wo_arg = event_embedding.get_embedding_wo_obj()
-                self.eval_stats.add_eval_result(
-                    arg_label,
-                    self.is_most_sim_event(
-                        arg_label, arg_coref_idx, script.corefs,
-                        embedding_wo_arg, other_event_embeddings),
-                    num_choices
-                )
-
-            for pobj_idx in range(len(event_embedding.event.pobj_list)):
-                # evaluate the prepositional object argument
-                # if it is pointed to a non-first coreference mention
-                if event_embedding.event.pobj_has_coref(pobj_idx) \
-                        and event_embedding.get_pobj(
-                            pobj_idx).mention.mention_idx != 0:
-                    # label of the missing argument
-                    arg_label = \
-                        'PREP_' + event_embedding.event.pobj_list[pobj_idx][0]
-                    # coreference index of the missing argument
-                    arg_coref_idx = \
-                        event_embedding.event.pobj_list[pobj_idx][1].coref.idx
-                    # embedding of the target event without the missing argument
-                    embedding_wo_arg = \
-                        event_embedding.get_embedding_wo_pobj(pobj_idx)
+                # if the argument is the first mention of a coreference,
+                # ignore it in evaluation
+                if arg_mention_idx != 0:
                     self.eval_stats.add_eval_result(
                         arg_label,
                         self.is_most_sim_event(
-                            arg_label, arg_coref_idx, script.corefs,
+                            arg_label, arg_coref_idx, arg_mention_idx,
+                            script.corefs,
                             embedding_wo_arg, other_event_embeddings),
                         num_choices
                     )
+
+            # evaluate the object argument if it is not None
+            # and is pointed to a coreference mention
+            if event_embedding.event.obj_has_coref():
+                # label of the missing argument
+                arg_label = 'OBJ'
+                # pointer to the argument
+                arg = event_embedding.event.get_obj()
+                # coreference index of the missing argument
+                arg_coref_idx = arg.coref.idx
+                # mention index of the missing argument
+                arg_mention_idx = arg.mention.mention_idx
+                # embedding of the target event without the missing argument
+                embedding_wo_arg = event_embedding.get_embedding_wo_obj()
+                # if the argument is the first mention of a coreference,
+                # ignore it in evaluation
+                if arg_mention_idx != 0:
+                    self.eval_stats.add_eval_result(
+                        arg_label,
+                        self.is_most_sim_event(
+                            arg_label, arg_coref_idx, arg_mention_idx,
+                            script.corefs,
+                            embedding_wo_arg, other_event_embeddings),
+                        num_choices
+                    )
+
+            for pobj_idx in range(len(event_embedding.event.pobj_list)):
+                # evaluate the prepositional object argument
+                # if it is pointed to a coreference mention
+                if event_embedding.event.pobj_has_coref(pobj_idx):
+                    # label of the missing argument
+                    arg_label = \
+                        'PREP_' + event_embedding.event.get_prep(pobj_idx)
+                    # pointer to the argument
+                    arg = event_embedding.event.get_pobj(pobj_idx)
+                    # coreference index of the missing argument
+                    arg_coref_idx = arg.coref.idx
+                    # mention index of the missing argument
+                    arg_mention_idx = arg.mention.mention_idx
+                    # embedding of the target event without the missing argument
+                    embedding_wo_arg = \
+                        event_embedding.get_embedding_wo_pobj(pobj_idx)
+                    # if the argument is the first mention of a coreference,
+                    # ignore it in evaluation
+                    if arg_mention_idx != 0:
+                        self.eval_stats.add_eval_result(
+                            arg_label,
+                            self.is_most_sim_event(
+                                arg_label, arg_coref_idx, arg_mention_idx,
+                                script.corefs,
+                                embedding_wo_arg, other_event_embeddings),
+                            num_choices
+                        )

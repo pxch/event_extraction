@@ -12,8 +12,10 @@ class Embedding:
         self.syntax_label = syntax_label
 
     def load_model(self, path=word2vec_path, zipped=True, ue='strict'):
-        print 'Loading word2vec model from: {}, zipped = {}'.format(path, zipped)
-        self.model = Word2Vec.load_word2vec_format(path, binary=zipped, unicode_errors=ue)
+        print 'Loading word2vec model from: {}, zipped = {}'.format(
+            path, zipped)
+        self.model = Word2Vec.load_word2vec_format(
+            path, binary=zipped, unicode_errors=ue)
         self.dimension = self.model.vector_size
         print 'Done\n'
 
@@ -69,7 +71,8 @@ class Embedding:
         return embedding
 
     def get_coref_embedding(
-            self, coref, suffix='', head_only=False, rep_only=True):
+            self, coref, suffix='', head_only=False, rep_only=True,
+            exclude_mention_idx=-1):
         if self.syntax_label:
             assert suffix != '', \
                 'Words in the embedding model have syntactic labels, ' \
@@ -79,7 +82,8 @@ class Embedding:
             embedding += self.get_mention_embedding(
                 coref.rep_mention, suffix, head_only)
         else:
-            for mention in coref.mentions:
-                embedding += self.get_mention_embedding(
-                    mention, suffix, head_only)
+            for mention_idx, mention in enumerate(coref.mentions):
+                if mention_idx != exclude_mention_idx:
+                    embedding += self.get_mention_embedding(
+                        mention, suffix, head_only)
         return embedding
