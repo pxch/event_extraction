@@ -58,12 +58,12 @@ class Embedding:
         embedding = self.zeros()
         if head_only:
             head_embedding = self.get_token_embedding(
-                mention.head_token, suffix)
+                mention.head_token, suffix=suffix)
             if head_embedding is not None:
                 embedding += head_embedding
         else:
             for token in mention.tokens:
-                token_embedding = self.get_token_embedding(token, suffix)
+                token_embedding = self.get_token_embedding(token, suffix=suffix)
                 if token_embedding is not None:
                     embedding += token_embedding
         return embedding

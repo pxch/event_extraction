@@ -61,10 +61,15 @@ class Event:
     def get_obj(self):
         return self.obj
 
+    def get_prep(self, pobj_idx):
+        assert 0 <= pobj_idx < len(self.pobj_list), \
+            'PObj index {} out of range'.format(pobj_idx)
+        return self.pobj_list[pobj_idx][0]
+
     def get_pobj(self, pobj_idx):
         assert 0 <= pobj_idx < len(self.pobj_list), \
             'PObj index {} out of range'.format(pobj_idx)
-        return self.pobj_list[pobj_idx]
+        return self.pobj_list[pobj_idx][1]
 
     def subj_has_coref(self):
         return self.subj is not None and self.subj.coref is not None

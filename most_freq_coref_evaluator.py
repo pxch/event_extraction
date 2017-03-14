@@ -20,8 +20,12 @@ class MostFreqCorefEvaluator(BaseEvaluator):
         coref_freqs = [len(coref.mentions) for coref in script.corefs]
         for event in script.events:
             for label, arg in event.get_all_args_with_coref():
-                self.eval_stats.add_eval_result(
-                    label,
-                    self.is_most_freq_coref(arg.coref.idx, coref_freqs),
-                    num_choices)
+                # do not evaluate the first mention of a coref chain,
+                # as per the evaluation framework of implicit argument,
+                # we must have other mentions in previous sentences
+                if arg.mention.mention_idx != 0:
+                    self.eval_stats.add_eval_result(
+                        label,
+                        self.is_most_freq_coref(arg.coref.idx, coref_freqs),
+                        num_choices)
         return self.eval_stats

@@ -73,8 +73,9 @@ class MostSimEventEvaluator(BaseEvaluator):
                 all_event_embeddings[:idx] + all_event_embeddings[idx + 1:]
 
             # evaluate the subject argument if it is not None
-            # and is pointed a coreference mention
-            if event_embedding.event.subj_has_coref():
+            # and is pointed to a non-first coreference mention,
+            if event_embedding.event.subj_has_coref() \
+                    and event_embedding.get_subj().mention.mention_idx != 0:
                 # label of the missing argument
                 arg_label = 'SUBJ'
                 # coreference index of the missing argument
@@ -90,8 +91,9 @@ class MostSimEventEvaluator(BaseEvaluator):
                 )
 
             # evaluate the object argument if it is not None
-            # and is pointed a coreference mention
-            if event_embedding.event.obj_has_coref():
+            # and is pointed to a non-first coreference mention
+            if event_embedding.event.obj_has_coref() \
+                    and event_embedding.get_obj().mention.mention_idx != 0:
                 # label of the missing argument
                 arg_label = 'OBJ'
                 # coreference index of the missing argument
@@ -108,8 +110,10 @@ class MostSimEventEvaluator(BaseEvaluator):
 
             for pobj_idx in range(len(event_embedding.event.pobj_list)):
                 # evaluate the prepositional object argument
-                # if it is pointed a coreference mention
-                if event_embedding.event.pobj_has_coref(pobj_idx):
+                # if it is pointed to a non-first coreference mention
+                if event_embedding.event.pobj_has_coref(pobj_idx) \
+                        and event_embedding.get_pobj(
+                            pobj_idx).mention.mention_idx != 0:
                     # label of the missing argument
                     arg_label = \
                         'PREP_' + event_embedding.event.pobj_list[pobj_idx][0]

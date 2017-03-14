@@ -43,6 +43,15 @@ class EventEmbedding:
         if pobj_embedding is not None:
             self.embedding += pobj_embedding
 
+    def get_subj(self):
+        return self.event.get_subj()
+
+    def get_obj(self):
+        return self.event.get_obj()
+
+    def get_pobj(self, pobj_idx):
+        return self.event.get_pobj(pobj_idx)
+
     def get_subj_embedding(self):
         return self.subj_embedding
 
