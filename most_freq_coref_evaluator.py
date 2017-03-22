@@ -13,7 +13,8 @@ class MostFreqCorefEvaluator(BaseEvaluator):
         return coref_idx == most_freq_coref_idx
 
     def print_debug_message(self):
-        return 'Evaluation based on most frequent coreference chain:'
+        return 'Evaluation based on most frequent coreference chain, ' \
+               'ignore_first_mention = {}:'.format(self.ignore_first_mention)
 
     def evaluate_script(self, script):
         num_choices = len(script.corefs)
@@ -23,7 +24,8 @@ class MostFreqCorefEvaluator(BaseEvaluator):
                 # do not evaluate the first mention of a coref chain,
                 # as per the evaluation framework of implicit argument,
                 # we must have other mentions in previous sentences
-                if arg.mention.mention_idx != 0:
+                if (not self.ignore_first_mention) \
+                        or arg.mention.mention_idx != 0:
                     self.eval_stats.add_eval_result(
                         label,
                         self.is_most_freq_coref(arg.coref.idx, coref_freqs),

@@ -1,22 +1,26 @@
-from gensim.models import Word2Vec
+import gensim
 import numpy as np
 
 word2vec_path = './GoogleNews-vectors-negative300.bin.gz'
 
 
 class Embedding:
-    def __init__(self, name, syntax_label):
+    def __init__(self, name, dimension, syntax_label='',
+                 use_ner=False, use_lemma=False, include_compounds=False):
         self.model = None
         self.name = name
-        self.dimension = 0
+        self.dimension = dimension
         self.syntax_label = syntax_label
+        self.use_ner = use_ner
+        self.use_lemma = use_lemma
+        self.include_compounds = include_compounds
 
     def load_model(self, path=word2vec_path, zipped=True, ue='strict'):
         print 'Loading word2vec model from: {}, zipped = {}'.format(
             path, zipped)
-        self.model = Word2Vec.load_word2vec_format(
+        self.model = gensim.models.KeyedVectors.load_word2vec_format(
             path, binary=zipped, unicode_errors=ue)
-        self.dimension = self.model.vector_size
+        # self.dimension = self.model.vector_size
         print 'Done\n'
 
     def zeros(self):
@@ -30,12 +34,24 @@ class Embedding:
             return None
 
     # TODO: add variant of whether or not to use ner and include compounds
-    def get_token_embedding(
-            self, token, use_ner=False, include_compounds=False, suffix=''):
+    def get_token_embedding(self, token, suffix=''):
         if self.syntax_label:
             assert suffix != '', \
                 'Words in the embedding model have syntactic labels, ' \
                 'must provide suffix to the token'
+        if token.is_noun() or token.is_verb():
+            token_string_form = token.string_form(
+                    self.use_ner, self.use_lemma, self.include_compounds)
+            try:
+                return self.get_embedding(token_string_form + suffix)
+            except KeyError:
+                if suffix.startswith('_PREP'):
+                    try:
+                        return self.get_embedding(token_string_form + '_PREP')
+                    except KeyError:
+                        pass
+                pass
+        '''
         token_word = token.string_form(use_ner=use_ner, use_lemma=False,
                                        include_compounds=include_compounds)
         token_lemma = token.string_form(use_ner=use_ner, use_lemma=True,
@@ -48,6 +64,7 @@ class Embedding:
                     return self.get_embedding(token_lemma + suffix)
                 except KeyError:
                     pass
+        '''
         # returns None if out of vocabulary
         return None
 

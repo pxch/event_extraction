@@ -25,8 +25,10 @@ class MostSimEventEvaluator(BaseEvaluator):
 
     def print_debug_message(self):
         return 'Evaluation based on most similar event, model = {}, ' \
-              'use_max_score = {}, head_only = {}, rep_only = {}:'.format(
-            self.model.name, self.use_max_score, self.head_only, self.rep_only)
+               'ignore_first_mention = {}, use_max_score = {}, ' \
+               'head_only = {}, rep_only = {}:'.format(
+                self.model.name, self.ignore_first_mention,
+                self.use_max_score, self.head_only, self.rep_only)
 
     def is_most_sim_event(self, arg_label, arg_coref_idx, arg_mention_idx,
                           corefs, embedding_wo_arg, event_embeddings):
@@ -93,7 +95,7 @@ class MostSimEventEvaluator(BaseEvaluator):
                 embedding_wo_arg = event_embedding.get_embedding_wo_subj()
                 # if the argument is the first mention of a coreference,
                 # ignore it in evaluation
-                if arg_mention_idx != 0:
+                if (not self.ignore_first_mention) or arg_mention_idx != 0:
                     self.eval_stats.add_eval_result(
                         arg_label,
                         self.is_most_sim_event(
@@ -118,7 +120,7 @@ class MostSimEventEvaluator(BaseEvaluator):
                 embedding_wo_arg = event_embedding.get_embedding_wo_obj()
                 # if the argument is the first mention of a coreference,
                 # ignore it in evaluation
-                if arg_mention_idx != 0:
+                if (not self.ignore_first_mention) or arg_mention_idx != 0:
                     self.eval_stats.add_eval_result(
                         arg_label,
                         self.is_most_sim_event(
@@ -146,7 +148,7 @@ class MostSimEventEvaluator(BaseEvaluator):
                         event_embedding.get_embedding_wo_pobj(pobj_idx)
                     # if the argument is the first mention of a coreference,
                     # ignore it in evaluation
-                    if arg_mention_idx != 0:
+                    if (not self.ignore_first_mention) or arg_mention_idx != 0:
                         self.eval_stats.add_eval_result(
                             arg_label,
                             self.is_most_sim_event(

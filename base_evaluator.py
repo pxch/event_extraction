@@ -7,6 +7,11 @@ class BaseEvaluator(object):
 
     def __init__(self):
         self.eval_stats = EvalStats()
+        self.ignore_first_mention = False
+
+    def set_ignore_first_mention(self, ignore_first_mention):
+        print 'Set ignore_first_mention = {}'.format(ignore_first_mention)
+        self.ignore_first_mention = ignore_first_mention
 
     @abc.abstractmethod
     def print_debug_message(self):
