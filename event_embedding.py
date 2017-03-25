@@ -93,6 +93,7 @@ class EventEmbedding:
             event_embedding.set_pred_embedding(pred_embedding)
         # return None if event.predicate is out of vocabulary
         else:
+            # print 'Out of vocabulary predicate token in {}'.format(event)
             return None
 
         # set subject embedding

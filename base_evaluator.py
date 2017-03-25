@@ -25,6 +25,8 @@ class BaseEvaluator(object):
         print self.print_debug_message()
         self.eval_stats = EvalStats()
         for script in all_scripts:
+            if len(script.events) < 2:
+                continue
             self.evaluate_script(script)
         self.print_stats()
 
