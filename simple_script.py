@@ -6,8 +6,9 @@ import event_script
 import sentence
 import utils
 
-import re
+from collections import Counter
 from itertools import product
+import re
 from warnings import warn
 
 ESCAPE_CHAR_SET = [' // ', '/', ';', ',', ':', '-']
@@ -415,7 +416,6 @@ class ParseMentionError(Exception):
 
 
 class Entity(object):
-    # TODO: add ner info to entity
     def __init__(self, mentions):
         if not mentions:
             raise ParseEntityError('must provide at least one mention')
@@ -432,6 +432,14 @@ class Entity(object):
                         'cannot have more than one representative mentions')
         if self.rep_mention is None:
             raise ParseEntityError('no representative mention provided')
+        ner_counter = Counter()
+        for mention in self.mentions:
+            if mention.ner != '':
+                ner_counter[mention.ner] += 1
+        if len(ner_counter):
+            self.ner = ner_counter.most_common(1)[0][0]
+        else:
+            self.ner = ''
 
     def __eq__(self, other):
         return all(mention == other_mention for mention, other_mention
