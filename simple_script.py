@@ -495,6 +495,12 @@ class Script(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def has_entities(self):
+        return len(self.entities) > 0
+
+    def has_events(self):
+        return len(self.events) > 0
+
     def check_entity_idx_range(self):
         for ev in self.events:
             for arg in ev.get_all_args():

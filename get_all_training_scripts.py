@@ -19,7 +19,8 @@ for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
         doc = read_doc_from_corenlp(fin)
         script = Script.from_doc(doc)
-        script_corpus.add_script(script)
+        if script.has_events():
+            script_corpus.add_script(script)
 
 fout.write(script_corpus.to_text())
 fout.close()
