@@ -243,7 +243,7 @@ class Event(object):
             raise ParseEventError('obj must be None or an Argument instance')
         self.obj = obj
         if not all(prep != '' for prep, _ in pobj_list):
-            raise ParseEventError('every prep cannot be an empty string')
+            warn('some of prep(s) in pobj_list are empty')
         if not all(isinstance(pobj, Argument) for _, pobj in pobj_list):
             raise ParseEventError('every pobj must be an Argument instance')
         self.pobj_list = pobj_list
