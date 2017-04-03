@@ -124,7 +124,7 @@ def read_doc_from_ontonotes(coref_doc, name_doc):
 
     all_corefs = read_coref_doc(coref_doc)
 
-    doc = Document.construct(all_sents, all_corefs)
+    doc = Document.construct(doc_id.split('/')[-1], all_sents, all_corefs)
 
     for name_entity in read_name_doc(name_doc):
         add_name_entity_to_doc(doc, name_entity)

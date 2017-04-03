@@ -4,7 +4,8 @@ import consts
 
 
 class EventScript:
-    def __init__(self):
+    def __init__(self, doc_name):
+        self.doc_name = doc_name
         self.events = []
         self.corefs = []
 
@@ -47,7 +48,7 @@ class EventScript:
                 obj_list = sent.get_obj_list(pred_token.token_idx)
                 pobj_list = sent.get_pobj_list(pred_token.token_idx)
 
-                if (not subj_list) and not (obj_list):
+                if (not subj_list) and (not obj_list):
                     continue
                 if not subj_list:
                     subj_list.append(None)

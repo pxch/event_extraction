@@ -1,5 +1,6 @@
 class Document:
-    def __init__(self):
+    def __init__(self, doc_name):
+        self.doc_name = doc_name
         self.sents = []
         self.corefs = []
 
@@ -60,8 +61,8 @@ class Document:
                 coref.find_rep_mention()
 
     @classmethod
-    def construct(cls, all_sents, all_corefs):
-        doc = cls()
+    def construct(cls, doc_name, all_sents, all_corefs):
+        doc = cls(doc_name)
         for sent in all_sents:
             doc.add_sent(sent)
         for coref in all_corefs:

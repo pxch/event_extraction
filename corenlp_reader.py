@@ -4,6 +4,7 @@ from sentence import *
 from coreference import *
 from lxml import etree
 import consts
+from os.path import basename, splitext
 
 # dependency_type = 'collapsed-ccprocessed-dependencies'
 dependency_type = 'enhanced-plus-plus-dependencies'
@@ -151,5 +152,7 @@ def read_doc_from_corenlp(input_xml):
     print 'Reading document from {}'.format(input_xml.name)
     xml_parser = etree.XMLParser(target=CoreNLPTarget())
     etree.parse(input_xml, xml_parser)
-    doc = Document.construct(xml_parser.target.sents, xml_parser.target.corefs)
+    doc_name = splitext(basename(input_xml.name))[0]
+    doc = Document.construct(
+        doc_name,xml_parser.target.sents, xml_parser.target.corefs)
     return doc
