@@ -603,8 +603,8 @@ class ParseScriptError(Exception):
 
 
 class ScriptCorpus(object):
-    def __init__(self, scripts):
-        self.scripts = scripts
+    def __init__(self):
+        self.scripts = []
 
     def __eq__(self, other):
         return all(script == other_script for script, other_script
@@ -613,11 +613,15 @@ class ScriptCorpus(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def add_script(self, script):
+        self.scripts.append(script)
+
     def to_text(self):
         return '\n###DOC###\n'.join(script.to_text() for script in self.scripts)
 
     @classmethod
     def from_text(cls, text):
-        script_texts = text.split('\n###DOC###\n')
-        return cls(
-            Script.from_text(script_text) for script_text in script_texts)
+        script_corpus = cls()
+        for script_text in text.split('\n###DOC###\n'):
+            script_corpus.add_script(Script.from_text(script_text))
+        return script_corpus
