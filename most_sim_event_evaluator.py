@@ -9,6 +9,7 @@ class MostSimEventEvaluator(BaseEvaluator):
         self.model = None
         self.head_only = False
         self.rep_only = False
+        self.use_neg = False
         self.use_max_score = False
 
     def set_model(self, model):
@@ -19,6 +20,9 @@ class MostSimEventEvaluator(BaseEvaluator):
 
     def set_rep_only(self, rep_only):
         self.rep_only = rep_only
+
+    def set_use_neg(self, use_neg):
+        self.use_neg = use_neg
 
     def set_use_max_score(self, use_max_score):
         self.use_max_score = use_max_score
@@ -68,7 +72,7 @@ class MostSimEventEvaluator(BaseEvaluator):
         event_embedding_list = []
         for event in script.events:
             event_embedding = EventEmbedding.construct(
-                event, self.model, self.head_only, self.rep_only)
+                event, self.model, self.head_only, self.rep_only, self.use_neg)
             if event_embedding is not None:
                 event_embedding_list.append(event_embedding)
 

@@ -1,5 +1,6 @@
 import numpy as np
 from warnings import warn
+from copy import deepcopy
 
 
 class EventEmbedding:
@@ -79,16 +80,22 @@ class EventEmbedding:
             return self.embedding
 
     @classmethod
-    def construct(cls, event, model, head_only=False, rep_only=False):
+    def construct(cls, event, model, head_only=False, rep_only=False,
+                  use_neg=False):
 
         event_embedding = cls(event, model.dimension)
+
+        new_pred = deepcopy(event.pred)
+        if use_neg and event.neg:
+            new_pred.lemma = 'not_' + new_pred.lemma
+            new_pred.word = 'not_' + new_pred.word
 
         # set predicate embedding
         if model.syntax_label:
             pred_embedding = model.get_token_embedding(
-                event.pred, suffix='-PRED')
+                new_pred, suffix='-PRED')
         else:
-            pred_embedding = model.get_token_embedding(event.pred)
+            pred_embedding = model.get_token_embedding(new_pred)
         if pred_embedding is not None:
             event_embedding.set_pred_embedding(pred_embedding)
         # return None if event.predicate is out of vocabulary
