@@ -19,7 +19,7 @@ for subdir in all_subdirs:
     for input_f in input_files:
         with BZ2File(input_f, 'r') as fin:
             doc = read_doc_from_corenlp(fin)
-            script = EventScript()
+            script = EventScript(doc.doc_name)
             script.read_from_document(doc)
             training_seq = script.get_training_seq()
             if training_seq:
