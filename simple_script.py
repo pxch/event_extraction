@@ -57,7 +57,7 @@ class Token(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_representation(self, use_lemma):
+    def get_representation(self, use_lemma=True):
         if use_lemma:
             return self.lemma.lower()
         else:
@@ -276,6 +276,10 @@ class Event(object):
         if not all(isinstance(pobj, Argument) for _, pobj in pobj_list):
             raise ParseEventError('every pobj must be an Argument instance')
         self.pobj_list = pobj_list
+        self.pred_text = ''
+        self.subj_text = ''
+        self.obj_text = ''
+        self.pobj_text_list = []
 
     def __eq__(self, other):
         return self.pred == other.pred and self.subj == other.subj and \
@@ -292,35 +296,32 @@ class Event(object):
         all_args = [arg for arg in all_args if arg is not None]
         return all_args
 
-    def get_training_seq(self, use_lemma=True, include_neg=True,
-                         include_prt=True, use_entity=True, entity_list=None,
-                         use_ner=False, include_prep=True):
-        pred_representation = \
+    def get_all_representations(self, use_lemma=True, include_neg=True,
+                                include_prt=True, use_entity=True,
+                                entity_list=None, use_ner=False,
+                                include_prep=True):
+        self.pred_text = \
             self.pred.get_representation(
                 use_lemma=use_lemma, include_neg=include_neg,
                 include_prt=include_prt) + '-PRED'
-        sequence = [pred_representation]
         if self.subj is not None:
-            subj_representation = \
+            self.subj_text = \
                 self.subj.get_representation(
                     use_entity=use_entity, entity_list=entity_list,
                     use_ner=use_ner, use_lemma=use_lemma) + '-SUBJ'
-            sequence.append(subj_representation)
         if self.obj is not None:
-            obj_representation = \
+            self.obj_text = \
                 self.obj.get_representation(
                     use_entity=use_entity, entity_list=entity_list,
                     use_ner=use_ner, use_lemma=use_lemma) + '-SUBJ'
-            sequence.append(obj_representation)
         for prep, pobj in self.pobj_list:
-            pobj_representation = \
+            pobj_text = \
                 pobj.get_representation(
                     use_entity=use_entity, entity_list=entity_list,
                     use_ner=use_ner, use_lemma=use_lemma) + '-PREP'
             if include_prep and prep:
-                pobj_representation += '_' + prep
-            sequence.append(pobj_representation)
-        return sequence
+                pobj_text += '_' + prep
+            self.pobj_text_list.append(pobj_text)
 
     def to_text(self):
         return '{} :SUBJ: {} :OBJ: {}{}'.format(
@@ -587,20 +588,29 @@ class Script(object):
                         '{} in {} has mention_idx {} out of range'.format(
                             arg.to_text(), ev.to_text(), arg.mention_idx)
 
-    def get_training_seq(self, use_lemma=True, include_neg=True,
-                         include_prt=True, use_entity=True, use_ner=False,
-                         include_prep=True):
+    def get_all_representations(self, use_lemma=True, include_neg=True,
+                                include_prt=True, use_entity=True,
+                                use_ner=False, include_prep=True):
         if not self.has_entities():
             use_entity = False
+        for ev in self.events:
+            ev.get_all_representations(use_lemma=use_lemma,
+                                       include_neg=include_neg,
+                                       include_prt=include_prt,
+                                       use_entity=use_entity,
+                                       entity_list=self.entities,
+                                       use_ner=use_ner,
+                                       include_prep=include_prep)
+
+    def get_training_seq(self):
         sequence = []
         for ev in self.events:
-            sequence.extend(ev.get_training_seq(use_lemma=use_lemma,
-                                                include_neg=include_neg,
-                                                include_prt=include_prt,
-                                                use_entity=use_entity,
-                                                entity_list=self.entities,
-                                                use_ner=use_ner,
-                                                include_prep=include_prep))
+            sequence.append(ev.pred_text)
+            if ev.subj_text != '':
+                sequence.append(ev.subj_text)
+            if ev.obj_text != '':
+                sequence.append(ev.obj_text)
+            sequence.extend(ev.pobj_text_list)
         return sequence
 
     def to_text(self):
