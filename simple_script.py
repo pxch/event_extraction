@@ -337,7 +337,7 @@ class Event(object):
 
     @classmethod
     def from_text(cls, text):
-        parts = [p.strip() for p in re.split(' :(?:SUBJ|OBJ|POBJ): ', text)]
+        parts = [p for p in re.split(' :(?:SUBJ|OBJ|POBJ): ', text)]
         if len(parts) < 3:
             raise ParseEventError('expected at least 3 parts, separated by ::, '
                                   'got {}: {}'.format(len(parts), text))
@@ -352,7 +352,8 @@ class Event(object):
         if len(parts) > 3:
             for part in parts[3:]:
                 prep, pobj = part.split(' : ')
-                pobj_list.append((prep, Argument.from_text(pobj)))
+                if prep != '':
+                    pobj_list.append((prep, Argument.from_text(pobj)))
         return cls(pred, subj, obj, pobj_list)
 
     @classmethod
