@@ -2,7 +2,7 @@ from corenlp_reader import read_doc_from_corenlp
 from simple_script import Script, ScriptCorpus
 import sys
 from os import listdir
-from os.path import isdir, isfile, join
+from os.path import isfile, join
 from bz2 import BZ2File
 
 input_path = sys.argv[1]

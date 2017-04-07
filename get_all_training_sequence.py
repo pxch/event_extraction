@@ -1,29 +1,48 @@
-from corenlp_reader import read_doc_from_corenlp
-from event_script import EventScript
-import sys
+from simple_script import Script, ScriptCorpus
 from os import listdir
-from os.path import isdir, isfile, join
+from os.path import isfile, join
 from bz2 import BZ2File
+import argparse
 
-input_path = sys.argv[1]
-output_path = sys.argv[2]
+parser = argparse.ArgumentParser()
+parser.add_argument('input_path', help='directory for ScriptCorpus files')
+parser.add_argument('output_path', help='path to write training sequence')
+parser.add_argument('--use_lemma', action='store_true',
+                    help='if turned on, use the lemma form of a token,'
+                         'otherwise use the word form')
+parser.add_argument('--include_neg', action='store_true',
+                    help='include negation for predicate when applicable')
+parser.add_argument('--include_prt', action='store_true',
+                    help='include particle for predicate when applicable')
+parser.add_argument('--use_entity', action='store_true',
+                    help='if turned on, use entity representation for arguments'
+                         'with entity_idx, otherwise use token representation')
+parser.add_argument('--use_ner', action='store_true',
+                    help='if turned on, use ner tag for entities, otherwise use'
+                         'head_token of rep_mention')
+parser.add_argument('--include_prep', action='store_true',
+                    help='include preposition word in pobj representations')
 
-fout = BZ2File(output_path, 'w')
+args = parser.parse_args()
 
-all_subdirs = sorted([join(input_path, subdir) for subdir in listdir(input_path) \
-        if isdir(join(input_path, subdir))])
+fout = BZ2File(args.output_path, 'w')
 
-for subdir in all_subdirs:
-    input_files = sorted([join(subdir, f) for f in listdir(subdir) \
-            if isfile(join(subdir, f)) and f.endswith('xml.bz2')])
-    for input_f in input_files:
-        with BZ2File(input_f, 'r') as fin:
-            doc = read_doc_from_corenlp(fin)
-            script = EventScript(doc.doc_name)
-            script.read_from_document(doc)
-            training_seq = script.get_training_seq()
-            if training_seq:
-                fout.write(' '.join(script.get_training_seq()) + '\n')
+input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
+                      if isfile(join(args.input_path, f))
+                      and f.endswith('.bz2')])
+
+for input_f in input_files:
+    with BZ2File(input_f, 'r') as fin:
+        script_corpus = ScriptCorpus.from_text(fin.read())
+        for script in script_corpus.scripts:
+            sequence = script.get_training_seq(
+                use_lemma=args.use_lemma,
+                include_neg=args.include_neg,
+                include_prt=args.include_prt,
+                use_entity=args.use_entity,
+                use_ner=args.use_ner,
+                include_prep=args.include_prep
+            )
+            fout.write(' '.join(sequence) + '\n')
 
 fout.close()
-

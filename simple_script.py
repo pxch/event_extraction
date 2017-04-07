@@ -57,6 +57,12 @@ class Token(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def get_representation(self, use_lemma):
+        if use_lemma:
+            return self.lemma.lower()
+        else:
+            return self.word.lower()
+
     def to_text(self):
         return '{}/{}/{}'.format(
             escape(self.word), escape(self.lemma), escape(self.pos))
@@ -111,6 +117,20 @@ class Argument(Token):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def get_representation(self, use_entity=True, entity_list=None,
+                           use_ner=True, use_lemma=True):
+        assert (not use_entity) or entity_list, \
+            'entity_list cannot be None when use_entity is specified'
+        if use_entity and self.entity_idx != -1:
+            assert 0 <= self.entity_idx < len(entity_list), \
+                'entity_idx {} out of range'.format(self.entity_idx)
+            assert all(isinstance(entity, Entity) for entity in entity_list), \
+                'entity_list must contains only Entity element'
+            return entity_list[self.entity_idx].get_representation(
+                use_ner, use_lemma)
+        else:
+            return super(Argument, self).get_representation(use_lemma)
 
     def get_entity(self, entity_list):
         if self.entity_idx != -1:
@@ -181,6 +201,15 @@ class Predicate(Token):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def get_representation(
+            self, use_lemma=True, include_neg=True, include_prt=True):
+        result = super(Predicate, self).get_representation(use_lemma)
+        if include_neg and self.neg:
+            result = 'not_' + result
+        if include_prt and self.prt:
+            result += '_' + self.prt
+        return result
 
     def to_text(self):
         text = super(Predicate, self).to_text()
@@ -263,6 +292,36 @@ class Event(object):
         all_args = [arg for arg in all_args if arg is not None]
         return all_args
 
+    def get_training_seq(self, use_lemma=True, include_neg=True,
+                         include_prt=True, use_entity=True, entity_list=None,
+                         use_ner=False, include_prep=True):
+        pred_representation = \
+            self.pred.get_representation(
+                use_lemma=use_lemma, include_neg=include_neg,
+                include_prt=include_prt) + '-PRED'
+        sequence = [pred_representation]
+        if self.subj is not None:
+            subj_representation = \
+                self.subj.get_representation(
+                    use_entity=use_entity, entity_list=entity_list,
+                    use_ner=use_ner, use_lemma=use_lemma) + '-SUBJ'
+            sequence.append(subj_representation)
+        if self.obj is not None:
+            obj_representation = \
+                self.obj.get_representation(
+                    use_entity=use_entity, entity_list=entity_list,
+                    use_ner=use_ner, use_lemma=use_lemma) + '-SUBJ'
+            sequence.append(obj_representation)
+        for prep, pobj in self.pobj_list:
+            pobj_representation = \
+                pobj.get_representation(
+                    use_entity=use_entity, entity_list=entity_list,
+                    use_ner=use_ner, use_lemma=use_lemma) + '-PREP'
+            if include_prep and prep:
+                pobj_representation += '_' + prep
+            sequence.append(pobj_representation)
+        return sequence
+
     def to_text(self):
         return '{} :SUBJ: {} :OBJ: {}{}'.format(
             self.pred.to_text(),
@@ -342,6 +401,8 @@ class Mention(object):
                 'every token must be a Token instance, found {}'.format(
                     [type(token) for token in tokens]))
         self.tokens = tokens
+        self.head_token = \
+            self.tokens[self.head_token_idx - self.start_token_idx]
         if not (ner == '' or ner in consts.VALID_NER_TAGS):
             raise ParseMentionError('ner {} is not a valid ner tag'.format(ner))
         self.ner = ner
@@ -353,13 +414,23 @@ class Mention(object):
                and self.head_token_idx == other.head_token_idx \
                and self.rep == other.rep and self.ner == other.ner \
                and all(token == other_token for token, other_token
-                       in zip(self.tokens, other.tokens))
+                       in zip(self.tokens, other.tokens)) \
+               and self.ner == other.ner
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def get_head_token(self):
-        return self.tokens[self.head_token_idx - self.start_token_idx]
+        return self.head_token
+
+    def get_ner(self):
+        return self.ner
+
+    def get_representation(self, use_ner=False, use_lemma=True):
+        if use_ner and self.ner != '':
+            return self.ner
+        else:
+            return self.head_token.get_representation(use_lemma)
 
     def to_text(self):
         return '{}:{}:{}:{}:{}:{}:{}'.format(
@@ -451,8 +522,10 @@ class Entity(object):
     def get_rep_mention(self):
         return self.rep_mention
 
-    def get_head_token(self):
-        return self.get_rep_mention().get_head_token()
+    def get_representation(self, use_ner=False, use_lemma=True):
+        if use_ner and self.ner != '':
+            return self.ner
+        return self.get_rep_mention().get_representation(use_ner, use_lemma)
 
     def to_text(self):
         return ' :: '.join([mention.to_text() for mention in self.mentions])
@@ -512,6 +585,22 @@ class Script(object):
                         self.entities[arg.entity_idx].mentions), \
                         '{} in {} has mention_idx {} out of range'.format(
                             arg.to_text(), ev.to_text(), arg.mention_idx)
+
+    def get_training_seq(self, use_lemma=True, include_neg=True,
+                         include_prt=True, use_entity=True, use_ner=False,
+                         include_prep=True):
+        if not self.has_entities():
+            use_entity = False
+        sequence = []
+        for ev in self.events:
+            sequence.extend(ev.get_training_seq(use_lemma=use_lemma,
+                                                include_neg=include_neg,
+                                                include_prt=include_prt,
+                                                use_entity=use_entity,
+                                                entity_list=self.entities,
+                                                use_ner=use_ner,
+                                                include_prep=include_prep))
+        return sequence
 
     def to_text(self):
         entities_text = '\n'.join(['entity-{:0>3d}\t{}'.format(
@@ -626,6 +715,10 @@ class ScriptCorpus(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    @property
+    def num_scripts(self):
+        return len(self.scripts)
 
     def add_script(self, script):
         self.scripts.append(script)
