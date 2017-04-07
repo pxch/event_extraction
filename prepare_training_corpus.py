@@ -49,10 +49,6 @@ def get_script_index_list(script, model):
         include_prep=args.include_prep
     )
     result = []
-    entity_idx_list = [model.get_word_index(
-        en.get_representation(use_ner=args.use_ner, use_lemma=args.use_lemma))
-        for en in script.entities]
-    result.append(entity_idx_list)
     for ev in script.events:
         event_idx_list = [model.get_word_index(word) for word in
                           [ev.pred_text, ev.subj_text,
