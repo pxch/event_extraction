@@ -70,6 +70,44 @@ def split_sections(input_iter, section_heads):
     return sections
 
 
+class IntListsWriter(object):
+    def __init__(self, filename):
+        self.filename = filename
+        self.writer = open(filename, 'w')
+
+    def write(self, lst):
+        self.writer.write("%s\n" % ",".join(str(num) for num in lst))
+
+    def close(self):
+        self.writer.close()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+
+class IntListsReader(object):
+    def __init__(self, filename):
+        self.filename = filename
+
+    def lists(self):
+        with open(self.filename, 'r') as reader:
+            for line in reader:
+                # Remove the line break at the end
+                line = line[:-1]
+                # Catch the empty case
+                if line:
+                    yield [int(val) if val != "None" else None for val in
+                           line.split(",")]
+                else:
+                    yield []
+
+    def __iter__(self):
+        return self.lists()
+
+
 class GroupedIntListsWriter(object):
     def __init__(self, filename):
         self.filename = filename
