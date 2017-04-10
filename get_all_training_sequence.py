@@ -1,4 +1,5 @@
 from simple_script import ScriptCorpus
+from rich_script import RichScript
 from os import listdir
 from os.path import isfile, join
 from bz2 import BZ2File
@@ -35,7 +36,8 @@ for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
         script_corpus = ScriptCorpus.from_text(fin.read())
         for script in script_corpus.scripts:
-            script.get_all_representations(
+            rich_script = RichScript.build(
+                script,
                 use_lemma=args.use_lemma,
                 include_neg=args.include_neg,
                 include_prt=args.include_prt,
@@ -43,7 +45,7 @@ for input_f in input_files:
                 use_ner=args.use_ner,
                 include_prep=args.include_prep
             )
-            sequence = script.get_training_seq()
+            sequence = rich_script.get_word2vec_training_seq()
             fout.write(' '.join(sequence) + '\n')
 
 fout.close()

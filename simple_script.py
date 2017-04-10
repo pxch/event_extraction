@@ -118,10 +118,10 @@ class Argument(Token):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_representation(self, use_entity=True, entity_list=None,
+    def get_representation(self, use_entity=False, entity_list=None,
                            use_ner=True, use_lemma=True):
         assert (not use_entity) or entity_list, \
-            'entity_list cannot be None when use_entity is specified'
+            'entity_list cannot be None or empty when use_entity is specified'
         if use_entity and self.entity_idx != -1:
             assert 0 <= self.entity_idx < len(entity_list), \
                 'entity_idx {} out of range'.format(self.entity_idx)
@@ -296,33 +296,6 @@ class Event(object):
         all_args = [arg for arg in all_args if arg is not None]
         return all_args
 
-    def get_all_representations(self, use_lemma=True, include_neg=True,
-                                include_prt=True, use_entity=True,
-                                entity_list=None, use_ner=False,
-                                include_prep=True):
-        self.pred_text = \
-            self.pred.get_representation(
-                use_lemma=use_lemma, include_neg=include_neg,
-                include_prt=include_prt) + '-PRED'
-        if self.subj is not None:
-            self.subj_text = \
-                self.subj.get_representation(
-                    use_entity=use_entity, entity_list=entity_list,
-                    use_ner=use_ner, use_lemma=use_lemma) + '-SUBJ'
-        if self.obj is not None:
-            self.obj_text = \
-                self.obj.get_representation(
-                    use_entity=use_entity, entity_list=entity_list,
-                    use_ner=use_ner, use_lemma=use_lemma) + '-SUBJ'
-        for prep, pobj in self.pobj_list:
-            pobj_text = \
-                pobj.get_representation(
-                    use_entity=use_entity, entity_list=entity_list,
-                    use_ner=use_ner, use_lemma=use_lemma) + '-PREP'
-            if include_prep and prep:
-                pobj_text += '_' + prep
-            self.pobj_text_list.append(pobj_text)
-
     def to_text(self):
         return '{} :SUBJ: {} :OBJ: {}{}'.format(
             self.pred.to_text(),
@@ -428,7 +401,7 @@ class Mention(object):
     def get_ner(self):
         return self.ner
 
-    def get_representation(self, use_ner=False, use_lemma=True):
+    def get_representation(self, use_ner=True, use_lemma=True):
         if use_ner and self.ner != '':
             return self.ner
         else:
@@ -524,7 +497,7 @@ class Entity(object):
     def get_rep_mention(self):
         return self.rep_mention
 
-    def get_representation(self, use_ner=False, use_lemma=True):
+    def get_representation(self, use_ner=True, use_lemma=True):
         if use_ner and self.ner != '':
             return self.ner
         return self.get_rep_mention().get_representation(use_ner, use_lemma)
@@ -587,31 +560,6 @@ class Script(object):
                         self.entities[arg.entity_idx].mentions), \
                         '{} in {} has mention_idx {} out of range'.format(
                             arg.to_text(), ev.to_text(), arg.mention_idx)
-
-    def get_all_representations(self, use_lemma=True, include_neg=True,
-                                include_prt=True, use_entity=True,
-                                use_ner=False, include_prep=True):
-        if not self.has_entities():
-            use_entity = False
-        for ev in self.events:
-            ev.get_all_representations(use_lemma=use_lemma,
-                                       include_neg=include_neg,
-                                       include_prt=include_prt,
-                                       use_entity=use_entity,
-                                       entity_list=self.entities,
-                                       use_ner=use_ner,
-                                       include_prep=include_prep)
-
-    def get_training_seq(self):
-        sequence = []
-        for ev in self.events:
-            sequence.append(ev.pred_text)
-            if ev.subj_text != '':
-                sequence.append(ev.subj_text)
-            if ev.obj_text != '':
-                sequence.append(ev.obj_text)
-            sequence.extend(ev.pobj_text_list)
-        return sequence
 
     def to_text(self):
         entities_text = '\n'.join(['entity-{:0>3d}\t{}'.format(
