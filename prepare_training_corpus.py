@@ -1,10 +1,10 @@
 from simple_script import ScriptCorpus
+from rich_script import RichScript
 from os import listdir
 from os.path import isfile, join
 from bz2 import BZ2File
 import argparse
 from word2vec import Word2VecModel
-import utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory for ScriptCorpus files')
@@ -26,10 +26,16 @@ parser.add_argument('--use_ner', action='store_true',
                          'head_token of rep_mention')
 parser.add_argument('--include_prep', action='store_true',
                     help='include preposition word in pobj representations')
+parser.add_argument('--neg_type', default='neg',
+                    help='how to select negative samples, options: '
+                         'one (one negative event and one left event), '
+                         'neg (one left event for every negative event), '
+                         'all (every left event for every negative event)')
 
 args = parser.parse_args()
 
-writer = utils.GroupedIntListsWriter(args.output_path)
+fout_pretraining = BZ2File(args.output_path + '_pretraining.bz2', 'w')
+fout_pair_tuning = BZ2File(args.output_path + '_pair_tuning.bz2', 'w')
 
 input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
                       if isfile(join(args.input_path, f))
@@ -39,29 +45,27 @@ model = Word2VecModel()
 model.load_model(args.word2vec, fvocab=args.word2vec_vocab, binary=True)
 
 
-def get_script_index_list(script, model):
-    script.get_all_representations(
-        use_lemma=args.use_lemma,
-        include_neg=args.include_neg,
-        include_prt=args.include_prt,
-        use_entity=args.use_entity,
-        use_ner=args.use_ner,
-        include_prep=args.include_prep
-    )
-    result = []
-    for ev in script.events:
-        event_idx_list = [model.get_word_index(word) for word in
-                          [ev.pred_text, ev.subj_text,
-                           ev.obj_text] + ev.pobj_text_list]
-        result.append(event_idx_list)
-    return result
-
-
 for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
         script_corpus = ScriptCorpus.from_text(fin.read())
-        for s in script_corpus.scripts:
-            script_index_list = get_script_index_list(s, model)
-            writer.write(script_index_list)
+        for script in script_corpus.scripts:
+            rich_script = RichScript.build(
+                script,
+                use_lemma=args.use_lemma,
+                include_neg=args.include_neg,
+                include_prt=args.include_prt,
+                use_entity=args.use_entity,
+                use_ner=args.use_ner,
+                include_prep=args.include_prep
+            )
+            rich_script.get_index(model)
+            pretraining_inputs = rich_script.get_pretraining_input()
+            pair_tuning_inputs = rich_script.get_pair_tuning_input(
+                neg_type=args.neg_type)
+            fout_pretraining.write(
+                '\n'.join(map(str, pretraining_inputs)) + '\n')
+            fout_pair_tuning.write(
+                '\n'.join(map(str, pair_tuning_inputs)) + '\n')
 
-writer.close()
+fout_pretraining.close()
+fout_pair_tuning.close()

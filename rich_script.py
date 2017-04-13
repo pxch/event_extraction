@@ -1,9 +1,9 @@
 from simple_script import Argument, Event, Script
 from word2vec import Word2VecModel
 
+from copy import deepcopy
 from itertools import product
-from random import sample
-
+import random
 
 class SingleTrainingInput(object):
     def __init__(self, pred_idx, subj_idx, obj_idx, pobj_idx):
@@ -38,15 +38,15 @@ class PairTrainingInput(object):
     def __init__(self, left_input, pos_input, neg_input, arg_type):
         assert isinstance(left_input, SingleTrainingInput), \
             'left_input must be a SingleTrainingInput instance'
-        self.left_input = left_input
+        self.left_input = deepcopy(left_input)
         assert isinstance(pos_input, SingleTrainingInput), \
             'pos_input must be a SingleTrainingInput instance'
-        self.pos_input = pos_input
+        self.pos_input = deepcopy(pos_input)
         assert isinstance(neg_input, SingleTrainingInput), \
             'neg_input must be a SingleTrainingInput instance'
-        self.neg_input = neg_input
+        self.neg_input = deepcopy(neg_input)
         assert arg_type in [0, 1, 2], \
-            'arg_type must be 0 (for subj), 1 (for obj), or 2(for pobj)'
+            'arg_type must be 0 (for subj), 1 (for obj), or 2 (for pobj)'
         self.arg_type = arg_type
 
     def __str__(self):
@@ -165,6 +165,16 @@ class RichEvent(object):
     def has_pobj_neg(self):
         return self.rich_pobj is not None and self.rich_pobj.has_neg
 
+    def has_neg(self, arg_type):
+        assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
+            'arg_type can only be 0/SUBJ, 1/OBJ, or 2/POBJ'
+        if arg_type == 0 or arg_type == 'SUBJ':
+            return self.has_subj_neg()
+        elif arg_type == 1 or arg_type == 'OBJ':
+            return self.has_obj_neg()
+        elif arg_type == 2 or arg_type == 'POBJ':
+            return self.has_pobj_neg()
+
     def get_word2vec_training_seq(self, include_all_pobj=True):
         sequence = [self.pred_text + '-PRED']
         all_arg_list = []
@@ -190,10 +200,10 @@ class RichEvent(object):
         )
 
     def get_neg_training_input(self, arg_type):
-        assert arg_type in ['SUBJ', 'OBJ', 'POBJ', 'ALL'], \
-            'arg_type must be among SUBJ/OBJ/POBJ/ALL'
+        assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
+            'arg_type can only be 0/SUBJ, 1/OBJ, or 2/POBJ'
         neg_input_list = []
-        if arg_type == 'SUBJ' or arg_type == 'ALL':
+        if arg_type == 0 or arg_type == 'SUBJ':
             if self.has_subj_neg():
                 for neg_idx in self.rich_subj.neg_idx_list:
                     neg_input = SingleTrainingInput(
@@ -203,7 +213,7 @@ class RichEvent(object):
                         self.rich_pobj.pos_idx if self.rich_pobj else -1
                     )
                     neg_input_list.append(neg_input)
-        if arg_type == 'OBJ' or arg_type == 'ALL':
+        elif arg_type == 1 or arg_type == 'OBJ':
             if self.has_obj_neg():
                 for neg_idx in self.rich_obj.neg_idx_list:
                     neg_input = SingleTrainingInput(
@@ -213,7 +223,7 @@ class RichEvent(object):
                         self.rich_pobj.pos_idx if self.rich_pobj else -1
                     )
                     neg_input_list.append(neg_input)
-        if arg_type == 'POBJ' or arg_type == 'ALL':
+        elif arg_type == 2 or arg_type == 'POBJ':
             if self.has_pobj_neg():
                 for neg_idx in self.rich_pobj.neg_idx_list:
                     neg_input = SingleTrainingInput(
@@ -273,53 +283,51 @@ class RichScript(object):
                 rich_event.get_word2vec_training_seq(include_all_pobj))
         return sequence
 
-    def get_autoencoder_pretraining_input(self):
+    def get_pretraining_input(self):
         results = []
         for rich_event in self.rich_events:
             results.append(rich_event.get_pos_training_input())
         return results
 
-    def get_pair_training_input(self, num_pairs=1, num_neg_samples=1):
+    def get_pair_tuning_input(self, neg_type):
         # return empty list when number of entities is less than or equal to 1,
         # since there exists no negative samples
         if self.num_entities <= 1:
             return []
+        assert neg_type in ['one', 'neg', 'all'], \
+            'neg_type can only be ' \
+            'one (one negative event and one left event), ' \
+            'neg (one left event for every negative event), or ' \
+            'all (every left event for every negative event)'
         results = []
-        if num_pairs >= self.num_events:
-            num_pairs = self.num_events - 1
-        if num_neg_samples >= self.num_entities:
-            num_neg_samples = self.num_entities - 1
-        for idx, rich_event in enumerate(self.rich_events):
-            # get positive right-hand event
-            pos_event = rich_event.get_pos_training_input()
-            # get list of left-hand event (equals to num_pairs)
-            left_event_idx_list = sample(
-                range(0, idx) + range(idx, self.num_events), num_pairs)
-            left_event_list = [
-                self.rich_events[left_idx].get_pos_training_input()
-                for left_idx in left_event_idx_list]
-            # get list of negative right-hand event for subject if possible
-            if rich_event.has_subj_neg():
-                neg_event_list = sample(
-                    rich_event.get_neg_training_input('SUBJ'), num_neg_samples)
-                for neg_event, left_event in product(
-                        neg_event_list, left_event_list):
-                    results.append(PairTrainingInput(
-                        left_event, pos_event, neg_event, 0))
-            if rich_event.has_obj_neg():
-                neg_event_list = sample(
-                    rich_event.get_neg_training_input('OBJ'), num_neg_samples)
-                for neg_event, left_event in product(
-                        neg_event_list, left_event_list):
-                    results.append(PairTrainingInput(
-                        left_event, pos_event, neg_event, 1))
-            if rich_event.has_pobj_neg():
-                neg_event_list = sample(
-                    rich_event.get_neg_training_input('POBJ'), num_neg_samples)
-                for neg_event, left_event in product(
-                        neg_event_list, left_event_list):
-                    results.append(PairTrainingInput(
-                        left_event, pos_event, neg_event, 2))
+        pos_input_list = [rich_event.get_pos_training_input()
+                          for rich_event in self.rich_events]
+        for pos_idx, pos_event in enumerate(self.rich_events):
+            pos_input = pos_event.get_pos_training_input()
+            left_input_idx_list = \
+                range(0, pos_idx) + range(pos_idx, self.num_events)
+            for arg in [0, 1, 2]:
+                if pos_event.has_neg(arg):
+                    if neg_type == 'one':
+                        neg_input = random.choice(
+                            pos_event.get_neg_training_input(arg))
+                        left_input = pos_input_list[
+                            random.choice(left_input_idx_list)]
+                        results.append(PairTrainingInput(
+                            left_input, pos_input, neg_input, arg))
+                    else:
+                        neg_input_list = pos_event.get_neg_training_input(arg)
+                        for neg_input in neg_input_list:
+                            if neg_type == 'neg':
+                                left_input = pos_input_list[
+                                    random.choice(left_input_idx_list)]
+                                results.append(PairTrainingInput(
+                                    left_input, pos_input, neg_input, arg))
+                            else:
+                                for left_input_idx in left_input_idx_list:
+                                    left_input = pos_input_list[left_input_idx]
+                                    results.append(PairTrainingInput(
+                                        left_input, pos_input, neg_input, arg))
         return results
 
     @classmethod
