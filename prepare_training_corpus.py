@@ -60,12 +60,14 @@ for input_f in input_files:
             )
             rich_script.get_index(model)
             pretraining_inputs = rich_script.get_pretraining_input()
+            if len(pretraining_inputs) > 0:
+                fout_pretraining.write(
+                    '\n'.join(map(str, pretraining_inputs)) + '\n')
             pair_tuning_inputs = rich_script.get_pair_tuning_input(
                 neg_type=args.neg_type)
-            fout_pretraining.write(
-                '\n'.join(map(str, pretraining_inputs)) + '\n')
-            fout_pair_tuning.write(
-                '\n'.join(map(str, pair_tuning_inputs)) + '\n')
+            if len(pair_tuning_inputs) > 0:
+                fout_pair_tuning.write(
+                    '\n'.join(map(str, pair_tuning_inputs)) + '\n')
 
 fout_pretraining.close()
 fout_pair_tuning.close()
