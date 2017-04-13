@@ -34,8 +34,7 @@ parser.add_argument('--neg_type', default='neg',
 
 args = parser.parse_args()
 
-fout_pretraining = BZ2File(args.output_path + '_pretraining.bz2', 'w')
-fout_pair_tuning = BZ2File(args.output_path + '_pair_tuning.bz2', 'w')
+fout = BZ2File(args.output_path, 'w')
 
 input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
                       if isfile(join(args.input_path, f))
@@ -59,15 +58,9 @@ for input_f in input_files:
                 include_prep=args.include_prep
             )
             rich_script.get_index(model)
-            pretraining_inputs = rich_script.get_pretraining_input()
-            if len(pretraining_inputs) > 0:
-                fout_pretraining.write(
-                    '\n'.join(map(str, pretraining_inputs)) + '\n')
             pair_tuning_inputs = rich_script.get_pair_tuning_input(
                 neg_type=args.neg_type)
             if len(pair_tuning_inputs) > 0:
-                fout_pair_tuning.write(
-                    '\n'.join(map(str, pair_tuning_inputs)) + '\n')
+                fout.write('\n'.join(map(str, pair_tuning_inputs)) + '\n')
 
-fout_pretraining.close()
-fout_pair_tuning.close()
+fout.close()
