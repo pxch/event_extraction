@@ -2,8 +2,8 @@ from simple_script import Argument, Event, Script
 from word2vec import Word2VecModel
 
 from copy import deepcopy
-from itertools import product
 import random
+
 
 class SingleTrainingInput(object):
     def __init__(self, pred_idx, subj_idx, obj_idx, pobj_idx):
@@ -118,6 +118,12 @@ class RichArgument(object):
             self.neg_idx_list = [
                 model.get_word_index(neg_text)
                 for neg_text in self.neg_text_list]
+        # remove non-indexed negative index
+        self.neg_idx_list = [idx for idx in self.neg_idx_list if idx != -1]
+        # set self.has_neg to False if self.pos_idx is -1
+        # or self.neg_idx_list is empty
+        if self.pos_idx == -1 or len(self.neg_idx_list) == 0:
+            self.has_neg = False
 
 
 class RichEvent(object):
