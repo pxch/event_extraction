@@ -1,4 +1,9 @@
 import logging
+from os import listdir
+from os.path import isdir, isfile, join
+from bz2 import BZ2File
+from rich_script import SingleTrainingInput, PairTrainingInput
+import numpy
 
 
 def get_console_logger(name, debug=False):
@@ -156,3 +161,73 @@ class GroupedIntTuplesReader(GroupedIntListsReader):
     def __iter__(self):
         for grp in GroupedIntListsReader.__iter__(self):
             yield [tuple(lst) for lst in grp]
+
+
+class IndexedCorpusReader(object):
+    def __init__(self, corpus_type, corpus_dir):
+        assert corpus_type in ['pretraining', 'pair_tuning'], \
+            'corpus_type can only be pretraining on pair_tuning'
+        self.corpus_type = corpus_type
+        if corpus_type == 'pretraining':
+            self.from_text_fn = SingleTrainingInput.from_text
+        else:
+            self.from_text_fn = PairTrainingInput.from_text
+        assert isdir(corpus_dir), '{} is not a directory'.format(corpus_dir)
+        self.corpus_dir = corpus_dir
+        self.filenames = sorted(
+            [join(corpus_dir, f) for f in listdir(corpus_dir)
+             if isfile(join(corpus_dir, f))])
+
+    def __iter__(self):
+        for filename in self.filenames:
+            if filename.endswith('bz2'):
+                index_file = BZ2File(filename, 'r')
+            else:
+                index_file = open(filename, 'r')
+            for line in index_file.readlines():
+                line = line.strip()
+                if line:
+                    yield self.from_text_fn(line)
+
+
+class PretrainingCorpusIterator(object):
+    def __init__(self, corpus_dir, model, layer_input=-1, batch_size=1):
+        self.corpus_dir = corpus_dir
+        self.batch_size = batch_size
+        self.model = model
+        self.layer_input = layer_input
+        if layer_input == -1:
+            # Compile the expression for the deepest hidden layer
+            self.projection_fn = model.projection_model.project
+        else:
+            # Compile the theano expression for this layer's input
+            self.projection_fn = \
+                model.projection_model.get_layer_input_function(layer_input)
+
+    def __iter__(self):
+        pred_inputs = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        subj_inputs = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        obj_inputs = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        pobj_inputs = numpy.zeros(self.batch_size, dtype=numpy.int32)
+
+        data_point_index = 0
+
+        reader = IndexedCorpusReader('Pretraining', self.corpus_dir)
+
+        for input in reader:
+            pred_inputs[data_point_index] = input.pred_input
+            subj_inputs[data_point_index] = input.subj_input
+            obj_inputs[data_point_index] = input.obj_input
+            pobj_inputs[data_point_index] = input.pobj_input
+            data_point_index += 1
+
+            # If we've filled up the batch, yield it
+            if data_point_index == self.batch_size:
+                yield self.projection_fn(
+                    pred_inputs, subj_inputs, obj_inputs, pobj_inputs)
+                data_point_index = 0
+
+        if data_point_index > 0:
+            # We've partially filled a batch: yield this as the last item
+            yield self.projection_fn(
+                pred_inputs, subj_inputs, obj_inputs, pobj_inputs)

@@ -1,18 +1,41 @@
 from gensim.models import KeyedVectors
+from os.path import basename
 
 
 class Word2VecModel(object):
-    def __init__(self, name=''):
+    def __init__(self, name, word2vec, dimension, vocab_size):
         self.name = name
-        self.word2vec = None
-        self.dimension = -1
-        self.vocab_size = -1
+        self.word2vec = word2vec
+        self.dimension = dimension
+        self.vocab_size = vocab_size
 
-    def load_model(self, fname, fvocab=None, binary=True):
-        self.word2vec = KeyedVectors.load_word2vec_format(
+    @classmethod
+    def load_model(cls, fname, fvocab=None, binary=True):
+        name = basename(fname)
+        word2vec = KeyedVectors.load_word2vec_format(
             fname, fvocab=fvocab, binary=binary)
-        self.vocab_size, self.dimension = self.word2vec.syn0.shape
-        self.word2vec.init_sims()
+        word2vec.init_sims()
+        vocab_size, dimension = word2vec.syn0.shape
+        return cls(name=name, word2vec=word2vec, dimension=dimension,
+                   vocab_size=vocab_size)
+
+    def get_vocab(self):
+        return self.word2vec.vocab
+
+    def get_id2word(self):
+        return [word for (id, word) in sorted(
+            [(v.index, word) for (word, v) in self.word2vec.vocab.items()])]
+
+    @staticmethod
+    def build_id2word(vocab):
+        return [word for (id, word) in sorted(
+            [(v.index, word) for (word, v) in vocab.items()])]
+
+    def get_vector_matrix(self, use_norm=True):
+        if use_norm:
+            return self.word2vec.syn0norm
+        else:
+            return self.word2vec.syn0
 
     def get_word_index(self, word):
         if word == '':

@@ -35,8 +35,8 @@ input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
                       if isfile(join(args.input_path, f))
                       and f.endswith('.bz2')])
 
-model = Word2VecModel()
-model.load_model(args.word2vec, fvocab=args.word2vec_vocab, binary=True)
+model = Word2VecModel.load_model(
+    args.word2vec, fvocab=args.word2vec_vocab, binary=True)
 
 
 for input_f in input_files:

@@ -6,11 +6,11 @@ import random
 
 
 class SingleTrainingInput(object):
-    def __init__(self, pred_idx, subj_idx, obj_idx, pobj_idx):
-        self.pred_idx = pred_idx
-        self.subj_idx = subj_idx
-        self.obj_idx = obj_idx
-        self.pobj_idx = pobj_idx
+    def __init__(self, pred_input, subj_input, obj_input, pobj_input):
+        self.pred_input = pred_input
+        self.subj_input = subj_input
+        self.obj_input = obj_input
+        self.pobj_input = pobj_input
 
     def __str__(self):
         return self.to_text()
@@ -20,18 +20,18 @@ class SingleTrainingInput(object):
 
     def to_text(self):
         return '{},{},{},{}'.format(
-            self.pred_idx, self.subj_idx, self.obj_idx, self.pobj_idx)
+            self.pred_input, self.subj_input, self.obj_input, self.pobj_input)
 
     @classmethod
     def from_text(cls, text):
         parts = text.strip().split(',')
         assert len(parts) == 4, \
             'expecting 4 parts separated by ",", found {}'.format(len(parts))
-        pred_idx = int(parts[0])
-        subj_idx = int(parts[1])
-        obj_idx = int(parts[2])
-        pobj_idx = int(parts[3])
-        return cls(pred_idx, subj_idx, obj_idx, pobj_idx)
+        pred_input = int(parts[0])
+        subj_input = int(parts[1])
+        obj_input = int(parts[2])
+        pobj_input = int(parts[3])
+        return cls(pred_input, subj_input, obj_input, pobj_input)
 
 
 class PairTrainingInput(object):
