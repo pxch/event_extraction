@@ -81,10 +81,10 @@ for layer in range(len(layer_sizes)):
     trainer.train(
         corpus_it,
         iterations=opts.iterations,
-        corruption_level=opts.corruption,
         log=log,
-        regularization=opts.regularization,
         learning_rate=opts.lr,
+        regularization=opts.regularization,
+        corruption_level=opts.corruption,
         loss="l2",
     )
 

@@ -212,7 +212,7 @@ class PretrainingCorpusIterator(object):
 
         data_point_index = 0
 
-        reader = IndexedCorpusReader('Pretraining', self.corpus_dir)
+        reader = IndexedCorpusReader('pretraining', self.corpus_dir)
 
         for input in reader:
             pred_inputs[data_point_index] = input.pred_input

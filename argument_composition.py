@@ -19,22 +19,28 @@ class ArgumentCompositionModel(object):
         return self.projection_model.projection_size
 
     @classmethod
-    def load_from_directory(cls, directory):
+    def load_from_directory(cls, directory, vocab, vectors):
         if not os.path.exists(directory):
             raise RuntimeError("{} doesn't exist, abort".format(directory))
+        '''
         with open(os.path.join(directory, "vocab"), "r") as f:
             vocab = pickle.load(f)
+        '''
         with open(os.path.join(directory, "projection_model"), "r") as f:
-            projection_model = pickle.load(f)
+            projection_model_state = pickle.load(f)
+            projection_model = EventVectorNetwork.__setstate__(
+                projection_model_state, vectors)
         return cls(projection_model, vocab)
 
     def save_to_directory(self, directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
+        '''
         with open(os.path.join(directory, "vocab"), "w") as f:
-            pickle.dump(self.vocab, f, -1)
+            pickle.dump(self.vocab, f)
+        '''
         with open(os.path.join(directory, "projection_model"), "w") as f:
-            pickle.dump(self.projection_model, f, -1)
+            pickle.dump(self.projection_model.__getstate__(), f)
 
 
 class EventVectorNetwork(object):
@@ -348,12 +354,13 @@ class EventVectorNetwork(object):
     def __getstate__(self):
         return {
             "weights": self.get_weights(),
-            "vectors": self.vectors.get_value(),
+            # "vectors": self.vectors.get_value(),
             "layer_sizes": self.layer_sizes,
         }
 
-    def __setstate__(self, state):
+    @classmethod
+    def __setstate__(cls, state, vectors):
         # Initialize using constructor
-        self.__init__(state["vectors"], layer_sizes=state["layer_sizes"])
-        self.set_weights(state["weights"])
-
+        model = cls(vectors, layer_sizes=state["layer_sizes"])
+        model.set_weights(state["weights"])
+        return model

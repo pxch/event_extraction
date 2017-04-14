@@ -18,9 +18,7 @@ class DenoisingAutoencoderIterableTrainer(object):
 
     def train(self, batch_iterator, iterations=10000, log=None,
               training_cost_prop_change_threshold=0.0005, learning_rate=0.1,
-              regularization=0., class_weights_vector=None, corruption_level=0.,
-              continuous_corruption=False,
-              loss="xent"):
+              regularization=0., corruption_level=0., loss="xent"):
         """
         Train on data stored in Theano tensors. Uses minibatch training.
 
@@ -41,29 +39,24 @@ class DenoisingAutoencoderIterableTrainer(object):
             log = utils.get_console_logger("Autoencoder train")
 
         log.info(
-            "Training params: learning rate=%s, noise ratio=%.1f%% (%s), "
+            "Training params: learning rate=%s, noise ratio=%.1f%%, "
             "regularization=%s" %
-            (learning_rate, corruption_level * 100.0,
-             "continuous corruption" if continuous_corruption
-             else "zeroing corruption",
-             regularization))
+            (learning_rate, corruption_level * 100.0, regularization))
         log.info("Training with SGD")
 
         ######## Compile functions
         # Prepare cost/update functions for training
         cost, updates = self.network.get_cost_updates(
-            self.learning_rate,
-            self.regularization,
-            class_cost_weights=class_weights_vector,
+            learning_rate=self.learning_rate,
+            regularization=self.regularization,
             corruption_level=corruption_level,
-            continuous_corruption=continuous_corruption,
             loss=loss)
         # Prepare training functions
         train_fn = theano.function(
             inputs=[
                 self.network.x,
-                theano.Param(self.learning_rate, default=0.1),
-                theano.Param(self.regularization, default=0.0)
+                theano.In(self.learning_rate, value=0.1),
+                theano.In(self.regularization, value=0.0)
             ],
             outputs=cost,
             updates=updates,
@@ -156,9 +149,7 @@ class DenoisingAutoencoder(object):
 
     def __init__(
             self,
-            numpy_rng=None,
-            theano_rng=None,
-            input=None,
+            input,
             n_visible=784,
             n_hidden=500,
             W=None,
@@ -177,13 +168,6 @@ class DenoisingAutoencoder(object):
         the dA on layer 2 gets as input the output of the dA on layer 1,
         and the weights of the dA are used in the second stage of training
         to construct an MLP.
-
-        :type numpy_rng: numpy.random.RandomState
-        :param numpy_rng: number random generator used to generate weights
-
-        :type theano_rng: theano.tensor.shared_randomstreams.RandomStreams
-        :param theano_rng: Theano random generator; if None is given one is
-                     generated based on a seed drawn from `rng`
 
         :type input: theano.tensor.TensorType
         :param input: a symbolic description of the input or None for
@@ -215,12 +199,10 @@ class DenoisingAutoencoder(object):
         self.n_visible = n_visible
         self.n_hidden = n_hidden
 
-        if not numpy_rng:
-            # TODO: determine whether or not to use a fixed seed in rng
-            numpy_rng = numpy.random.RandomState(int(time.time()))
+        # TODO: determine whether or not to use a fixed seed in rng
+        numpy_rng = numpy.random.RandomState(int(time.time()))
         # create a Theano random generator that gives symbolic random values
-        if not theano_rng:
-            theano_rng = RandomStreams(numpy_rng.randint(2 ** 30))
+        self.theano_rng = RandomStreams(numpy_rng.randint(2 ** 30))
 
         # note : W' was written as `W_prime` and b' as `b_prime`
         if not W:
@@ -258,6 +240,7 @@ class DenoisingAutoencoder(object):
                 borrow=True
             )
 
+        self.non_linearity = non_linearity
         if non_linearity == 'sigmoid':
             self.activation_fn = T.nnet.sigmoid
             # self.inverse_activation_fn = lambda x: T.log(x / (1-x))
@@ -275,7 +258,6 @@ class DenoisingAutoencoder(object):
         self.b_prime = bvis
         # tied weights, therefore W_prime is W transpose
         self.W_prime = self.W.T
-        self.theano_rng = theano_rng
         # if no input is given, generate a variable representing the input
         if input is None:
             # we use a matrix because we expect a minibatch of several
@@ -334,9 +316,12 @@ class DenoisingAutoencoder(object):
                 correctly as it only support float32 for now.
 
         """
-        return self.theano_rng.binomial(size=input.shape, n=1,
-                                        p=1 - corruption_level,
-                                        dtype=theano.config.floatX) * input
+        if corruption_level > 0:
+            return self.theano_rng.binomial(
+                size=input.shape, n=1, p=1 - corruption_level,
+                dtype=theano.config.floatX) * input
+        else:
+            return input
 
     def get_hidden_values(self, input):
         """ Computes the values of the hidden layer """
@@ -349,31 +334,52 @@ class DenoisingAutoencoder(object):
         """
         return self.activation_fn(T.dot(hidden, self.W_prime) + self.b_prime)
 
-    def get_cost_updates(self, corruption_level, learning_rate):
-        """ This function computes the cost and the updates for one trainng
-        step of the dA """
-
-        tilde_x = self.get_corrupted_input(self.x, corruption_level)
+    def get_reconstruction(self, corruption_level):
+        tilde_x = self.get_corrupted_input(
+            self.x, corruption_level=corruption_level)
         y = self.get_hidden_values(tilde_x)
-        z = self.get_reconstructed_input(y)
+        return self.get_reconstructed_input(y)
+
+    def get_cost(self, regularization=0.0, corruption_level=0., loss="xent"):
+        z = self.get_reconstruction(corruption_level=corruption_level)
+
         # note : we sum over the size of a datapoint; if we are using
         #        minibatches, L will be a vector, with one entry per
         #        example in minibatch
-        L = - T.sum(self.x * T.log(z) + (1 - self.x) * T.log(1 - z), axis=1)
-        # note : L is now a vector, where each element is the
-        #        cross-entropy cost of the reconstruction of the
-        #        corresponding example of the minibatch. We need to
-        #        compute the average of all these to get the cost of
-        #        the minibatch
-        cost = T.mean(L)
+        if loss == "xent":
+            # Cross-entropy loss function
+            if self.non_linearity == "tanh":
+                # If we're using tanh activation, we need to shift & scale
+                # the output into the (0, 1) range
+                z = 0.5 * (z + 1.)
+            L = - T.sum(
+                (self.x * T.log(z) + (1 - self.x) * T.log(1 - z)), axis=1)
+        elif loss == "l2":
+            # Squared error loss function
+            L = T.sum(0.5 * ((self.x - z)**2), axis=1)
+        else:
+            raise ValueError("unknown loss function '%s'. "
+                             "Expected one of: 'xent', 'l2'" % loss)
+        # L is now a vector, where each element is the cross-entropy cost of
+        # the reconstruction of the corresponding example of the minibatch
+        cost = T.mean(L) + regularization * T.mean(self.W ** 2.)
+        return cost
+
+    def get_cost_updates(self, learning_rate, regularization,
+                         corruption_level=0., loss="xent"):
+        """ This function computes the cost and the updates for one training
+        step of the dA
+
+        """
+        cost = self.get_cost(regularization=regularization,
+                             corruption_level=corruption_level, loss=loss)
 
         # compute the gradients of the cost of the `dA` with respect
         # to its parameters
-        gparams = T.grad(cost, self.params)
+        gparams = [T.grad(cost, param) for param in self.params]
         # generate the list of updates
         updates = [
             (param, param - learning_rate * gparam)
-            for param, gparam in zip(self.params, gparams)
-        ]
+            for param, gparam in zip(self.params, gparams)]
 
-        return (cost, updates)
+        return cost, updates
