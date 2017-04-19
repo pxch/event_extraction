@@ -18,7 +18,8 @@ class DenoisingAutoencoderIterableTrainer(object):
 
     def train(self, batch_iterator, iterations=10000, log=None,
               training_cost_prop_change_threshold=0.0005, learning_rate=0.1,
-              regularization=0., corruption_level=0., loss="xent"):
+              regularization=0., corruption_level=0., loss="xent",
+              log_every_batch=100):
         """
         Train on data stored in Theano tensors. Uses minibatch training.
 
@@ -84,6 +85,9 @@ class DenoisingAutoencoderIterableTrainer(object):
                 err += train_fn(batch,
                                 learning_rate=learning_rate,
                                 regularization=regularization)
+
+                if (batch_num + 1) % log_every_batch == 0:
+                    log.info('Processed {} batches'.format(batch_num + 1))
 
             training_costs.append(err / batch_num)
 

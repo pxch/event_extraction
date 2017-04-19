@@ -174,9 +174,17 @@ class IndexedCorpusReader(object):
             self.from_text_fn = PairTrainingInput.from_text
         assert isdir(corpus_dir), '{} is not a directory'.format(corpus_dir)
         self.corpus_dir = corpus_dir
+        try:
+            self.length = int(
+                open(join(corpus_dir, 'line_count'), 'r').readline().strip())
+        except:
+            raise IOError('File {}/line_count not found!'.format(corpus_dir))
         self.filenames = sorted(
             [join(corpus_dir, f) for f in listdir(corpus_dir)
-             if isfile(join(corpus_dir, f))])
+             if isfile(join(corpus_dir, f)) and not f.endswith('line_count')])
+
+    def __len__(self):
+        return self.length
 
     def __iter__(self):
         for filename in self.filenames:
@@ -193,9 +201,10 @@ class IndexedCorpusReader(object):
 class PretrainingCorpusIterator(object):
     def __init__(self, corpus_dir, model, layer_input=-1, batch_size=1):
         self.corpus_dir = corpus_dir
-        self.batch_size = batch_size
+        self.reader = IndexedCorpusReader('pretraining', self.corpus_dir)
         self.model = model
         self.layer_input = layer_input
+        self.batch_size = batch_size
         if layer_input == -1:
             # Compile the expression for the deepest hidden layer
             self.projection_fn = model.projection_model.project
@@ -203,6 +212,9 @@ class PretrainingCorpusIterator(object):
             # Compile the theano expression for this layer's input
             self.projection_fn = \
                 model.projection_model.get_layer_input_function(layer_input)
+
+    def __len__(self):
+        return len(self.reader)
 
     def __iter__(self):
         pred_inputs = numpy.zeros(self.batch_size, dtype=numpy.int32)
@@ -212,9 +224,7 @@ class PretrainingCorpusIterator(object):
 
         data_point_index = 0
 
-        reader = IndexedCorpusReader('pretraining', self.corpus_dir)
-
-        for input in reader:
+        for input in self.reader:
             pred_inputs[data_point_index] = input.pred_input
             subj_inputs[data_point_index] = input.subj_input
             obj_inputs[data_point_index] = input.obj_input
