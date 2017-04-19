@@ -44,8 +44,6 @@ output_dir = os.path.join(opts.output_path, model_name)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-log.info('Saving models in directory {}'.format(output_dir))
-
 log.info('Started autoencoder pretraining')
 
 # Split up the layer size specification
@@ -64,7 +62,9 @@ network = EventVectorNetwork(
     word2vec_model.get_vector_matrix(), layer_sizes=layer_sizes)
 model = ArgumentCompositionModel(network, word2vec_model.get_vocab())
 
-model.save_to_directory(os.path.join(output_dir, 'init'))
+model_saving_dir = os.path.join(output_dir, 'init')
+log.info('Saving model to {}'.format(model_saving_dir))
+model.save_to_directory(model_saving_dir)
 
 # raise error if indexed_corpus doesn't exist
 if not os.path.isdir(opts.indexed_corpus):
@@ -98,8 +98,11 @@ for layer in range(len(layer_sizes)):
     )
 
     log.info('Finished training layer {}'.format(layer))
-    log.info('Saving model: {}'.format(model_name))
-    model.save_to_directory(os.path.join(output_dir, 'layer_{}'.format(layer)))
+    model_saving_dir = os.path.join(output_dir, 'layer_{}'.format(layer))
+    log.info('Saving model to {}'.format(model_saving_dir))
+    model.save_to_directory(model_saving_dir)
 
 log.info('Finished autoencoder pretraining')
-model.save_to_directory(os.path.join(output_dir, 'finish'))
+model_saving_dir = os.path.join(output_dir, 'finish')
+log.info('Saving model to {}'.format(model_saving_dir))
+model.save_to_directory(model_saving_dir)
