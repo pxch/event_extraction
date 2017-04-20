@@ -87,11 +87,13 @@ class DenoisingAutoencoderIterableTrainer(object):
                                 regularization=regularization)
 
                 if (batch_num + 1) % log_every_batch == 0:
-                    log.info('Processed {:>8d}/{:>8d} batches'.format(
-                        batch_num + 1, batch_iterator.num_batch))
+                    log.info(
+                        'Iteration {}: Processed {:>8d}/{:>8d} batches'.format(
+                            i, batch_num + 1, batch_iterator.num_batch))
 
-            log.info('Processed {:>8d}/{:>8d} batches'.format(
-                batch_iterator.num_batch, batch_iterator.num_batch))
+            log.info(
+                'Iteration {}: Processed {:>8d}/{:>8d} batches'.format(
+                    i, batch_iterator.num_batch, batch_iterator.num_batch))
 
             training_costs.append(err / batch_num)
 
