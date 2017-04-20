@@ -8,48 +8,15 @@ import pickle
 
 
 class ArgumentCompositionModel(object):
-    def __init__(self, projection_model, vocab):
-        self.vocab = vocab
-        self.id2word = Word2VecModel.build_id2word(vocab)
-        self.projection_model = projection_model
-        self._project = self.projection_model.project
-
-    @property
-    def vector_size(self):
-        return self.projection_model.projection_size
-
-    @classmethod
-    def load_from_directory(cls, directory, vocab, vectors):
-        if not os.path.exists(directory):
-            raise RuntimeError("{} doesn't exist, abort".format(directory))
-        '''
-        with open(os.path.join(directory, "vocab"), "r") as f:
-            vocab = pickle.load(f)
-        '''
-        with open(os.path.join(directory, "projection_model"), "r") as f:
-            projection_model_state = pickle.load(f)
-            projection_model = EventVectorNetwork.__setstate__(
-                projection_model_state, vectors)
-        return cls(projection_model, vocab)
-
-    def save_to_directory(self, directory):
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        '''
-        with open(os.path.join(directory, "vocab"), "w") as f:
-            pickle.dump(self.vocab, f)
-        '''
-        with open(os.path.join(directory, "projection_model"), "w") as f:
-            pickle.dump(self.projection_model.__getstate__(), f)
-
-
-class EventVectorNetwork(object):
-    def __init__(self, vectors, layer_sizes, pred_input=None,
+    def __init__(self, word2vec, layer_sizes, pred_input=None,
                  subj_input=None, obj_input=None, pobj_input=None,
                  inputs_a=None, inputs_b=None, inputs_c=None):
+        self.word2vec = word2vec
         self.layer_sizes = layer_sizes
         self.projection_size = self.layer_sizes[-1]
-        self.vocab_size, self.vector_size = vectors.shape
+        # self.vocab = word2vec.get_vocab()
+        self.vocab_size = self.word2vec.vocab_size
+        self.vector_size = self.word2vec.vector_size
 
         # Very first inputs are integers to select the input vectors
         if pred_input is not None:
@@ -71,7 +38,8 @@ class EventVectorNetwork(object):
 
         # Wrap the input vector matrices in a Theano variable
         self.vectors = theano.shared(
-            numpy.asarray(vectors, dtype=theano.config.floatX),
+            numpy.asarray(
+                word2vec.get_vector_matrix(), dtype=theano.config.floatX),
             name="vectors",
             borrow=False
         )
@@ -122,7 +90,8 @@ class EventVectorNetwork(object):
         self.input_size = 4 * self.vector_size
         # Build the theano expression for this network
         self.input_vector, self.layers, self.layer_outputs, \
-            self.projection_layer = EventVectorNetwork.build_projection_layer(
+            self.projection_layer = \
+            ArgumentCompositionModel.build_projection_layer(
                 self.pred_input, self.subj_input, self.obj_input,
                 self.pobj_input, self.vectors, self.empty_subj_vector,
                 self.empty_obj_vector, self.empty_pobj_vector,
@@ -189,7 +158,7 @@ class EventVectorNetwork(object):
 
         # Build a new projection function
         input_vector, layers, layer_outputs, projection_layer = \
-            EventVectorNetwork.build_projection_layer(
+            ArgumentCompositionModel.build_projection_layer(
                 pred_input, subj_input, obj_input, pobj_input,
                 self.vectors, self.empty_subj_vector, self.empty_obj_vector,
                 self.empty_pobj_vector, self.input_size, self.layer_sizes)
@@ -351,16 +320,30 @@ class EventVectorNetwork(object):
         self.empty_obj_vector.set_value(weights[len(self.layers)+1])
         self.empty_pobj_vector.set_value(weights[len(self.layers)+2])
 
-    def __getstate__(self):
-        return {
-            "weights": self.get_weights(),
-            # "vectors": self.vectors.get_value(),
-            "layer_sizes": self.layer_sizes,
-        }
-
     @classmethod
-    def __setstate__(cls, state, vectors):
-        # Initialize using constructor
-        model = cls(vectors, layer_sizes=state["layer_sizes"])
-        model.set_weights(state["weights"])
+    def load_from_directory(cls, directory, word2vec_prefix):
+        if not os.path.exists(directory):
+            raise RuntimeError("{} doesn't exist, abort".format(directory))
+        word2vec = Word2VecModel.load_model(
+            os.path.join(directory, '{}.bin'.format(word2vec_prefix)),
+            fvocab=os.path.join(directory, '{}.vocab'.format(word2vec_prefix))
+        )
+        with open(os.path.join(directory, "layer_sizes"), "w") as f:
+            layer_sizes = pickle.load(f)
+        with open(os.path.join(directory, "weights"), "w") as f:
+            weights = pickle.load(f)
+        model = cls(word2vec, layer_sizes=layer_sizes)
+        model.set_weights(weights)
         return model
+
+    def save_to_directory(self, directory, save_word2vec=False,
+                          word2vec_prefix=''):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with open(os.path.join(directory, "weights"), "w") as f:
+            pickle.dump(self.get_weights(), f)
+        with open(os.path.join(directory, "layer_sizes"), "w") as f:
+            pickle.dump(self.layer_sizes, f)
+        if save_word2vec:
+            self.word2vec.set_vector_matrix(self.vectors.get_value())
+            self.word2vec.save_model(directory, word2vec_prefix)

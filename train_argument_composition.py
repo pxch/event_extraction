@@ -1,5 +1,4 @@
 from argument_composition import ArgumentCompositionModel
-from argument_composition import EventVectorNetwork
 from autoencoder import DenoisingAutoencoderIterableTrainer
 from word2vec import Word2VecModel
 from utils import PretrainingCorpusIterator, get_console_logger
@@ -52,19 +51,17 @@ layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
 # Load the word2vec model that we're using as input
 log.info('Loading base word2vec model')
 word2vec_model = Word2VecModel.load_model(
-    opts.word2vec_vector, opts.word2vec_vocab)
+    opts.word2vec_vector, fvocab=opts.word2vec_vocab)
 
 # Create and initialize the network(s)
 log.info('Initializing network with layer sizes {}->{}'.format(
-    4 * word2vec_model.dimension, '->'.join(str(s) for s in layer_sizes)))
+    4 * word2vec_model.vector_size, '->'.join(str(s) for s in layer_sizes)))
 
-network = EventVectorNetwork(
-    word2vec_model.get_vector_matrix(), layer_sizes=layer_sizes)
-model = ArgumentCompositionModel(network, word2vec_model.get_vocab())
+model = ArgumentCompositionModel(word2vec_model, layer_sizes=layer_sizes)
 
 model_saving_dir = os.path.join(output_dir, 'init')
 log.info('Saving model to {}'.format(model_saving_dir))
-model.save_to_directory(model_saving_dir)
+model.save_to_directory(model_saving_dir, save_word2vec=False)
 
 # raise error if indexed_corpus doesn't exist
 if not os.path.isdir(opts.indexed_corpus):
@@ -86,7 +83,7 @@ for layer in range(len(layer_sizes)):
     corpus_it = PretrainingCorpusIterator(opts.indexed_corpus, model, layer,
                                           batch_size=opts.batch_size)
     log.info('Found {} lines in the corpus'.format(len(corpus_it)))
-    trainer = DenoisingAutoencoderIterableTrainer(network.layers[layer])
+    trainer = DenoisingAutoencoderIterableTrainer(model.layers[layer])
     trainer.train(
         corpus_it,
         iterations=opts.iterations,
@@ -105,4 +102,4 @@ for layer in range(len(layer_sizes)):
 log.info('Finished autoencoder pretraining')
 model_saving_dir = os.path.join(output_dir, 'finish')
 log.info('Saving model to {}'.format(model_saving_dir))
-model.save_to_directory(model_saving_dir)
+model.save_to_directory(model_saving_dir, save_word2vec=True)

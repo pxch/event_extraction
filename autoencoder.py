@@ -289,7 +289,6 @@ class DenoisingAutoencoder(object):
     def get_weights(self):
         """
         Return a copy of all the weight arrays in a tuple.
-
         """
         return (self.W.get_value().copy(),
                 self.b.get_value().copy(),
@@ -298,7 +297,6 @@ class DenoisingAutoencoder(object):
     def set_weights(self, weights):
         """
         Set all weights from a tuple, like that returned by get_weights().
-
         """
         self.W.set_value(weights[0])
         self.b.set_value(weights[1])
