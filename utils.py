@@ -4,7 +4,7 @@ from os.path import isdir, isfile, join
 from bz2 import BZ2File
 from rich_script import SingleTrainingInput, PairTrainingInput
 import numpy
-
+from math import ceil
 
 def get_console_logger(name, debug=False):
     if debug:
@@ -205,6 +205,7 @@ class PretrainingCorpusIterator(object):
         self.model = model
         self.layer_input = layer_input
         self.batch_size = batch_size
+        self.num_batch = int(ceil(float(len(self.reader)) / batch_size))
         if layer_input == -1:
             # Compile the expression for the deepest hidden layer
             self.projection_fn = model.projection_model.project
