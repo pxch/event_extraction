@@ -68,7 +68,6 @@ if not os.path.isdir(opts.indexed_corpus):
     log.error('Cannot find indexed corpus at {}'.format(opts.indexed_corpus))
     exit(-1)
 
-# Normal, autoencoder pre-training
 # Start the training algorithm
 log.info(
     'Pretraining with l2 reg={}, lr={}, corruption={}, '
@@ -91,7 +90,7 @@ for layer in range(len(layer_sizes)):
         learning_rate=opts.lr,
         regularization=opts.regularization,
         corruption_level=opts.corruption,
-        loss='l2',
+        loss='l2'
     )
 
     log.info('Finished training layer {}'.format(layer))

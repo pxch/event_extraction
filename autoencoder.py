@@ -112,8 +112,8 @@ class DenoisingAutoencoderIterableTrainer(object):
                     # Very small change in training cost - maybe we've converged
                     below_threshold_its += 1
                     if below_threshold_its >= 5:
-                        # We've had enough iterations with very small
-                        # changes: we've converged
+                        # We've had enough iterations with very small changes:
+                        # we've converged
                         log.info(
                             "Proportional change in training cost (%g) below "
                             "%g for five successive iterations: converged" %

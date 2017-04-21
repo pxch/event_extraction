@@ -214,6 +214,9 @@ class PretrainingCorpusIterator(object):
             # Compile the theano expression for this layer's input
             self.projection_fn = model.get_layer_input_function(layer_input)
 
+    def restart(self):
+        self.reader = IndexedCorpusReader('pretraining', self.corpus_dir)
+
     def __len__(self):
         return len(self.reader)
 
@@ -225,11 +228,11 @@ class PretrainingCorpusIterator(object):
 
         data_point_index = 0
 
-        for input in self.reader:
-            pred_inputs[data_point_index] = input.pred_input
-            subj_inputs[data_point_index] = input.subj_input
-            obj_inputs[data_point_index] = input.obj_input
-            pobj_inputs[data_point_index] = input.pobj_input
+        for single_input in self.reader:
+            pred_inputs[data_point_index] = single_input.pred_input
+            subj_inputs[data_point_index] = single_input.subj_input
+            obj_inputs[data_point_index] = single_input.obj_input
+            pobj_inputs[data_point_index] = single_input.pobj_input
             data_point_index += 1
 
             # If we've filled up the batch, yield it
@@ -242,3 +245,86 @@ class PretrainingCorpusIterator(object):
             # We've partially filled a batch: yield this as the last item
             yield self.projection_fn(
                 pred_inputs, subj_inputs, obj_inputs, pobj_inputs)
+
+
+class PairTuningCorpusIterator(object):
+    def __init__(self, corpus_dir, batch_size=1):
+        self.corpus_dir = corpus_dir
+        self.reader = IndexedCorpusReader('pair_tuning', self.corpus_dir)
+        self.batch_size = batch_size
+        self.num_batch = int(ceil(float(len(self.reader)) / batch_size))
+
+    def restart(self):
+        self.reader = IndexedCorpusReader('pair_tuning', self.corpus_dir)
+
+    def __len__(self):
+        return len(self.reader)
+
+    def __iter__(self):
+        left_pred_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        left_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        left_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        left_pobj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        pos_pred_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        pos_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        pos_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        pos_pobj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        neg_pred_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        neg_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        neg_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        neg_pobj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        arg_type_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+
+        data_point_index = 0
+
+        for pair_input in self.reader:
+            left_pred_input[data_point_index] = pair_input.left_input.pred_input
+            left_subj_input[data_point_index] = pair_input.left_input.subj_input
+            left_obj_input[data_point_index] = pair_input.left_input.obj_input
+            left_pobj_input[data_point_index] = pair_input.left_input.pobj_input
+            pos_pred_input[data_point_index] = pair_input.pos_input.pred_input
+            pos_subj_input[data_point_index] = pair_input.pos_input.subj_input
+            pos_obj_input[data_point_index] = pair_input.pos_input.obj_input
+            pos_pobj_input[data_point_index] = pair_input.pos_input.pobj_input
+            neg_pred_input[data_point_index] = pair_input.neg_input.pred_input
+            neg_subj_input[data_point_index] = pair_input.neg_input.subj_input
+            neg_obj_input[data_point_index] = pair_input.neg_input.obj_input
+            neg_pobj_input[data_point_index] = pair_input.neg_input.pobj_input
+            arg_type_input[data_point_index] = pair_input.arg_type
+            data_point_index += 1
+
+            # If we've filled up the batch, yield it
+            if data_point_index == self.batch_size:
+                yield left_pred_input, \
+                      left_subj_input, \
+                      left_obj_input, \
+                      left_pobj_input, \
+                      pos_pred_input, \
+                      pos_subj_input, \
+                      pos_obj_input, \
+                      pos_pobj_input, \
+                      neg_pred_input, \
+                      neg_subj_input, \
+                      neg_obj_input, \
+                      neg_pobj_input, \
+                      arg_type_input
+                data_point_index = 0
+
+        # TODO: Should return this last partial batch,
+        # TODO: but having a smaller batch is currently messing up training
+        # TODO: If you update this, allow for the triple option as well
+        if False and data_point_index > 0:
+            # We've partially filled a batch: yield this as the last item
+            yield left_pred_input[:data_point_index], \
+                  left_subj_input[:data_point_index], \
+                  left_obj_input[:data_point_index], \
+                  left_pobj_input[:data_point_index], \
+                  pos_pred_input[:data_point_index], \
+                  pos_subj_input[:data_point_index], \
+                  pos_obj_input[:data_point_index], \
+                  pos_pobj_input[:data_point_index], \
+                  neg_pred_input[:data_point_index], \
+                  neg_subj_input[:data_point_index], \
+                  neg_obj_input[:data_point_index], \
+                  neg_pobj_input[:data_point_index], \
+                  arg_type_input[:data_point_index]

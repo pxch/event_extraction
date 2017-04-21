@@ -75,18 +75,6 @@ class ArgumentCompositionModel(object):
             broadcastable=(True, False),
         )
 
-        # NB I don't seem to use these anywhere!
-        self.composition_weights = theano.shared(
-            numpy.zeros((layer_sizes[-1] * 2, 1), dtype=theano.config.floatX),
-            name="composition_w",
-            borrow=True,
-        )
-        self.composition_bias = theano.shared(
-            numpy.zeros(1, dtype=theano.config.floatX),
-            name="composition_b",
-            borrow=True,
-        )
-
         self.input_size = 4 * self.vector_size
         # Build the theano expression for this network
         self.input_vector, self.layers, self.layer_outputs, \
@@ -102,7 +90,7 @@ class ArgumentCompositionModel(object):
                 (self.projection_layer ** 2.).sum(axis=1)).reshape(
                 (self.projection_layer.shape[0], 1))
 
-        ### Composition of two projections
+        # Composition of two projections
         if inputs_a is not None:
             self.pred_input_a, self.subj_input_a, self.obj_input_a, \
                 self.pobj_input_a = inputs_a
