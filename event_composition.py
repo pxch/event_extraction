@@ -7,6 +7,7 @@ import utils
 import os
 import pickle
 
+
 class EventCompositionTrainer(object):
     def __init__(self, model, learning_rate=0.025, min_learning_rate=0.0001,
                  regularization=0.01, update_argument_composition=False,
@@ -207,7 +208,8 @@ class EventCompositionModel(object):
         self.input_a, self.input_b = self.arg_comp_model.get_projection_pair()
         self.input_arg_type = T.vector("arg_type", dtype="int32")
         self.input_vector = T.concatenate(
-            (self.input_a, self.input_b, self.input_arg_type), axis=1)
+            (self.input_a, self.input_b,
+             self.input_arg_type.dimshuffle(0, 'x')), axis=1)
         self.layer_sizes = layer_sizes
 
         # Initialize each layer as an autoencoder,
