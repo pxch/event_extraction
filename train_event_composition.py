@@ -10,9 +10,6 @@ parser.add_argument('arg_comp_model_path',
                     help='Path to a trained argument composition model that '
                          'gives us our basic event representations that '
                          'we will learn a similarity function of')
-parser.add_argument('word2vec_prefix',
-                    help='Prefix to word2vec vector and vocab files in the '
-                         'arg_comp_model_path')
 parser.add_argument('indexed_corpus',
                     help='Path to the indexed corpus')
 parser.add_argument('output_path',
@@ -23,9 +20,6 @@ parser.add_argument('--layer-sizes', default='100',
 parser.add_argument('--batch-size', type=int, default=1000,
                     help='Number of examples to include in a minibatch ('
                          'default: 1000)')
-parser.add_argument('--iterations', type=int, default=10,
-                    help='Number of iterations to train each layer for ('
-                         'default: 10)')
 parser.add_argument('--tuning-lr', type=float, default=0.025,
                     help='SGD learning rate to use for fine-tuning (default: '
                          '0.025)')
@@ -74,8 +68,8 @@ layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
 
 log.info('Loading argument composition model from {}'.format(
     opts.arg_comp_model_path))
-arg_comp_model = ArgumentCompositionModel.load_from_directory(
-    opts.arg_comp_model_path, opts.word2vec_prefix)
+arg_comp_model = \
+    ArgumentCompositionModel.load_from_directory(opts.arg_comp_model_path)
 
 # Create and initialize the network(s)
 log.info('Initializing network with layer sizes [{}|{}|1]->{}->1'.format(

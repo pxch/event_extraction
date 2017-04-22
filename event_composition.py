@@ -383,7 +383,7 @@ class EventCompositionModel(object):
         self.prediction_bias.set_value(weights[len(self.layers) + 1])
 
     @classmethod
-    def load_from_directory(cls, directory, word2vec_prefix):
+    def load_from_directory(cls, directory):
         if not os.path.exists(directory):
             raise RuntimeError("{} doesn't exist, abort".format(directory))
 
@@ -391,8 +391,8 @@ class EventCompositionModel(object):
         if not os.path.exists(arg_comp_model_dir):
             raise RuntimeError(
                 "{} doesn't exist, abort".format(arg_comp_model_dir))
-        arg_comp_model = ArgumentCompositionModel.load_from_directory(
-            arg_comp_model_dir, word2vec_prefix)
+        arg_comp_model = \
+            ArgumentCompositionModel.load_from_directory(arg_comp_model_dir)
 
         with open(os.path.join(directory, "layer_sizes"), "w") as f:
             layer_sizes = pickle.load(f)
@@ -402,8 +402,7 @@ class EventCompositionModel(object):
         model.set_weights(weights)
         return model
 
-    def save_to_directory(self, directory, save_word2vec=False,
-                          word2vec_prefix=''):
+    def save_to_directory(self, directory, save_word2vec=False):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -411,9 +410,7 @@ class EventCompositionModel(object):
         if not os.path.exists(arg_comp_model_dir):
             os.makedirs(arg_comp_model_dir)
         self.arg_comp_model.save_to_directory(
-            arg_comp_model_dir,
-            save_word2vec=save_word2vec,
-            word2vec_prefix=word2vec_prefix)
+            arg_comp_model_dir, save_word2vec=save_word2vec)
 
         with open(os.path.join(directory, "weights"), "w") as f:
             pickle.dump(self.get_weights(), f)

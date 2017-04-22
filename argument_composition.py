@@ -309,12 +309,12 @@ class ArgumentCompositionModel(object):
         self.empty_pobj_vector.set_value(weights[len(self.layers)+2])
 
     @classmethod
-    def load_from_directory(cls, directory, word2vec_prefix):
+    def load_from_directory(cls, directory):
         if not os.path.exists(directory):
             raise RuntimeError("{} doesn't exist, abort".format(directory))
         word2vec = Word2VecModel.load_model(
-            os.path.join(directory, '{}.bin'.format(word2vec_prefix)),
-            fvocab=os.path.join(directory, '{}.vocab'.format(word2vec_prefix))
+            os.path.join(directory, 'word2vec.bin'),
+            fvocab=os.path.join(directory, 'word2vec.vocab')
         )
         with open(os.path.join(directory, "layer_sizes"), "w") as f:
             layer_sizes = pickle.load(f)
@@ -324,8 +324,7 @@ class ArgumentCompositionModel(object):
         model.set_weights(weights)
         return model
 
-    def save_to_directory(self, directory, save_word2vec=False,
-                          word2vec_prefix=''):
+    def save_to_directory(self, directory, save_word2vec=False):
         if not os.path.exists(directory):
             os.makedirs(directory)
         with open(os.path.join(directory, "weights"), "w") as f:
@@ -334,4 +333,4 @@ class ArgumentCompositionModel(object):
             pickle.dump(self.layer_sizes, f)
         if save_word2vec:
             self.word2vec.set_vector_matrix(self.vectors.get_value())
-            self.word2vec.save_model(directory, word2vec_prefix)
+            self.word2vec.save_model(directory, 'word2vec')
