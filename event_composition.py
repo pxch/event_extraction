@@ -405,7 +405,7 @@ class EventCompositionModel(object):
             os.makedirs(directory)
 
         self.arg_comp_model.save_to_directory(
-            os.path.join(g, 'arg-comp'), save_word2vec=save_word2vec)
+            os.path.join(directory, 'arg-comp'), save_word2vec=save_word2vec)
 
         with open(os.path.join(directory, "weights"), "w") as f:
             pickle.dump(self.get_weights(), f)
