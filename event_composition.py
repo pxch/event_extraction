@@ -16,7 +16,6 @@ class EventCompositionTrainer(object):
         self.regularization = regularization
         self.learning_rate = learning_rate
         self.model = model
-        self.arg_comp_model = model.arg_comp_model
         self.learning_rate_var = T.scalar(
             "learning_rate", dtype=theano.config.floatX)
 
@@ -25,33 +24,30 @@ class EventCompositionTrainer(object):
         self.regularized_params = []
         # Always add our own between-event composition function weights
         self.params.extend(
-            sum([[layer.W, layer.b] for layer
-                 in model.pair_projection_model.layers], [])
+            sum([[layer.W, layer.b] for layer in model.layers], [])
         )
-        self.regularized_params.extend(
-            [layer.W for layer in model.pair_projection_model.layers])
+        self.regularized_params.extend([layer.W for layer in model.layers])
 
-        self.params.append(self.model.pair_projection_model.prediction_weights)
-        self.params.append(self.model.pair_projection_model.prediction_bias)
-        self.regularized_params.append(
-            self.model.pair_projection_model.prediction_weights)
+        self.params.append(self.model.prediction_weights)
+        self.params.append(self.model.prediction_bias)
+        self.regularized_params.append(self.model.prediction_weights)
 
         if update_argument_composition:
             # Add the event-internal composition weights
             self.params.extend(
                 sum([[layer.W, layer.b] for layer
-                     in self.arg_comp_model.layers], []))
+                     in self.model.arg_comp_model.layers], []))
             self.regularized_params.extend(
-                [layer.W for layer in self.arg_comp_model.layers])
+                [layer.W for layer in self.model.arg_comp_model.layers])
 
         if update_input_vectors:
-            self.params.append(self.arg_comp_model.vectors)
+            self.params.append(self.model.arg_comp_model.vectors)
 
         if update_empty_vectors:
             self.params.extend([
-                self.arg_comp_model.empty_subj_vector,
-                self.arg_comp_model.empty_obj_vector,
-                self.arg_comp_model.empty_pobj_vector
+                self.model.arg_comp_model.empty_subj_vector,
+                self.model.arg_comp_model.empty_obj_vector,
+                self.model.arg_comp_model.empty_pobj_vector
             ])
 
         self.update_argument_composition = update_argument_composition
