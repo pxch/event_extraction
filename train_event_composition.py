@@ -72,7 +72,8 @@ log.info('Started pair tuning')
 # Split up the layer size specification
 layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
 
-log.info('Loading argument composition model')
+log.info('Loading argument composition model from {}'.format(
+    opts.arg_comp_model_path))
 arg_comp_model = ArgumentCompositionModel.load_from_directory(
     opts.arg_comp_model_path, opts.word2vec_prefix)
 
