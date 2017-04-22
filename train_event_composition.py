@@ -118,8 +118,8 @@ trainer = EventCompositionTrainer(
     min_learning_rate=opts.tuning_min_lr,
     regularization=opts.tuning_regularization,
     update_argument_composition=opts.update_argument_composition,
-    update_input_vectors=opts.update_input_vecs,
-    update_empty_vectors=opts.update_empty_vecs
+    update_input_vectors=opts.update_input_vectors,
+    update_empty_vectors=opts.update_empty_vectors
 )
 
 # Start the training process
@@ -156,7 +156,7 @@ if opts.event_tuning_iterations > 0:
         regularization=opts.tuning_regularization,
         update_argument_composition=True,
         update_input_vectors=True,
-        update_empty_vectors=opts.update_empty_vecs
+        update_empty_vectors=opts.update_empty_vectors
     )
 
     # start the full training process
