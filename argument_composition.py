@@ -316,9 +316,9 @@ class ArgumentCompositionModel(object):
             os.path.join(directory, 'word2vec.bin'),
             fvocab=os.path.join(directory, 'word2vec.vocab')
         )
-        with open(os.path.join(directory, "layer_sizes"), "w") as f:
+        with open(os.path.join(directory, "layer_sizes"), "r") as f:
             layer_sizes = pickle.load(f)
-        with open(os.path.join(directory, "weights"), "w") as f:
+        with open(os.path.join(directory, "weights"), "r") as f:
             weights = pickle.load(f)
         model = cls(word2vec, layer_sizes=layer_sizes)
         model.set_weights(weights)

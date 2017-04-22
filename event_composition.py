@@ -387,16 +387,12 @@ class EventCompositionModel(object):
         if not os.path.exists(directory):
             raise RuntimeError("{} doesn't exist, abort".format(directory))
 
-        arg_comp_model_dir = os.path.join(directory, 'arg-comp')
-        if not os.path.exists(arg_comp_model_dir):
-            raise RuntimeError(
-                "{} doesn't exist, abort".format(arg_comp_model_dir))
-        arg_comp_model = \
-            ArgumentCompositionModel.load_from_directory(arg_comp_model_dir)
+        arg_comp_model = ArgumentCompositionModel.load_from_directory(
+            os.path.join(directory, 'arg-comp'))
 
-        with open(os.path.join(directory, "layer_sizes"), "w") as f:
+        with open(os.path.join(directory, "layer_sizes"), "r") as f:
             layer_sizes = pickle.load(f)
-        with open(os.path.join(directory, "weights"), "w") as f:
+        with open(os.path.join(directory, "weights"), "r") as f:
             weights = pickle.load(f)
         model = cls(arg_comp_model, layer_sizes=layer_sizes)
         model.set_weights(weights)
@@ -406,11 +402,8 @@ class EventCompositionModel(object):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        arg_comp_model_dir = os.path.join(directory, 'arg-comp')
-        if not os.path.exists(arg_comp_model_dir):
-            os.makedirs(arg_comp_model_dir)
         self.arg_comp_model.save_to_directory(
-            arg_comp_model_dir, save_word2vec=save_word2vec)
+            os.path.join(g, 'arg-comp'), save_word2vec=save_word2vec)
 
         with open(os.path.join(directory, "weights"), "w") as f:
             pickle.dump(self.get_weights(), f)
