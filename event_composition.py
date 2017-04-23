@@ -122,9 +122,10 @@ class EventCompositionTrainer(object):
         for i in range(iterations):
             err = 0.0
             batch_num = 0
-            learning_rate = self.learning_rate
-            seen_samples = 0
-            tenth_progress = -1
+            if i == 0:
+                learning_rate = self.learning_rate
+            else:
+                learning_rate = self.min_learning_rate
 
             for batch_num, batch_inputs in enumerate(batch_iterator):
                 # Shuffle the training data between iterations, as one should
