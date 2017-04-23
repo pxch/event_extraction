@@ -6,14 +6,17 @@ from utils import PairTuningCorpusIterator, get_console_logger
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('arg_comp_model_path',
-                    help='Path to a trained argument composition model that '
-                         'gives us our basic event representations that '
-                         'we will learn a similarity function of')
 parser.add_argument('indexed_corpus',
                     help='Path to the indexed corpus')
 parser.add_argument('output_path',
                     help='Path to saving the trained model')
+parser.add_argument('--arg_comp_model_path',
+                    help='Path to a trained argument composition model that '
+                         'gives us our basic event representations that '
+                         'we will learn a similarity function of')
+parser.add_argument('--event_comp_model_path',
+                    help='Path to a partially trained event composition model '
+                         'that we will continue training on')
 parser.add_argument('--layer-sizes', default='100',
                     help='Comma-separated list of layer sizes (default: 100, '
                          'single layer)')
@@ -62,21 +65,26 @@ if not os.path.exists(output_dir):
 
 log.info('Started pair tuning')
 
-
-# Split up the layer size specification
-layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
-
-log.info('Loading argument composition model from {}'.format(
-    opts.arg_comp_model_path))
-arg_comp_model = \
-    ArgumentCompositionModel.load_from_directory(opts.arg_comp_model_path)
-
-# Create and initialize the network(s)
-log.info('Initializing network with layer sizes [{}|{}|1]->{}->1'.format(
-    arg_comp_model.vector_size, arg_comp_model.vector_size,
-    '->'.join(str(s) for s in layer_sizes)))
-
-model = EventCompositionModel(arg_comp_model, layer_sizes=layer_sizes)
+if opts.arg_comp_model_path:
+    log.info('Loading argument composition model from {}'.format(
+        opts.arg_comp_model_path))
+    arg_comp_model = \
+        ArgumentCompositionModel.load_from_directory(opts.arg_comp_model_path)
+    # Split up the layer size specification
+    layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
+    # Create and initialize the network(s)
+    log.info('Initializing network with layer sizes [{}|{}|1]->{}->1'.format(
+        arg_comp_model.vector_size, arg_comp_model.vector_size,
+        '->'.join(str(s) for s in layer_sizes)))
+    model = EventCompositionModel(arg_comp_model, layer_sizes=layer_sizes)
+elif opts.event_comp_model_path:
+    log.info('Loading partially trained event composition model from {}'.format(
+        opts.event_comp_model_path))
+    model = EventCompositionModel.load_from_directory(
+        opts.event_comp_model_path)
+else:
+    raise RuntimeError(
+        'Must provide either arg_comp_model_path or event_comp_model_path')
 
 model_saving_dir = os.path.join(output_dir, 'init')
 log.info('Saving model to {}'.format(model_saving_dir))
