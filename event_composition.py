@@ -149,10 +149,10 @@ class EventCompositionTrainer(object):
 
                 if (batch_num + 1) % log_every_batch == 0:
                     log.info(
-                        'Iteration {}: Processed {:>8d}/{:>8d} batches'.format(
-                            i, batch_num + 1, batch_iterator.num_batch))
-                    if i == 0:
-                        log.info("Learning rate updated to %g" % learning_rate)
+                        'Iteration {}: Processed {:>8d}/{:>8d} batches, '
+                        'learning rate = {:g}'.format(
+                            i, batch_num + 1, batch_iterator.num_batch,
+                            learning_rate))
 
             log.info(
                 'Iteration {}: Processed {:>8d}/{:>8d} batches'.format(
