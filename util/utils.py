@@ -1,5 +1,7 @@
 from warnings import warn
 
+import numpy as np
+
 import consts
 
 
@@ -23,3 +25,9 @@ def unescape(text, char_set=consts.ESCAPE_CHAR_SET):
 
 def get_class_name(class_type):
     return '{}.{}'.format(class_type.__module__, class_type.__name__)
+
+
+def cos_sim(vec1, vec2):
+    if np.count_nonzero(vec1) == 0 or np.count_nonzero(vec2) == 0:
+        return 0.0
+    return vec1.dot(vec2) / np.linalg.norm(vec1) / np.linalg.norm(vec2)

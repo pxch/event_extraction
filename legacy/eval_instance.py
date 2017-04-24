@@ -1,5 +1,4 @@
-from numpy.linalg import norm
-from numpy import count_nonzero
+from util import cos_sim
 
 
 class EvalInstance:
@@ -65,8 +64,3 @@ class EvalInstance:
         most_similar_idx = sim_scores.index(max(sim_scores))
         return most_similar_idx == self.arg_coref_idx
 
-
-def cos_sim(vec1, vec2):
-    if count_nonzero(vec1) == 0 or count_nonzero(vec2) == 0:
-        return 0.0
-    return vec1.dot(vec2) / norm(vec1) / norm(vec2)

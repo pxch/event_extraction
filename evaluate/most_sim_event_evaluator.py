@@ -2,7 +2,7 @@ import numpy as np
 
 from base_evaluator import BaseEvaluator
 from event_script import EventEmbedding
-
+from util import cos_sim
 
 class MostSimEventEvaluator(BaseEvaluator):
     def __init__(self):
@@ -51,7 +51,7 @@ class MostSimEventEvaluator(BaseEvaluator):
                 coref_embedding = self.model.get_coref_embedding(
                     coref, '', self.head_only, self.rep_only,
                     exclude_mention_idx)
-            event_sim_scores = [self.cos_sim(
+            event_sim_scores = [cos_sim(
                 embedding_wo_arg + coref_embedding, event_embedding)
                                 for event_embedding in event_embeddings]
             if self.use_max_score:
@@ -60,12 +60,6 @@ class MostSimEventEvaluator(BaseEvaluator):
                 sim_scores.append(sum(event_sim_scores))
         most_sim_idx = sim_scores.index(max(sim_scores))
         return arg_coref_idx == most_sim_idx
-
-    @staticmethod
-    def cos_sim(vec1, vec2):
-        if np.count_nonzero(vec1) == 0 or np.count_nonzero(vec2) == 0:
-            return 0.0
-        return vec1.dot(vec2) / np.linalg.norm(vec1) / np.linalg.norm(vec2)
 
     def evaluate_script(self, script):
         num_choices = len(script.corefs)
