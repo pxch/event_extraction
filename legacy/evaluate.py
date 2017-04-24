@@ -45,4 +45,5 @@ def eval_all(all_scripts, model, syntax_suffix, head_only, rep_only):
                         syntax_suffix=syntax_suffix, head_only=head_only,
                         rep_only=rep_only)
     eval_most_sim_event(all_scripts, model, use_max_score=True,
-                        syntax_suffix=syntax_suffix, head_only=head_only, rep_only=rep_only)
+                        syntax_suffix=syntax_suffix, head_only=head_only,
+                        rep_only=rep_only)
