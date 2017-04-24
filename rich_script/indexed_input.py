@@ -32,6 +32,41 @@ class SingleTrainingInput(object):
         return cls(pred_input, subj_input, obj_input, pobj_input)
 
 
+class SingleTrainingInputMultiPobj(object):
+    def __init__(self, pred_input, subj_input, obj_input, pobj_input_list):
+        self.pred_input = pred_input
+        self.subj_input = subj_input
+        self.obj_input = obj_input
+        self.pobj_input_list = pobj_input_list
+
+    def __str__(self):
+        return self.to_text()
+
+    def __repr__(self):
+        return 'SingleTrainingInputMultiPobj: ' + self.to_text()
+
+    def to_text(self):
+        return '{},{},{}{}'.format(
+            self.pred_input, self.subj_input, self.obj_input,
+            ',{}'.format(','.join(
+                [pobj_input for pobj_input in self.pobj_input_list]))
+            if self.pobj_input_list else '')
+
+    @classmethod
+    def from_text(cls, text):
+        parts = text.strip().split(',')
+        assert len(parts) >= 3, \
+            'expecting at least 3 parts separated by ",", found {}'.format(
+                len(parts))
+        pred_input = int(parts[0])
+        subj_input = int(parts[1])
+        obj_input = int(parts[2])
+        pobj_input_list = []
+        for p in parts[3:]:
+            pobj_input_list.append(int(p))
+        return cls(pred_input, subj_input, obj_input, pobj_input_list)
+
+
 class PairTrainingInput(object):
     def __init__(self, left_input, pos_input, neg_input, arg_type):
         assert isinstance(left_input, SingleTrainingInput), \

@@ -23,6 +23,8 @@ class RichEvent(object):
         self.rich_pobj_list = rich_pobj_list
         # select the first argument with entity linking from rich_pobj_list
         # as the rich_pobj
+        # FIXME: seems the self.rich_pobj is not set correctly here
+        # FIXME: need to reset after call get_index()
         self.rich_pobj = None
         for rich_pobj in self.rich_pobj_list:
             if rich_pobj.has_neg:

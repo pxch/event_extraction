@@ -6,10 +6,21 @@ class RichArgument(object):
     def __init__(self, arg_type, pos_text, neg_text_list):
         assert arg_type in ['SUBJ', 'OBJ'] or arg_type.startswith('PREP'), \
             'arg_type {} must be SUBJ/OBJ or starts with PREP'.format(arg_type)
+        # type of argument, can be SUBJ, OBJ, or PREP_*
         self.arg_type = arg_type
+        # text of the true argument, set to Entity.get_representation()
+        # if the argument is pointed to an entity,
+        # otherwise set to Argument.get_representation()
         self.pos_text = pos_text
+        # list of text for other candidates of the argument,
+        # set to the list of representations of other entities in the script
+        # if the argument is pointed to an entity, otherwise set to empty list
         self.neg_text_list = neg_text_list
+        # boolean flag indicating whether the argument has other candidates
+        # i.e., the argument is pointed to an entity and
+        # the number of entities in the script is greater than 1
         self.has_neg = (len(self.neg_text_list) != 0)
+        # index of the argument text, -1 if
         self.pos_idx = -1
         self.neg_idx_list = []
 
@@ -56,4 +67,3 @@ class RichArgument(object):
         # or self.neg_idx_list is empty
         if self.pos_idx == -1 or len(self.neg_idx_list) == 0:
             self.has_neg = False
-
