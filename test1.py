@@ -29,9 +29,8 @@ for doc in all_docs:
 all_scripts_dump_name = 'all_scripts_03292200.pkl'
 pkl.dump(all_scripts, open(all_scripts_dump_name, 'w'))
 
-from simple_script import Script
+import rich_script
 all_simple_scripts = []
 for script in all_scripts:
-    simple_script = Script.from_script(script)
+    simple_script = rich_script.Script.from_script(script)
     all_simple_scripts.append(simple_script)
-

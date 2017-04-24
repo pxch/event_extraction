@@ -1,13 +1,17 @@
-from simple_script import ScriptCorpus
-from rich_script import RichScript
+import argparse
+from bz2 import BZ2File
 from os import listdir
 from os.path import isfile, join
-from bz2 import BZ2File
-import argparse
+
+from rich_script import RichScript
+from script import ScriptCorpus
+from word2vec import Word2VecModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory for ScriptCorpus files')
 parser.add_argument('output_path', help='path to write training sequence')
+parser.add_argument('word2vec', help='path to word2vec vector file')
+parser.add_argument('word2vec_vocab', help='path to word2vec vocab file')
 parser.add_argument('--use_lemma', action='store_true',
                     help='if turned on, use the lemma form of a token,'
                          'otherwise use the word form')
@@ -23,6 +27,11 @@ parser.add_argument('--use_ner', action='store_true',
                          'head_token of rep_mention')
 parser.add_argument('--include_prep', action='store_true',
                     help='include preposition word in pobj representations')
+parser.add_argument('--neg_type', default='neg',
+                    help='how to select negative samples, options: '
+                         'one (one negative event and one left event), '
+                         'neg (one left event for every negative event), '
+                         'all (every left event for every negative event)')
 
 args = parser.parse_args()
 
@@ -31,6 +40,10 @@ fout = BZ2File(args.output_path, 'w')
 input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
                       if isfile(join(args.input_path, f))
                       and f.endswith('.bz2')])
+
+model = Word2VecModel.load_model(
+    args.word2vec, fvocab=args.word2vec_vocab, binary=True)
+
 
 for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
@@ -45,7 +58,10 @@ for input_f in input_files:
                 use_ner=args.use_ner,
                 include_prep=args.include_prep
             )
-            sequence = rich_script.get_word2vec_training_seq()
-            fout.write(' '.join(sequence) + '\n')
+            rich_script.get_index(model)
+            pair_tuning_inputs = rich_script.get_pair_tuning_input(
+                neg_type=args.neg_type)
+            if len(pair_tuning_inputs) > 0:
+                fout.write('\n'.join(map(str, pair_tuning_inputs)) + '\n')
 
 fout.close()

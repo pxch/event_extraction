@@ -1,9 +1,10 @@
-from simple_script import ScriptCorpus
-from rich_script import RichScript
+import argparse
+from bz2 import BZ2File
 from os import listdir
 from os.path import isfile, join
-from bz2 import BZ2File
-import argparse
+
+from rich_script import RichScript
+from script import ScriptCorpus
 from word2vec import Word2VecModel
 
 parser = argparse.ArgumentParser()
@@ -26,11 +27,6 @@ parser.add_argument('--use_ner', action='store_true',
                          'head_token of rep_mention')
 parser.add_argument('--include_prep', action='store_true',
                     help='include preposition word in pobj representations')
-parser.add_argument('--neg_type', default='neg',
-                    help='how to select negative samples, options: '
-                         'one (one negative event and one left event), '
-                         'neg (one left event for every negative event), '
-                         'all (every left event for every negative event)')
 
 args = parser.parse_args()
 
@@ -58,9 +54,8 @@ for input_f in input_files:
                 include_prep=args.include_prep
             )
             rich_script.get_index(model)
-            pair_tuning_inputs = rich_script.get_pair_tuning_input(
-                neg_type=args.neg_type)
-            if len(pair_tuning_inputs) > 0:
-                fout.write('\n'.join(map(str, pair_tuning_inputs)) + '\n')
+            pretraining_inputs = rich_script.get_pretraining_input()
+            if len(pretraining_inputs) > 0:
+                fout.write('\n'.join(map(str, pretraining_inputs)) + '\n')
 
 fout.close()
