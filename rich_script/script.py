@@ -5,17 +5,19 @@ import document
 import event_script
 from entity import Entity
 from event import Event
-from util import consts, split_sections
+from util import consts, get_class_name, split_sections
 
 
 class Script(object):
     def __init__(self, doc_name, entities, events):
         self.doc_name = doc_name
         if not all(isinstance(entity, Entity) for entity in entities):
-            raise ParseScriptError('every entity must be a Entity instance')
+            raise ParseScriptError('every entity must be a {} instance'.format(
+                get_class_name(Entity)))
         self.entities = entities
         if not all(isinstance(event, Event) for event in events):
-            raise ParseScriptError('every event must be a Event instance')
+            raise ParseScriptError('every event must be a {} instance'.format(
+                get_class_name(Event)))
         self.events = events
 
     def __eq__(self, other):
@@ -82,9 +84,8 @@ class Script(object):
     def from_script(cls, ev_script):
         if not isinstance(ev_script, event_script.EventScript):
             raise ParseScriptError(
-                'from_script must be called with a {}.{} instance'.format(
-                    event_script.EventScript.__module__,
-                    event_script.EventScript.__name__))
+                'from_script must be called with a {} instance'.format(
+                    get_class_name(event_script.EventScript)))
         if not ev_script.events:
             warn('EventScript {} has no events'.format(ev_script.doc_name))
         if not ev_script.corefs:
@@ -99,8 +100,8 @@ class Script(object):
     def from_doc(cls, doc):
         if not isinstance(doc, document.Document):
             raise ParseScriptError(
-                'from_doc must be called with a {}.{} instance'.format(
-                    document.Document.__module__, document.Document.__name__))
+                'from_doc must be called with a {} instance'.format(
+                    get_class_name(document.Document)))
         # get all events from document
         events = []
         # iterate through all sentences

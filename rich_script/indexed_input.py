@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+from util import get_class_name
+
 
 class SingleTrainingInput(object):
     def __init__(self, pred_input, subj_input, obj_input, pobj_input):
@@ -33,13 +35,16 @@ class SingleTrainingInput(object):
 class PairTrainingInput(object):
     def __init__(self, left_input, pos_input, neg_input, arg_type):
         assert isinstance(left_input, SingleTrainingInput), \
-            'left_input must be a SingleTrainingInput instance'
+            'left_input must be a {} instance'.format(
+                get_class_name(SingleTrainingInput))
         self.left_input = deepcopy(left_input)
         assert isinstance(pos_input, SingleTrainingInput), \
-            'pos_input must be a SingleTrainingInput instance'
+            'pos_input must be a {} instance'.format(
+                get_class_name(SingleTrainingInput))
         self.pos_input = deepcopy(pos_input)
         assert isinstance(neg_input, SingleTrainingInput), \
-            'neg_input must be a SingleTrainingInput instance'
+            'neg_input must be a {} instance'.format(
+                get_class_name(SingleTrainingInput))
         self.neg_input = deepcopy(neg_input)
         assert arg_type in [0, 1, 2], \
             'arg_type must be 0 (for subj), 1 (for obj), or 2 (for pobj)'

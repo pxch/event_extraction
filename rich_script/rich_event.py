@@ -1,7 +1,7 @@
 from event import Event
 from indexed_input import SingleTrainingInput
 from rich_argument import RichArgument
-from util import Word2VecModel
+from util import Word2VecModel, get_class_name
 
 
 class RichEvent(object):
@@ -9,14 +9,17 @@ class RichEvent(object):
         self.pred_text = pred_text
         self.pred_idx = -1
         assert rich_subj is None or isinstance(rich_subj, RichArgument), \
-            'rich_subj must be None or a RichArgument instance'
+            'rich_subj must be None or a {} instance'.format(
+                get_class_name(RichArgument))
         self.rich_subj = rich_subj
         assert rich_obj is None or isinstance(rich_obj, RichArgument), \
-            'rich_obj must be None or a RichArgument instance'
+            'rich_obj must be None or a {} instance'.format(
+                get_class_name(RichArgument))
         self.rich_obj = rich_obj
         assert all(isinstance(rich_pobj, RichArgument) for rich_pobj
                    in rich_pobj_list), \
-            'every rich_pobj must be a RichArgument instance'
+            'every rich_pobj must be a {} instance'.format(
+                get_class_name(RichArgument))
         self.rich_pobj_list = rich_pobj_list
         # select the first argument with entity linking from rich_pobj_list
         # as the rich_pobj
@@ -28,7 +31,7 @@ class RichEvent(object):
 
     def get_index(self, model, include_type=True):
         assert isinstance(model, Word2VecModel), \
-            'model must be a Word2VecModel instance'
+            'model must be a {} instance'.format(get_class_name(Word2VecModel))
         if include_type:
             self.pred_idx = model.get_word_index(self.pred_text + '-PRED')
         else:
@@ -123,7 +126,8 @@ class RichEvent(object):
     def build(cls, event, entity_list, use_lemma=True, include_neg=True,
               include_prt=True, use_entity=True, use_ner=True,
               include_prep=True):
-        assert isinstance(event, Event), 'event must be an Event instance'
+        assert isinstance(event, Event), 'event must be a {} instance'.format(
+            get_class_name(Event))
         pred_text = event.pred.get_representation(
             use_lemma=use_lemma, include_neg=include_neg,
             include_prt=include_prt)

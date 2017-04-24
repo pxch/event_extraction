@@ -2,7 +2,7 @@ from collections import Counter
 
 import document
 from token import Token
-from util import consts
+from util import consts, get_class_name
 
 
 class Mention(object):
@@ -25,8 +25,8 @@ class Mention(object):
             raise ParseMentionError('must provide at least one token')
         if not all(isinstance(token, Token) for token in tokens):
             raise ParseMentionError(
-                'every token must be a Token instance, found {}'.format(
-                    [type(token) for token in tokens]))
+                'every token must be a {} instance, found {}'.format(
+                    get_class_name(Token), [type(token) for token in tokens]))
         self.tokens = tokens
         self.head_token = \
             self.tokens[self.head_token_idx - self.start_token_idx]
@@ -92,8 +92,8 @@ class Mention(object):
     def from_mention(cls, mention):
         if not isinstance(mention, document.Mention):
             raise ParseMentionError(
-                'from_mention must be called with a {}.{} instance'.format(
-                    document.Mention.__module__, document.Mention.__name__))
+                'from_mention must be called with a {} instance'.format(
+                    get_class_name(document.Mention)))
         # FIXME: use ner of head token as ner for the mention, might be wrong
         ner = mention.head_token.ner
         if ner not in consts.VALID_NER_TAGS:
@@ -118,7 +118,8 @@ class Entity(object):
         if not mentions:
             raise ParseEntityError('must provide at least one mention')
         if not all(isinstance(mention, Mention) for mention in mentions):
-            raise ParseEntityError('every mention must be a Mention instance')
+            raise ParseEntityError('every mention must be a {} instance'.format(
+                get_class_name(Mention)))
         self.mentions = mentions
         self.rep_mention = None
         for mention in self.mentions:
@@ -166,9 +167,8 @@ class Entity(object):
     def from_coref(cls, coref):
         if not isinstance(coref, document.Coreference):
             raise ParseEntityError(
-                'from_coref must be called with a {}.{}.instance'.format(
-                    document.Coreference.__module__,
-                    document.Coreference.__name__))
+                'from_coref must be called with a {} instance'.format(
+                    get_class_name(document.Coreference)))
         return cls([Mention.from_mention(mention)
                     for mention in coref.mentions])
 

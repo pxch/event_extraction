@@ -4,6 +4,8 @@ from copy import deepcopy
 import numpy as np
 from gensim.models import KeyedVectors
 
+from utils import get_class_name
+
 
 class Word2VecModel(object):
     def __init__(self, name, word2vec):
@@ -49,7 +51,7 @@ class Word2VecModel(object):
 
     def set_vector_matrix(self, vectors):
         assert isinstance(vectors, np.ndarray), \
-            'vectors must be a numpy.ndarray instance'
+            'vectors must be a {} instance'.format(get_class_name(np.ndarray))
         assert vectors.shape == (self.vocab_size, self.vector_size), \
             'dimension of vectors {} mismatch with ({}, {})'.format(
                 vectors.shape, self.vocab_size, self.vector_size)

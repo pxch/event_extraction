@@ -1,7 +1,7 @@
 import re
 
 import document
-from util import escape, unescape
+from util import escape, unescape, get_class_name
 
 
 class Token(object):
@@ -46,8 +46,8 @@ class Token(object):
     def from_token(cls, token):
         if not isinstance(token, document.Token):
             raise ParseTokenError(
-                'from_token must be called with a {}.{} instance'.format(
-                    document.Token.__module__, document.Token.__name__))
+                'from_token must be called with a {} instance'.format(
+                    get_class_name(document.Token)))
         word = token.word
         lemma = token.lemma
         pos = token.pos

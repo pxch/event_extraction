@@ -3,7 +3,7 @@ from warnings import warn
 
 import document
 from token import Token, ParseTokenError
-from util import escape, unescape
+from util import escape, unescape, get_class_name
 
 
 class Predicate(Token):
@@ -62,8 +62,8 @@ class Predicate(Token):
     def from_token(cls, token, **kwargs):
         if not isinstance(token, document.Token):
             raise ParseTokenError(
-                'from_token must be called with a {}.{} instance'.format(
-                    document.Token.__module__, document.Token.__name__))
+                'from_token must be called with a {} instance'.format(
+                    get_class_name(document.Token)))
         if not token.pos.startswith('VB'):
             raise ParseTokenError(
                 'from_token cannot be called with a {} token'.format(token.pos))

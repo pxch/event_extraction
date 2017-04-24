@@ -1,5 +1,5 @@
 from argument import Argument
-from util import Word2VecModel
+from util import Word2VecModel, get_class_name
 
 
 class RichArgument(object):
@@ -17,7 +17,8 @@ class RichArgument(object):
     def build(cls, arg_type, arg, entity_list, use_entity=True, use_ner=True,
               use_lemma=True):
         assert arg is not None and isinstance(arg, Argument), \
-            'arg must be an Argument instance, {} found'.format(type(arg))
+            'arg must be a {} instance, {} found'.format(
+                get_class_name(Argument), type(arg))
         if arg.entity_idx != -1 and use_entity:
             assert 0 <= arg.entity_idx < len(entity_list), \
                 'entity_idx {} out of range'.format(arg.entity_idx)
@@ -37,7 +38,7 @@ class RichArgument(object):
 
     def get_index(self, model, include_type=True):
         assert isinstance(model, Word2VecModel), \
-            'model must be a Word2VecModel instance'
+            'model must be a {} instance'.format(get_class_name(Word2VecModel))
         if include_type:
             self.pos_idx = model.get_word_index(
                 self.pos_text + '-' + self.arg_type)

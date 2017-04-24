@@ -4,23 +4,28 @@ from warnings import warn
 import event_script
 from argument import Argument
 from predicate import Predicate
+from util import get_class_name
 
 
 class Event(object):
     def __init__(self, pred, subj, obj, pobj_list):
         if not isinstance(pred, Predicate):
-            raise ParseEventError('pred must be a Predicate instance')
+            raise ParseEventError('pred must be a {} instance'.format(
+                get_class_name(Predicate)))
         self.pred = pred
         if not (subj is None or isinstance(subj, Argument)):
-            raise ParseEventError('subj must be None or an Argument instance')
+            raise ParseEventError('subj must be None or a {} instance'.format(
+                get_class_name(Argument)))
         self.subj = subj
         if not (obj is None or isinstance(obj, Argument)):
-            raise ParseEventError('obj must be None or an Argument instance')
+            raise ParseEventError('obj must be None or a {} instance'.format(
+                get_class_name(Argument)))
         self.obj = obj
         if not all(prep != '' for prep, _ in pobj_list):
             warn('some of prep(s) in pobj_list are empty')
         if not all(isinstance(pobj, Argument) for _, pobj in pobj_list):
-            raise ParseEventError('every pobj must be an Argument instance')
+            raise ParseEventError('every pobj must be a {} instance'.format(
+                get_class_name(Argument)))
         self.pobj_list = pobj_list
         self.pred_text = ''
         self.subj_text = ''
@@ -80,8 +85,8 @@ class Event(object):
     def from_event(cls, event):
         if not isinstance(event, event_script.Event):
             raise ParseEventError(
-                'from_event must be called with a {}.{} instance'.format(
-                    event_script.Event.__module__, event_script.Event.__name__))
+                'from_event must be called with a {} instance'.format(
+                    get_class_name(event_script.Event)))
         return cls.from_tokens(event.pred, event.neg, event.subj, event.obj,
                                event.pobj_list)
 

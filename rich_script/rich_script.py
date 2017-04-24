@@ -3,7 +3,7 @@ import random
 from indexed_input import PairTrainingInput
 from rich_event import RichEvent
 from script import Script
-from util import Word2VecModel
+from util import Word2VecModel, get_class_name
 
 
 class RichScript(object):
@@ -15,7 +15,7 @@ class RichScript(object):
 
     def get_index(self, model, include_type=True):
         assert isinstance(model, Word2VecModel), \
-            'model must be a Word2VecModel instance'
+            'model must be a {} instance'.format(get_class_name(Word2VecModel))
         for rich_event in self.rich_events:
             rich_event.get_index(model, include_type=include_type)
 
@@ -76,7 +76,8 @@ class RichScript(object):
     @classmethod
     def build(cls, script, use_lemma=True, include_neg=True, include_prt=True,
               use_entity=True, use_ner=True, include_prep=True):
-        assert isinstance(script, Script), 'script must be a Script instance'
+        assert isinstance(script, Script), \
+            'script must be a {} instance'.format(get_class_name(Script))
         rich_events = []
         if not script.has_entities():
             use_entity = False

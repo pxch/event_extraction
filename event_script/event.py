@@ -1,10 +1,11 @@
-from util import consts
-
+from util import consts, get_class_name
+import document
 
 class Event:
     def __init__(self, pred, neg=False):
-        assert pred is not None and pred.__class__.__name__ == 'Token', \
-            'Predicate must be an instance of Token'
+        assert pred is not None and isinstance(pred, document.Token), \
+            'Predicate must be a {} instance'.format(
+                get_class_name(document.Token))
         self.pred = pred
         self.neg = neg
         self.subj = None
@@ -38,21 +39,24 @@ class Event:
         return '{:0>4d}{:0>4d}'.format(self.pred.sent_idx, self.pred.token_idx)
 
     def add_subj(self, subj):
-        assert subj is not None and subj.__class__.__name__ == 'Token', \
-            'Subject must be an instance of Token'
+        assert subj is not None and isinstance(subj, document.Token), \
+            'Subject must be a {} instance'.format(
+                get_class_name(document.Token))
         assert self.subj is None, 'Cannot add a subject while it already exists'
         self.subj = subj
 
     def add_obj(self, obj):
-        assert obj is not None and obj.__class__.__name__ == 'Token', \
-            'Object must be an instance of Token'
+        assert obj is not None and isinstance(obj, document.Token), \
+            'Object must be a {} instance'.format(
+                get_class_name(document.Token))
         assert self.obj is None, 'Cannot add an object while it already exists'
         self.obj = obj
 
     def add_pobj(self, prep, pobj):
         assert prep != '', 'Cannot add a pobj with empty preposition!'
-        assert pobj is not None and pobj.__class__.__name__ == 'Token', \
-            'Prepositional object must be an instance of Token'
+        assert pobj is not None and isinstance(pobj, document.Token), \
+            'Prepositional object must be a {} instance'.format(
+                get_class_name(document.Token))
         self.pobj_list.append((prep, pobj))
 
     def get_subj(self):

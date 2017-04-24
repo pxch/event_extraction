@@ -20,3 +20,6 @@ def unescape(text, char_set=consts.ESCAPE_CHAR_SET):
             warn('unescape rule for {} undefined'.format(char))
     return text
 
+
+def get_class_name(class_type):
+    return '{}.{}'.format(class_type.__module__, class_type.__name__)
