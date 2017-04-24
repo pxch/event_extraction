@@ -1,13 +1,14 @@
 from copy import deepcopy
-from document import *
-from sentence import *
-from coreference import *
 from os.path import join
 from warnings import warn
+
+from document import *
+
 import consts
 
 ONTONOTES_SOURCE = '/Users/pengxiang/corpora/ontonotes-release-5.0/' \
                    'data/files/data/english/annotations/'
+
 
 def read_coref_link(coref_link):
     mention = Mention(
@@ -21,7 +22,7 @@ def read_coref_link(coref_link):
 
 
 def read_coref_chain(coref_idx, coref_chain):
-    coref = Coref(coref_idx)
+    coref = Coreference(coref_idx)
     for coref_link in coref_chain:
         coref.add_mention(read_coref_link(coref_link))
     return coref
@@ -64,13 +65,13 @@ def read_conll_depparse(input_path):
 
     all_sents = []
     sent_idx = 0
-    sent = Sent(sent_idx)
+    sent = Sentence(sent_idx)
 
     for line_idx, line in enumerate(fin.readlines()):
         if line == '\n':
             all_sents.append(deepcopy(sent))
             sent_idx += 1
-            sent = Sent(sent_idx)
+            sent = Sentence(sent_idx)
         else:
             items = line.strip().split('\t')
             try:
@@ -91,8 +92,8 @@ def read_conll_depparse(input_path):
                 continue
             dep_label = items[7]
             if dep_label != 'root':
-                sent.add_dep(Dep(dep_label, head_idx - 1,
-                                 token_idx - 1,extra=False))
+                sent.add_dep(Dependency(dep_label, head_idx - 1,
+                                        token_idx - 1,extra=False))
             if items[8] != '_':
                 for e_dep in items[8].strip().split('|'):
                     try:
@@ -100,8 +101,8 @@ def read_conll_depparse(input_path):
                     except ValueError:
                         continue
                     e_dep_label = ':'.join(e_dep.split(':')[1:])
-                    sent.add_dep(Dep(e_dep_label, e_dep_head_idx - 1,
-                                     token_idx - 1, extra=True))
+                    sent.add_dep(Dependency(e_dep_label, e_dep_head_idx - 1,
+                                            token_idx - 1, extra=True))
 
     return all_sents
 

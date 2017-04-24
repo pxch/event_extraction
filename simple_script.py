@@ -1,15 +1,14 @@
-import consts
-import coreference
-import document
-import event
-import event_script
-import sentence
-import utils
-
+import re
 from collections import Counter
 from itertools import product
-import re
 from warnings import warn
+
+import document
+
+import consts
+import event
+import event_script
+import utils
 
 ESCAPE_CHAR_SET = [' // ', '/', ';', ',', ':', '-']
 ESCAPE_CHAR_MAP = {
@@ -84,9 +83,10 @@ class Token(object):
 
     @classmethod
     def from_token(cls, token):
-        if not isinstance(token, sentence.Token):
+        if not isinstance(token, document.Token):
             raise ParseTokenError(
-                'from_token must be called with a sentence.Token instance')
+                'from_token must be called with a {}.{} instance'.format(
+                    document.Token.__module__, document.Token.__name__))
         word = token.word
         lemma = token.lemma
         pos = token.pos
@@ -174,9 +174,10 @@ class Argument(Token):
 
     @classmethod
     def from_token(cls, token):
-        if not isinstance(token, sentence.Token):
+        if not isinstance(token, document.Token):
             raise ParseTokenError(
-                'from_token must be called with a sentence.Token instance')
+                'from_token must be called with a {}.{} instance'.format(
+                    document.Token.__module__, document.Token.__name__))
         word = token.word
         lemma = token.lemma
         pos = token.pos
@@ -239,9 +240,10 @@ class Predicate(Token):
 
     @classmethod
     def from_token(cls, token, **kwargs):
-        if not isinstance(token, sentence.Token):
+        if not isinstance(token, document.Token):
             raise ParseTokenError(
-                'from_token must be called with a sentence.Token instance')
+                'from_token must be called with a {}.{} instance'.format(
+                    document.Token.__module__, document.Token.__name__))
         if not token.pos.startswith('VB'):
             raise ParseTokenError(
                 'from_token cannot be called with a {} token'.format(token.pos))
@@ -438,10 +440,10 @@ class Mention(object):
 
     @classmethod
     def from_mention(cls, mention):
-        if not isinstance(mention, coreference.Mention):
+        if not isinstance(mention, document.Mention):
             raise ParseMentionError(
-                'from_mention must be called with a coreference.Mention '
-                'instance')
+                'from_mention must be called with a {}.{} instance'.format(
+                    document.Mention.__module__, document.Mention.__name__))
         # FIXME: use ner of head token as ner for the mention, might be wrong
         ner = mention.head_token.ner
         if ner not in consts.VALID_NER_TAGS:
@@ -512,9 +514,11 @@ class Entity(object):
 
     @classmethod
     def from_coref(cls, coref):
-        if not isinstance(coref, coreference.Coref):
+        if not isinstance(coref, document.Coreference):
             raise ParseEntityError(
-                'from_coref must be called with a coreference.Coref')
+                'from_coref must be called with a {}.{}.instance'.format(
+                    document.Coreference.__module__,
+                    document.Coreference.__name__))
         return cls([Mention.from_mention(mention)
                     for mention in coref.mentions])
 
@@ -611,7 +615,8 @@ class Script(object):
     def from_doc(cls, doc):
         if not isinstance(doc, document.Document):
             raise ParseEventError(
-                'from_doc must be called with a document.Document instance')
+                'from_doc must be called with a {}.{} instance'.format(
+                    document.Document.__module__, document.Document.__name__))
         # get all events from document
         events = []
         # iterate through all sentences

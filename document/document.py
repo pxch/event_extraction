@@ -1,4 +1,4 @@
-class Document:
+class Document(object):
     def __init__(self, doc_name):
         self.doc_name = doc_name
         self.sents = []

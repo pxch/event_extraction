@@ -1,10 +1,10 @@
 from copy import deepcopy
-from document import *
-from sentence import *
-from coreference import *
 from lxml import etree
-import consts
 from os.path import basename, splitext
+
+from document import *
+
+import consts
 
 # dependency_type = 'collapsed-ccprocessed-dependencies'
 dependency_type = 'enhanced-plus-plus-dependencies'
@@ -41,7 +41,7 @@ class CoreNLPTarget(object):
             self.parse_sent = True
         elif tag == 'sentence':
             if self.parse_sent:
-                self.sent = Sent(int(attrib['id']) - 1)
+                self.sent = Sentence(int(attrib['id']) - 1)
         elif tag == 'dependencies':
             if attrib['type'] == dependency_type and self.parse_sent:
                 self.parse_dep = True
@@ -59,7 +59,7 @@ class CoreNLPTarget(object):
         elif tag == 'coreference':
             if not self.parse_coref:
                 self.parse_coref = True
-            self.coref = Coref(len(self.corefs))
+            self.coref = Coreference(len(self.corefs))
         elif tag == 'mention':
             if self.parse_coref:
                 if 'representative' in attrib:
@@ -116,8 +116,8 @@ class CoreNLPTarget(object):
         elif tag == 'dep':
             if self.parse_dep:
                 if self.dep_label != 'root':
-                    dep = Dep(self.dep_label, self.gov_idx,
-                              self.dep_idx, self.extra)
+                    dep = Dependency(self.dep_label, self.gov_idx,
+                                     self.dep_idx, self.extra)
                     self.sent.add_dep(deepcopy(dep))
                 self.dep_label = ''
                 self.gov_idx = -1
