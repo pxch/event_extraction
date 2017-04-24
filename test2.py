@@ -2,7 +2,8 @@ import pickle as pkl
 
 all_scripts = pkl.load(open('all_scripts_03292200.pkl', 'r'))
 
-from most_freq_coref_evaluator import MostFreqCorefEvaluator
+from evaluate import MostFreqCorefEvaluator
+
 most_freq_coref_eval = MostFreqCorefEvaluator()
 most_freq_coref_eval.evaluate(all_scripts)
 
@@ -23,7 +24,8 @@ pair_triple.load_model('/Users/pengxiang/corpora/spaces/enwiki-20160901/event_ba
 event_model = embedding.Embedding('event_script', 300, syntax_label = True, use_ner = True, use_lemma = True, include_compounds = True)
 event_model.load_model('/Users/pengxiang/corpora/spaces/03141230_dim300vecs.bin', True)
 
-from most_sim_event_evaluator import MostSimEventEvaluator
+from evaluate import MostSimEventEvaluator
+
 most_sim_event_eval = MostSimEventEvaluator()
 most_sim_event_eval.set_use_max_score(True)
 

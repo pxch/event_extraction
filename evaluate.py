@@ -1,4 +1,4 @@
-from eval_stats import EvalStats
+from evaluate.eval_stats import EvalStats
 
 
 def eval_most_freq_coref(all_scripts):
