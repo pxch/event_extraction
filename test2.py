@@ -1,6 +1,8 @@
 import pickle as pkl
 
-all_scripts = pkl.load(open('all_scripts_03292200.pkl', 'r'))
+date_tag = '04232330'
+
+all_scripts = pkl.load(open('all_scripts_{}.pkl'.format(date_tag), 'r'))
 
 from evaluate import MostFreqCorefEvaluator
 
@@ -9,6 +11,17 @@ most_freq_coref_eval.evaluate(all_scripts)
 
 most_freq_coref_eval.set_ignore_first_mention(True)
 most_freq_coref_eval.evaluate(all_scripts)
+
+all_simple_scripts = pkl.load(
+    open('all_simple_scripts_{}.pkl'.format(date_tag), 'r'))
+
+from evaluate import MostFreqEntityEvaluator
+
+most_freq_entity_eval = MostFreqEntityEvaluator()
+most_freq_entity_eval.evaluate(all_simple_scripts)
+
+most_freq_entity_eval.set_ignore_first_mention(True)
+most_freq_entity_eval.evaluate(all_simple_scripts)
 
 import embedding
 

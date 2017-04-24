@@ -1,3 +1,4 @@
 from eval_stats import EvalStats
 from most_freq_coref_evaluator import MostFreqCorefEvaluator
+from most_freq_entity_evaluator import MostFreqEntityEvaluator
 from most_sim_event_evaluator import MostSimEventEvaluator

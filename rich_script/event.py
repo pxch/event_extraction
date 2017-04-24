@@ -42,10 +42,22 @@ class Event(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_all_args(self):
-        all_args = [self.subj, self.obj] + [pobj for _, pobj in self.pobj_list]
-        all_args = [arg for arg in all_args if arg is not None]
-        return all_args
+    def get_all_args(self, include_arg_type=False):
+        all_args = [('SUBJ', self.subj), ('OBJ', self.obj)] + \
+                   [('PREP_' + prep, pobj) for prep, pobj in self.pobj_list]
+        all_args = [arg for arg in all_args if arg[1] is not None]
+        if include_arg_type:
+            return all_args
+        else:
+            return [arg[1] for arg in all_args]
+
+    def get_all_args_with_entity(self, include_arg_type=False):
+        all_args = self.get_all_args(include_arg_type=True)
+        all_args = [arg for arg in all_args if arg[1].entity_idx != -1]
+        if include_arg_type:
+            return all_args
+        else:
+            return [arg[1] for arg in all_args]
 
     def to_text(self):
         return '{} :SUBJ: {} :OBJ: {}{}'.format(
