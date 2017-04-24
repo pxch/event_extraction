@@ -3,7 +3,8 @@ import os
 
 from argument_composition import ArgumentCompositionModel
 from autoencoder import DenoisingAutoencoderIterableTrainer
-from util import get_console_logger, PretrainingCorpusIterator, Word2VecModel
+from rich_script import PretrainingCorpusIterator
+from util import get_console_logger, Word2VecModel
 
 parser = argparse.ArgumentParser()
 

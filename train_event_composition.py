@@ -3,7 +3,8 @@ import os
 
 from argument_composition import ArgumentCompositionModel
 from event_composition import EventCompositionModel, EventCompositionTrainer
-from util import get_console_logger, PairTuningCorpusIterator
+from rich_script import PairTuningCorpusIterator
+from util import get_console_logger
 
 parser = argparse.ArgumentParser()
 

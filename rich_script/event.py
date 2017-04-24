@@ -1,7 +1,9 @@
-import event_script
 import re
-from token import Predicate, Argument
 from warnings import warn
+
+import event_script
+from argument import Argument
+from predicate import Predicate
 
 
 class Event(object):

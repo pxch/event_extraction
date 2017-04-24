@@ -1,9 +1,11 @@
+from bz2 import BZ2File
+from math import ceil
 from os import listdir
 from os.path import isdir, isfile, join
-from bz2 import BZ2File
-from rich_script import SingleTrainingInput, PairTrainingInput
+
 import numpy
-from math import ceil
+
+from indexed_input import SingleTrainingInput, PairTrainingInput
 
 
 class IndexedCorpusReader(object):

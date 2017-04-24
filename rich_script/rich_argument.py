@@ -1,4 +1,4 @@
-from token import Argument
+from argument import Argument
 from util import Word2VecModel
 
 
