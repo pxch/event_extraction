@@ -1,7 +1,7 @@
 from event import Event
 from indexed_input import SingleTrainingInput
 from rich_argument import RichArgument
-from word2vec import Word2VecModel
+from util import Word2VecModel
 
 
 class RichEvent(object):

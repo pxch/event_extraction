@@ -1,9 +1,9 @@
 import random
 
-from rich_event import RichEvent
 from indexed_input import PairTrainingInput
+from rich_event import RichEvent
 from script import Script
-from word2vec import Word2VecModel
+from util import Word2VecModel
 
 
 class RichScript(object):

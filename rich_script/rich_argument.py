@@ -1,5 +1,5 @@
 from token import Argument
-from word2vec import Word2VecModel
+from util import Word2VecModel
 
 
 class RichArgument(object):

@@ -1,10 +1,12 @@
-from autoencoder import DenoisingAutoencoder
-from word2vec import Word2VecModel
+import os
+import pickle
+
 import numpy
 import theano
 import theano.tensor as T
-import os
-import pickle
+
+from autoencoder import DenoisingAutoencoder
+from util import Word2VecModel
 
 
 class ArgumentCompositionModel(object):

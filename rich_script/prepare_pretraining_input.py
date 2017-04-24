@@ -5,7 +5,7 @@ from os.path import isfile, join
 
 from rich_script import RichScript
 from script import ScriptCorpus
-from word2vec import Word2VecModel
+from util import Word2VecModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory for ScriptCorpus files')

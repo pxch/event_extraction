@@ -1,7 +1,8 @@
-from gensim.models import KeyedVectors
-from copy import deepcopy
 import os
+from copy import deepcopy
+
 import numpy as np
+from gensim.models import KeyedVectors
 
 
 class Word2VecModel(object):
