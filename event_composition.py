@@ -1,11 +1,13 @@
-from autoencoder import DenoisingAutoencoder
-from argument_composition import ArgumentCompositionModel
+import os
+import pickle
+
 import numpy
 import theano
 import theano.tensor as T
-import utils
-import os
-import pickle
+
+from argument_composition import ArgumentCompositionModel
+from autoencoder import DenoisingAutoencoder
+from util import get_console_logger
 
 
 class EventCompositionTrainer(object):
@@ -89,7 +91,7 @@ class EventCompositionTrainer(object):
               log=None, training_cost_prop_change_threshold=0.0005,
               log_every_batch=100):
         if log is None:
-            log = utils.get_console_logger("Pair tuning")
+            log = get_console_logger("Pair tuning")
 
         log.info("Tuning params: learning rate=%s (->%s), regularization=%s" %
                  (self.learning_rate, self.min_learning_rate,

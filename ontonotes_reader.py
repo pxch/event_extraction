@@ -3,11 +3,17 @@ from os.path import join
 from warnings import warn
 
 from document import *
-
-import consts
+from util import consts
 
 ONTONOTES_SOURCE = '/Users/pengxiang/corpora/ontonotes-release-5.0/' \
                    'data/files/data/english/annotations/'
+
+
+def convert_ontonotes_ner_tag(tag, to_corenlp=False):
+    if to_corenlp:
+        return consts.ONTONOTES_TO_CORENLP_MAPPING.get(tag, '')
+    else:
+        return consts.ONTONOTES_TO_VALID_MAPPING.get(tag, '')
 
 
 def read_coref_link(coref_link):
@@ -57,7 +63,7 @@ def add_name_entity_to_doc(doc, name_entity):
         token = sent.get_token(token_idx)
         # map ontonotes ner tags to coerse grained ner tags
         token.set_attrib(
-            'ner', consts.convert_ontonotes_ner_tag(name_entity.type))
+            'ner', convert_ontonotes_ner_tag(name_entity.type))
 
 
 def read_conll_depparse(input_path):

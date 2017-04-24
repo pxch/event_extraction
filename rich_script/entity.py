@@ -1,7 +1,8 @@
-import consts
+from collections import Counter
+
 import document
 from token import Token
-from collections import Counter
+from util import consts
 
 
 class Mention(object):

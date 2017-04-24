@@ -1,3 +1,6 @@
+CORENLP_DEPENDENCY_TYPE = 'enhanced-plus-plus-dependencies'
+# CORENLP_DEPENDENCY_TYPE = 'collapsed-ccprocessed-dependencies'
+
 FREQ_PREPS = ['of', 'in', 'to', 'for', 'with',
               'on', 'at', 'from','by', 'about']
 
@@ -75,12 +78,13 @@ CORENLP_TO_VALID_MAPPING = {
 }
 
 
-def convert_ontonotes_ner_tag(tag, to_corenlp=False):
-    if to_corenlp:
-        return ONTONOTES_TO_CORENLP_MAPPING.get(tag, '')
-    else:
-        return ONTONOTES_TO_VALID_MAPPING.get(tag, '')
+ESCAPE_CHAR_SET = [' // ', '/', ';', ',', ':', '-']
 
-
-def convert_corenlp_ner_tag(tag):
-    return CORENLP_TO_VALID_MAPPING.get(tag, '')
+ESCAPE_CHAR_MAP = {
+    ' // ': '@slashes@',
+    '/': '@slash@',
+    ';': '@semicolon@',
+    ',': '@comma@',
+    ':': '@colon@',
+    '-': '@dash@',
+    '_': '@underscore@'}

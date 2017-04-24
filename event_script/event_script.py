@@ -1,8 +1,8 @@
 from itertools import product
 
-import consts
 import document
 from event import Event
+from util import consts
 
 
 class EventScript:

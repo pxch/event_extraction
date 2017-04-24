@@ -1,35 +1,9 @@
-import document
 import re
 from warnings import warn
+
+import document
 from entity import Entity
-
-ESCAPE_CHAR_SET = [' // ', '/', ';', ',', ':', '-']
-ESCAPE_CHAR_MAP = {
-    ' // ': '@slashes@',
-    '/': '@slash@',
-    ';': '@semicolon@',
-    ',': '@comma@',
-    ':': '@colon@',
-    '-': '@dash@',
-    '_': '@underscore@'}
-
-
-def escape(text, char_set=ESCAPE_CHAR_SET):
-    for char in char_set:
-        if char in ESCAPE_CHAR_MAP:
-            text = text.replace(char, ESCAPE_CHAR_MAP[char])
-        else:
-            warn('escape rule for {} undefined'.format(char))
-    return text
-
-
-def unescape(text, char_set=ESCAPE_CHAR_SET):
-    for char in char_set:
-        if char in ESCAPE_CHAR_MAP:
-            text = text.replace(ESCAPE_CHAR_MAP[char], char)
-        else:
-            warn('unescape rule for {} undefined'.format(char))
-    return text
+from util import escape, unescape
 
 
 class ParseTokenError(Exception):

@@ -1,13 +1,11 @@
 from itertools import product
 from warnings import warn
 
-import consts
 import document
 import event_script
-import utils
-
-from event import Event
 from entity import Entity
+from event import Event
+from util import consts, split_sections
 
 
 class Script(object):
@@ -67,7 +65,7 @@ class Script(object):
             # Empty document: error in event extraction
             return cls(text.strip(), [], [])
 
-        sections = utils.split_sections(
+        sections = split_sections(
             (l.strip() for l in text.splitlines()), ["Entities:", "Events:"])
         # First comes the doc name
         doc_name = sections[0][0].strip()

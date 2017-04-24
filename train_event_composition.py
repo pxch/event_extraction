@@ -1,8 +1,9 @@
-from argument_composition import ArgumentCompositionModel
-from event_composition import EventCompositionModel, EventCompositionTrainer
 import argparse
 import os
-from utils import PairTuningCorpusIterator, get_console_logger
+
+from argument_composition import ArgumentCompositionModel
+from event_composition import EventCompositionModel, EventCompositionTrainer
+from util import get_console_logger, PairTuningCorpusIterator
 
 parser = argparse.ArgumentParser()
 

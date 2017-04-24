@@ -1,5 +1,6 @@
-from consts import VALID_NER_TAGS
 from warnings import warn
+
+from util.consts import VALID_NER_TAGS
 
 
 class Token(object):

@@ -1,4 +1,4 @@
-import consts
+from util import consts
 
 
 class Event:

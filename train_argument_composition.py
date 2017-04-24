@@ -1,9 +1,10 @@
-from argument_composition import ArgumentCompositionModel
-from autoencoder import DenoisingAutoencoderIterableTrainer
-from word2vec import Word2VecModel
-from utils import PretrainingCorpusIterator, get_console_logger
 import argparse
 import os
+
+from argument_composition import ArgumentCompositionModel
+from autoencoder import DenoisingAutoencoderIterableTrainer
+from util import get_console_logger, PretrainingCorpusIterator
+from word2vec import Word2VecModel
 
 parser = argparse.ArgumentParser()
 

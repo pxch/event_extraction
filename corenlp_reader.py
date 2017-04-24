@@ -3,11 +3,11 @@ from lxml import etree
 from os.path import basename, splitext
 
 from document import *
+from util import consts
 
-import consts
 
-# dependency_type = 'collapsed-ccprocessed-dependencies'
-dependency_type = 'enhanced-plus-plus-dependencies'
+def convert_corenlp_ner_tag(tag):
+    return consts.CORENLP_TO_VALID_MAPPING.get(tag, '')
 
 
 class CoreNLPTarget(object):
@@ -43,7 +43,8 @@ class CoreNLPTarget(object):
             if self.parse_sent:
                 self.sent = Sentence(int(attrib['id']) - 1)
         elif tag == 'dependencies':
-            if attrib['type'] == dependency_type and self.parse_sent:
+            if attrib['type'] == consts.CORENLP_DEPENDENCY_TYPE \
+                    and self.parse_sent:
                 self.parse_dep = True
         elif tag == 'dep':
             if self.parse_dep:
@@ -104,7 +105,7 @@ class CoreNLPTarget(object):
             if self.ner != '':
                 # map corenlp ner tags to coerse grained ner tags
                 token.set_attrib(
-                    'ner', consts.convert_corenlp_ner_tag(self.ner))
+                    'ner', convert_corenlp_ner_tag(self.ner))
             self.sent.add_token(deepcopy(token))
             self.word = ''
             self.lemma = ''
