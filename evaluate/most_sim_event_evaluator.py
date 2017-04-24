@@ -1,8 +1,7 @@
-import numpy as np
-
 from base_evaluator import BaseEvaluator
 from event_script import EventEmbedding
 from util import cos_sim
+
 
 class MostSimEventEvaluator(BaseEvaluator):
     def __init__(self):
