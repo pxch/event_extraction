@@ -1,6 +1,7 @@
-from base_evaluator import BaseEvaluator
-from event_embedding import EventEmbedding
 import numpy as np
+
+from base_evaluator import BaseEvaluator
+from event_script import EventEmbedding
 
 
 class MostSimEventEvaluator(BaseEvaluator):

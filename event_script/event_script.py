@@ -1,6 +1,8 @@
-from event import Event
 from itertools import product
+
 import consts
+import document
+from event import Event
 
 
 class EventScript:
@@ -26,6 +28,9 @@ class EventScript:
         return results
 
     def read_from_sentence(self, sent):
+        assert isinstance(sent, document.Sentence), \
+            'read_from_sentence must be called with a {}.{} instance'.format(
+                document.Sentence.__module__, document.Sentence.__name__)
         for pred_token in sent.tokens:
             if pred_token.pos.startswith('VB'):
                 # exclude "be" verbs
@@ -65,6 +70,9 @@ class EventScript:
                     ))
 
     def read_from_document(self, doc):
+        assert isinstance(doc, document.Document), \
+            'read_from_document must be called with a {}.{} instance'.format(
+                document.Document.__module__, document.Document.__name__)
         for sent in doc.sents:
             self.read_from_sentence(sent)
         for coref in doc.corefs:

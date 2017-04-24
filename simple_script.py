@@ -3,10 +3,8 @@ from collections import Counter
 from itertools import product
 from warnings import warn
 
-import document
-
 import consts
-import event
+import document
 import event_script
 import utils
 
@@ -334,9 +332,10 @@ class Event(object):
 
     @classmethod
     def from_event(cls, ev):
-        if not isinstance(ev, event.Event):
+        if not isinstance(ev, event_script.Event):
             raise ParseEventError(
-                'from_event must be called with a event.Event instance')
+                'from_event must be called with a {}.{} instance'.format(
+                    event_script.Event.__module__, event_script.Event.__name__))
         return cls.from_tokens(ev.pred, ev.neg, ev.subj, ev.obj, ev.pobj_list)
 
     @classmethod
@@ -599,8 +598,9 @@ class Script(object):
     def from_script(cls, ev_script):
         if not isinstance(ev_script, event_script.EventScript):
             raise ParseEventError(
-                'from_script must be called with a event_script.EventScript '
-                'instance')
+                'from_script must be called with a {}.{} instance'.format(
+                    event_script.EventScript.__module__,
+                    event_script.EventScript.__name__))
         if not ev_script.events:
             warn('EventScript {} has no events'.format(ev_script.doc_name))
         if not ev_script.corefs:
