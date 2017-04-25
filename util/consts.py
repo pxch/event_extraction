@@ -1,3 +1,15 @@
+ONTONOTES_SOURCE = \
+    '/Users/pengxiang/corpora/ontonotes-release-5.0/data/files/data/'
+ONTONOTES_ANNOTATIONS_SOURCE = ONTONOTES_SOURCE + 'english/annotations/'
+
+VALID_ONTONOTES_CORPORA = [
+    'english-bn-cnn',
+    'english-bn-voa',
+    'english-nw-xinhua',
+    # 'english-nw-wsj',
+    # 'english-nw-wsj_filter'
+]
+
 CORENLP_DEPENDENCY_TYPE = 'enhanced-plus-plus-dependencies'
 # CORENLP_DEPENDENCY_TYPE = 'collapsed-ccprocessed-dependencies'
 

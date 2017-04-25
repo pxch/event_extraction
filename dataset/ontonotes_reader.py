@@ -2,11 +2,9 @@ from copy import deepcopy
 from os.path import join
 from warnings import warn
 
+import ontonotes_loader
 from document import *
 from util import consts
-
-ONTONOTES_SOURCE = '/Users/pengxiang/corpora/ontonotes-release-5.0/' \
-                   'data/files/data/english/annotations/'
 
 
 def convert_ontonotes_ner_tag(tag, to_corenlp=False):
@@ -125,7 +123,8 @@ def read_doc_from_ontonotes(coref_doc, name_doc):
 
     print 'Reading document from {}'.format(doc_id)
 
-    conll_file_path = join(ONTONOTES_SOURCE, doc_id + '.depparse')
+    conll_file_path = join(
+        consts.ONTONOTES_ANNOTATIONS_SOURCE, doc_id + '.depparse')
 
     all_sents = read_conll_depparse(conll_file_path)
 
@@ -137,3 +136,17 @@ def read_doc_from_ontonotes(coref_doc, name_doc):
         add_name_entity_to_doc(doc, name_entity)
 
     return doc
+
+
+def read_all_docs_from_ontonotes(corpora):
+    all_subcorps = ontonotes_loader.load_ontonotes(corpora=corpora)
+
+    all_coref_docs = ontonotes_loader.get_all_coref_docs(all_subcorps)
+    all_name_docs = ontonotes_loader.get_all_name_docs(all_subcorps)
+
+    all_docs = []
+    for coref_doc, name_doc in zip(all_coref_docs, all_name_docs):
+        doc = read_doc_from_ontonotes(coref_doc, name_doc)
+        all_docs.append(doc)
+
+    return all_docs
