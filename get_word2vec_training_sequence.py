@@ -3,7 +3,7 @@ from bz2 import BZ2File
 from os import listdir
 from os.path import isfile, join
 
-import rich_script
+from rich_script import RichScript, ScriptCorpus
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory for ScriptCorpus files')
@@ -34,9 +34,9 @@ input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
 
 for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
-        script_corpus = rich_script.ScriptCorpus.from_text(fin.read())
+        script_corpus = ScriptCorpus.from_text(fin.read())
         for script in script_corpus.scripts:
-            rich_script = rich_script.RichScript.build(
+            rich_script = RichScript.build(
                 script,
                 use_lemma=args.use_lemma,
                 include_neg=args.include_neg,
