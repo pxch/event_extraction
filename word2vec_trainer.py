@@ -69,6 +69,8 @@ assert opts.hs == 1 or opts.negative > 0, \
 assert opts.workers > 0, '--workers must be a positive integer'
 assert opts.iter > 0, '--iter must be a positive integer'
 assert opts.min_count >= 0, '--min_count must be a non-negative integer'
+assert opts.max_vocab_size is None or opts.max_vocab_size > 0, \
+    '--max_vocab_size must be None or a positive integer'
 assert opts.alpha > 0, '--alpha must be a positive number'
 
 logger = logging.getLogger('word2vec-trainer')
@@ -98,6 +100,7 @@ model = gensim.models.Word2Vec(
     workers=opts.workers,
     iter=opts.iter,
     min_count=opts.min_count,
+    max_vocab_size=opts.max_vocab_size,
     alpha=opts.alpha
 )
 
