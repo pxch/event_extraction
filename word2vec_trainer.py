@@ -48,6 +48,10 @@ parser.add_argument(
     '--min_count', type=int, default=5,
     help='Discard words that appear less than min-count times; default is 5')
 parser.add_argument(
+    '--max_vocab_size', type=int, default=None,
+    help='Maximum size of vocabulary; default is None (no limit)'
+)
+parser.add_argument(
     '--alpha', type=float, default=0.025,
     help='Starting learning rate; default is 0.025 for skip-gram '
          'and 0.05 for CBOW')
