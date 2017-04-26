@@ -3,19 +3,31 @@ from util import Word2VecModel, get_class_name
 
 
 class RichArgument(object):
-    def __init__(self, arg_type, text_list, pos_idx, has_entity, mention_idx):
+    def __init__(self, arg_type, candidate_text_list, entity_idx, mention_idx):
         assert arg_type in ['SUBJ', 'OBJ'] or arg_type.startswith('PREP'), \
             'arg_type {} must be SUBJ/OBJ or starts with PREP'.format(arg_type)
-        # type of argument, can be SUBJ, OBJ, or PREP_*
+        assert candidate_text_list, 'candidate_text_list cannot be empty'
+        assert 0 <= entity_idx < len(candidate_text_list) or \
+               (len(candidate_text_list) == 1 and entity_idx == -1), \
+            'entity_idx must be between 0 and len(candidate_text_list), ' \
+            'or -1 when len(candidate_text_list) = 1'
+        assert mention_idx >= 0 or (entity_idx == -1 and mention_idx == -1), \
+            'mention_idx must be >= 0, or -1 when entity_idx = -1'
+        # type of argument
         self.arg_type = arg_type
-        self.text_list = text_list
-        # TODO: find a better name for this, to avoid ambiguity
-        self.pos_idx = pos_idx
-        # TODO: use a better name like has_entity or something
-        self.has_neg = (len(self.text_list) > 1)
-        self.has_entity = has_entity
+        # list of texts for all candidates of the argument
+        self.candidate_text_list = candidate_text_list
+        # index of the entity the argument points to, -1 if no entity/mention
+        self.entity_idx = entity_idx
+        # index of the mention the argument points to, -1 if no entity/mention
         self.mention_idx = mention_idx
-        self.idx_list = []
+
+        # index of target candidate in the candidate list
+        self.target_idx = max(self.entity_idx, 0)
+        # boolean flag indicating whether the argument has negative candidates
+        self.has_neg = (len(self.candidate_text_list) > 1)
+        # list of word2vec indices for all candidates of the argument
+        self.candidate_idx_list = []
 
     @classmethod
     def build(cls, arg_type, arg, entity_list, use_entity=True, use_ner=True,
@@ -26,97 +38,70 @@ class RichArgument(object):
         if arg.entity_idx != -1 and use_entity:
             assert 0 <= arg.entity_idx < len(entity_list), \
                 'entity_idx {} out of range'.format(arg.entity_idx)
-            text_list = [
+            candidate_text_list = [
                 entity.get_representation(use_ner=use_ner, use_lemma=use_lemma)
                 for entity in entity_list]
-            pos_idx = arg.entity_idx
-            has_entity = True
+            entity_idx = arg.entity_idx
+            mention_idx = arg.mention_idx
         else:
-            text_list = [
+            candidate_text_list = [
                 arg.get_representation(use_entity=False, entity_list=None,
                                        use_ner=use_ner, use_lemma=use_lemma)]
-            pos_idx = 0
-            has_entity = False
-        return cls(arg_type, text_list, pos_idx, has_entity, arg.mention_idx)
+            entity_idx = -1
+            mention_idx = -1
+        return cls(arg_type, candidate_text_list, entity_idx, mention_idx)
 
+    # get word2vec indices for all candidates
     def get_index(self, model, include_type=True):
+        # TODO: add logic to deal with cases when pos_idx == -1
+        # TODO: add logic to backtrack when pobj is out-of-vocab
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
         if include_type:
-            self.idx_list = [
-                model.get_word_index(text + '-' + self.arg_type)
-                for text in self.text_list]
+            self.candidate_idx_list = [
+                model.get_word_index(candidate_text + '-' + self.arg_type)
+                for candidate_text in self.candidate_text_list]
         else:
-            self.idx_list = [
-                model.get_word_index(text) for text in self.text_list]
-        # TODO: add logic to deal with cases when idx_list[pos_idx] is -1
+            self.candidate_idx_list = [
+                model.get_word_index(candidate_text)
+                for candidate_text in self.candidate_text_list]
 
-    def get_pos_arg_index(self):
-        return self.idx_list[self.pos_idx]
+    # get the text for the positive candidate
+    def get_pos_text(self, include_type=True):
+        pos_text = self.candidate_text_list[self.target_idx]
+        if include_type:
+            pos_text += '-' + self.arg_type
+        return pos_text
 
-    '''
-    def __init__(self, arg_type, pos_text, neg_text_list):
-        assert arg_type in ['SUBJ', 'OBJ'] or arg_type.startswith('PREP'), \
-            'arg_type {} must be SUBJ/OBJ or starts with PREP'.format(arg_type)
-        # type of argument, can be SUBJ, OBJ, or PREP_*
-        self.arg_type = arg_type
-        # text of the true argument, set to Entity.get_representation()
-        # if the argument is pointed to an entity,
-        # otherwise set to Argument.get_representation()
-        self.pos_text = pos_text
-        # list of text for other candidates of the argument,
-        # set to the list of representations of other entities in the script
-        # if the argument is pointed to an entity, otherwise set to empty list
-        self.neg_text_list = neg_text_list
-        # boolean flag indicating whether the argument has other candidates
-        # i.e., the argument is pointed to an entity and
-        # the number of entities in the script is greater than 1
-        self.has_neg = (len(self.neg_text_list) != 0)
-        # index of the argument text, -1 if
-        self.pos_idx = -1
-        self.neg_idx_list = []
-
-    @classmethod
-    def build(cls, arg_type, arg, entity_list, use_entity=True, use_ner=True,
-              use_lemma=True):
-        assert arg is not None and isinstance(arg, Argument), \
-            'arg must be a {} instance, {} found'.format(
-                get_class_name(Argument), type(arg))
-        if arg.entity_idx != -1 and use_entity:
-            assert 0 <= arg.entity_idx < len(entity_list), \
-                'entity_idx {} out of range'.format(arg.entity_idx)
-            entity_text_list = [
-                entity.get_representation(use_ner=use_ner, use_lemma=use_lemma)
-                for entity in entity_list]
-            pos_text = entity_text_list[arg.entity_idx]
+    # get the list of texts for all negative candidates, might be empty
+    def get_neg_text_list(self, include_type=True):
+        if len(self.candidate_text_list) == 1:
+            return []
+        neg_text_list = \
+            self.candidate_text_list[self.target_idx] + \
+            self.candidate_text_list[self.target_idx+1:]
+        if include_type:
             neg_text_list = \
-                entity_text_list[:arg.entity_idx] + \
-                entity_text_list[arg.entity_idx + 1:]
-        else:
-            pos_text = arg.get_representation(
-                use_entity=False, entity_list=None,
-                use_ner=use_ner, use_lemma=use_lemma)
-            neg_text_list = []
-        return cls(arg_type, pos_text, neg_text_list)
+                [neg_text + '-' + self.arg_type for neg_text in neg_text_list]
+        return neg_text_list
 
-    def get_index(self, model, include_type=True):
-        assert isinstance(model, Word2VecModel), \
-            'model must be a {} instance'.format(get_class_name(Word2VecModel))
-        if include_type:
-            self.pos_idx = model.get_word_index(
-                self.pos_text + '-' + self.arg_type)
-            self.neg_idx_list = [
-                model.get_word_index(neg_text + '-' + self.arg_type)
-                for neg_text in self.neg_text_list]
-        else:
-            self.pos_idx = model.get_word_index(self.pos_text)
-            self.neg_idx_list = [
-                model.get_word_index(neg_text)
-                for neg_text in self.neg_text_list]
-        # remove non-indexed negative index
-        self.neg_idx_list = [idx for idx in self.neg_idx_list if idx != -1]
-        # set self.has_neg to False if self.pos_idx is -1
-        # or self.neg_idx_list is empty
-        if self.pos_idx == -1 or len(self.neg_idx_list) == 0:
-            self.has_neg = False
-    '''
+    # get the word2vec index for the positive candidate, might be -1
+    def get_pos_idx(self):
+        return self.candidate_idx_list[self.target_idx]
+
+    # get the word2vec indices for all negative candidates, might be empty
+    def get_neg_idx_list(self):
+        if len(self.candidate_idx_list) == 1:
+            return []
+        neg_idx_list = \
+            self.candidate_idx_list[:self.target_idx] + \
+            self.candidate_idx_list[self.target_idx+1:]
+        return neg_idx_list
+
+    # boolean flag indicating whether the argument points to an entity
+    def has_entity(self):
+        return self.entity_idx != -1
+
+    # boolean flag indicating whether the argument points to the first mention
+    def is_first_mention(self):
+        return self.mention_idx == 0

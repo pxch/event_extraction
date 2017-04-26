@@ -8,10 +8,9 @@ import numpy as np
 
 import logging
 
-logging.basicConfig(
-    format='%(levelname) s : : %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname) s : : %(message)s', level=logging.INFO)
 
-logger = logging.getLogger('most_sim_event')
+logger = logging.getLogger('word2vec_evaluator')
 
 
 def get_arg_embedding(model, rich_arg):
@@ -36,18 +35,12 @@ def get_event_vector(model, event_input, use_all_pobj=True):
         assert isinstance(event_input, SingleTrainingInput), \
             'event_input must be a {} instance when use_all_pobj=False'.format(
                 get_class_name(SingleTrainingInput))
-    # TODO: (done) switch to add from zero vector
     vector = np.zeros(model.vector_size)
     pred_vector = model.get_index_vec(event_input.pred_input)
     if pred_vector is not None:
         vector += pred_vector
     else:
         return None
-    '''
-    vector = deepcopy(model.get_index_vec(event_input.pred_input))
-    if vector is None:
-        return vector
-    '''
     subj_vector = model.get_index_vec(event_input.subj_input)
     if subj_vector is not None:
         vector += subj_vector
@@ -71,16 +64,16 @@ def get_coherence_scores(target_vector, context_vector_list):
             for context_vector in context_vector_list]
 
 
-def get_most_coherent(target_vector_list, context_vector_list,
+def get_most_coherent(eval_vector_list, context_vector_list,
                       use_max_score=True):
     coherence_score_list = []
-    for target_vector in target_vector_list:
+    for eval_vector in eval_vector_list:
         if use_max_score:
             coherence_score_list.append(max(
-                get_coherence_scores(target_vector, context_vector_list)))
+                get_coherence_scores(eval_vector, context_vector_list)))
         else:
             coherence_score_list.append(sum(
-                get_coherence_scores(target_vector, context_vector_list)))
+                get_coherence_scores(eval_vector, context_vector_list)))
 
     most_coherent_idx = coherence_score_list.index(max(coherence_score_list))
     return most_coherent_idx
@@ -127,7 +120,7 @@ class Word2VecEvaluator(BaseEvaluator):
         assert isinstance(script, Script), \
             'evaluate_script must be called with a {} instance'.format(
                 get_class_name(Script))
-        logger.info('Processing script #{}'.format(script.doc_name))
+        logger.debug('Processing script #{}'.format(script.doc_name))
 
         rich_script = RichScript.build(
             script,
@@ -139,7 +132,7 @@ class Word2VecEvaluator(BaseEvaluator):
             include_prep=self.include_prep
         )
         rich_script.get_index(self.model, self.include_type)
-        # TODO: (done) remove events with None embedding (pred_idx == -1)
+        # remove events with None embedding (pred_idx == -1)
         rich_event_list = [rich_event for rich_event in rich_script.rich_events
                            if rich_event.pred_idx != -1]
         pos_input_list = [rich_event.get_pos_training_input_multi_pobj()
@@ -147,69 +140,26 @@ class Word2VecEvaluator(BaseEvaluator):
         pos_vector_list = [get_event_vector(self.model, pos_input)
                            for pos_input in pos_input_list]
         for event_idx, rich_event in enumerate(rich_event_list):
-            logger.info('Processing event #{}'.format(event_idx))
-            target_vector = pos_vector_list[event_idx]
-            context_vector_list = pos_vector_list[:event_idx] + \
-                                  pos_vector_list[event_idx+1:]
+            logger.debug('Processing event #{}'.format(event_idx))
+            context_vector_list = \
+                pos_vector_list[:event_idx] + pos_vector_list[event_idx+1:]
 
-            subj_neg_input_list = rich_event.get_neg_training_input_subj()
-            if subj_neg_input_list:
-                if (not self.ignore_first_mention) or rich_event.rich_subj.mention_idx != 0:
-                    subj_neg_vector_list = [get_event_vector(self.model, neg_input)
-                                            for neg_input in subj_neg_input_list]
-                    most_coherent_idx = get_most_coherent(
-                        subj_neg_vector_list,
-                        context_vector_list,
-                        self.use_max_score
-                    )
-                    correct = (most_coherent_idx == rich_event.rich_subj.pos_idx)
-                    num_choices = len(subj_neg_input_list)
-                    self.eval_stats.add_eval_result(
-                        rich_event.rich_subj.arg_type,
-                        correct,
-                        num_choices
-                    )
-                    logger.info('Processing SUBJ, correct = {}, num_choices = {}'.format(correct, num_choices))
-
-            obj_neg_input_list = rich_event.get_neg_training_input_obj()
-            if obj_neg_input_list:
-                if (not self.ignore_first_mention) or rich_event.rich_obj.mention_idx != 0:
-                    obj_neg_vector_list = [get_event_vector(self.model, neg_input)
-                                           for neg_input in obj_neg_input_list]
-                    most_coherent_idx = get_most_coherent(
-                        obj_neg_vector_list,
-                        context_vector_list,
-                        self.use_max_score
-                    )
-                    correct = (most_coherent_idx == rich_event.rich_obj.pos_idx)
-                    num_choices = len(obj_neg_input_list)
-                    self.eval_stats.add_eval_result(
-                        rich_event.rich_obj.arg_type,
-                        correct,
-                        num_choices
-                    )
-                    logger.info('Processing OBJ, correct = {}, num_choices = {}'.format(correct, num_choices))
-
-            for pobj_idx, rich_pobj in enumerate(rich_event.rich_pobj_list):
-                pobj_neg_input_list = \
-                    rich_event.get_neg_training_input_pobj(pobj_idx)
-                if pobj_neg_input_list:
-                    if (not self.ignore_first_mention) or rich_pobj.mention_idx != 0:
-                        pobj_neg_vector_list = [
-                            get_event_vector(self.model, neg_input)
-                            for neg_input in pobj_neg_input_list]
-                        most_coherent_idx = get_most_coherent(
-                            pobj_neg_vector_list,
-                            context_vector_list,
-                            self.use_max_score
-                        )
-                        correct = (most_coherent_idx == rich_event.rich_pobj_list[pobj_idx].pos_idx)
-                        num_choices = len(pobj_neg_input_list)
-                        self.eval_stats.add_eval_result(
-                            rich_pobj.arg_type,
-                            correct,
-                            num_choices
-                        )
-                        logger.info(
-                            'Processing POBJ #{}, correct = {}, num_choices = {}'.format(
-                                pobj_idx, correct, num_choices))
+            eval_input_list_all = rich_event.get_eval_input_list_all()
+            for rich_arg, eval_input_list in eval_input_list_all:
+                eval_vector_list = [get_event_vector(self.model, eval_input)
+                                    for eval_input in eval_input_list]
+                most_coherent_idx = get_most_coherent(
+                    eval_vector_list,
+                    context_vector_list,
+                    self.use_max_score
+                )
+                correct = (most_coherent_idx == rich_arg.target_idx)
+                num_choices = len(eval_input_list)
+                self.eval_stats.add_eval_result(
+                    rich_arg.arg_type,
+                    correct,
+                    num_choices
+                )
+                logger.debug(
+                    'Processing {}, correct = {}, num_choices = {}'.format(
+                        rich_arg.arg_type, correct, num_choices))

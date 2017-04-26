@@ -20,6 +20,15 @@ class SingleTrainingInput(object):
         return '{},{},{},{}'.format(
             self.pred_input, self.subj_input, self.obj_input, self.pobj_input)
 
+    def set_subj(self, subj_input):
+        self.subj_input = subj_input
+
+    def set_obj(self, obj_input):
+        self.obj_input = obj_input
+
+    def set_pobj(self, pobj_input):
+        self.pobj_input = pobj_input
+
     @classmethod
     def from_text(cls, text):
         parts = text.strip().split(',')

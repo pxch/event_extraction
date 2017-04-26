@@ -66,7 +66,6 @@ class RichEvent(object):
             return self.has_pobj_neg()
 
     def get_word2vec_training_seq(self, include_all_pobj=True):
-        # FIXME: fix the updated RichArgument class
         sequence = [self.pred_text + '-PRED']
         all_arg_list = []
         if self.rich_subj is not None:
@@ -79,93 +78,99 @@ class RichEvent(object):
             if self.rich_pobj is not None:
                 all_arg_list.append(self.rich_pobj)
         for arg in all_arg_list:
-            sequence.append(arg.pos_text + '-' + arg.arg_type)
+            sequence.append(arg.get_pos_text(include_type=True))
         return sequence
 
     def get_pos_training_input(self):
-        # FIXME: fix the updated RichArgument class
         return SingleTrainingInput(
             self.pred_idx,
-            self.rich_subj.pos_idx if self.rich_subj else -1,
-            self.rich_obj.pos_idx if self.rich_obj else -1,
-            self.rich_pobj.pos_idx if self.rich_pobj else -1
+            self.rich_subj.get_pos_idx() if self.rich_subj else -1,
+            self.rich_obj.get_pos_idx() if self.rich_obj else -1,
+            self.rich_pobj.get_pos_idx() if self.rich_pobj else -1
         )
 
     def get_pos_training_input_multi_pobj(self):
         return SingleTrainingInputMultiPobj(
             self.pred_idx,
-            self.rich_subj.get_pos_arg_index() if self.rich_subj else -1,
-            self.rich_obj.get_pos_arg_index() if self.rich_obj else -1,
-            [rich_pobj.get_pos_arg_index() for rich_pobj in self.rich_pobj_list]
+            self.rich_subj.get_pos_idx() if self.rich_subj else -1,
+            self.rich_obj.get_pos_idx() if self.rich_obj else -1,
+            [rich_pobj.get_pos_idx() for rich_pobj in self.rich_pobj_list]
         )
 
     def get_neg_training_input(self, arg_type):
-        # FIXME: fix the updated RichArgument class
         assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
             'arg_type can only be 0/SUBJ, 1/OBJ, or 2/POBJ'
+        pos_input = self.get_pos_training_input()
         neg_input_list = []
         if arg_type == 0 or arg_type == 'SUBJ':
             if self.has_subj_neg():
-                for neg_idx in self.rich_subj.neg_idx_list:
-                    neg_input = SingleTrainingInput(
-                        self.pred_idx,
-                        neg_idx,
-                        self.rich_obj.pos_idx if self.rich_obj else -1,
-                        self.rich_pobj.pos_idx if self.rich_pobj else -1
-                    )
+                for neg_idx in self.rich_subj.get_neg_idx_list():
+                    neg_input = deepcopy(pos_input)
+                    neg_input.set_subj(neg_idx)
                     neg_input_list.append(neg_input)
         elif arg_type == 1 or arg_type == 'OBJ':
             if self.has_obj_neg():
-                for neg_idx in self.rich_obj.neg_idx_list:
-                    neg_input = SingleTrainingInput(
-                        self.pred_idx,
-                        self.rich_subj.pos_idx if self.rich_subj else -1,
-                        neg_idx,
-                        self.rich_pobj.pos_idx if self.rich_pobj else -1
-                    )
+                for neg_idx in self.rich_obj.get_neg_idx_list():
+                    neg_input = deepcopy(pos_input)
+                    neg_input.set_obj(neg_idx)
                     neg_input_list.append(neg_input)
         elif arg_type == 2 or arg_type == 'POBJ':
             if self.has_pobj_neg():
-                for neg_idx in self.rich_pobj.neg_idx_list:
-                    neg_input = SingleTrainingInput(
-                        self.pred_idx,
-                        self.rich_subj.pos_idx if self.rich_subj else -1,
-                        self.rich_obj.pos_idx if self.rich_obj else -1,
-                        neg_idx
-                    )
+                for neg_idx in self.rich_pobj.get_neg_idx_list():
+                    neg_input = deepcopy(pos_input)
+                    neg_input.set_pobj(neg_idx)
                     neg_input_list.append(neg_input)
         return neg_input_list
 
-    def get_neg_training_input_subj(self):
-        neg_input_list = []
-        if self.rich_subj is not None and self.rich_subj.has_entity:
+    def get_eval_input_list_all(self):
+        # TODO: add support to evaluate with only one pobj
+        results = []
+
+        subj_eval_input_list = self.get_eval_input_list_subj()
+        if subj_eval_input_list:
+            results.append((self.rich_subj, subj_eval_input_list))
+
+        obj_eval_input_list = self.get_eval_input_list_obj()
+        if obj_eval_input_list:
+            results.append((self.rich_obj, obj_eval_input_list))
+
+        for pobj_idx, rich_pobj in enumerate(self.rich_pobj_list):
+            pobj_eval_input_list = self.get_eval_input_list_pobj(pobj_idx)
+            if pobj_eval_input_list:
+                results.append((rich_pobj, pobj_eval_input_list))
+
+        return results
+
+    def get_eval_input_list_subj(self):
+        eval_input_list = []
+        if self.rich_subj is not None and self.rich_subj.has_entity():
             pos_input = self.get_pos_training_input_multi_pobj()
-            for neg_idx in self.rich_subj.idx_list:
+            for neg_idx in self.rich_subj.candidate_idx_list:
                 neg_input = deepcopy(pos_input)
                 neg_input.set_subj(neg_idx)
-                neg_input_list.append(neg_input)
-        return neg_input_list
+                eval_input_list.append(neg_input)
+        return eval_input_list
 
-    def get_neg_training_input_obj(self):
-        neg_input_list = []
-        if self.rich_obj is not None and self.rich_obj.has_entity:
+    def get_eval_input_list_obj(self):
+        eval_input_list = []
+        if self.rich_obj is not None and self.rich_obj.has_entity():
             pos_input = self.get_pos_training_input_multi_pobj()
-            for neg_idx in self.rich_obj.idx_list:
+            for neg_idx in self.rich_obj.candidate_idx_list:
                 neg_input = deepcopy(pos_input)
                 neg_input.set_obj(neg_idx)
-                neg_input_list.append(neg_input)
-        return neg_input_list
+                eval_input_list.append(neg_input)
+        return eval_input_list
 
-    def get_neg_training_input_pobj(self, pobj_idx):
+    def get_eval_input_list_pobj(self, pobj_idx):
         assert 0 <= pobj_idx < len(self.rich_pobj_list)
-        neg_input_list = []
-        if self.rich_pobj_list[pobj_idx].has_entity:
+        eval_input_list = []
+        if self.rich_pobj_list[pobj_idx].has_entity():
             pos_input = self.get_pos_training_input_multi_pobj()
-            for neg_idx in self.rich_pobj_list[pobj_idx].idx_list:
+            for neg_idx in self.rich_pobj_list[pobj_idx].candidate_idx_list:
                 neg_input = deepcopy(pos_input)
                 neg_input.set_pobj(pobj_idx, neg_idx)
-                neg_input_list.append(neg_input)
-        return neg_input_list
+                eval_input_list.append(neg_input)
+        return eval_input_list
 
     @classmethod
     def build(cls, event, entity_list, use_lemma=True, include_neg=True,
@@ -173,7 +178,6 @@ class RichEvent(object):
               include_prep=True):
         assert isinstance(event, Event), 'event must be a {} instance'.format(
             get_class_name(Event))
-        # TODO: (done) pred_text is consistent when include_neg = False
         pred_text = event.pred.get_representation(
             use_lemma=use_lemma, include_neg=include_neg,
             include_prt=include_prt)

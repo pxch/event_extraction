@@ -112,8 +112,8 @@ class MostSimEventEvaluator(BaseEvaluator):
                         num_choices
                     )
                     logger.debug(
-                        'Processing SUBJ, correct = {}, '
-                        'num_choices = {}'.format(correct, num_choices))
+                        'Processing {}, correct = {}, num_choices = {}'.format(
+                            arg_label, correct, num_choices))
 
             # evaluate the object argument if it is not None
             # and is pointed to a coreference mention
@@ -140,8 +140,8 @@ class MostSimEventEvaluator(BaseEvaluator):
                         num_choices
                     )
                     logger.debug(
-                        'Processing OBJ, correct = {}, '
-                        'num_choices = {}'.format(correct, num_choices))
+                        'Processing {}, correct = {}, num_choices = {}'.format(
+                            arg_label, correct, num_choices))
 
             for pobj_idx in range(len(event_embedding.event.pobj_list)):
                 # evaluate the prepositional object argument
@@ -172,6 +172,6 @@ class MostSimEventEvaluator(BaseEvaluator):
                             num_choices
                         )
                         logger.debug(
-                            'Processing POBJ #{}, correct = {}, '
+                            'Processing {}, correct = {}, '
                             'num_choices = {}'.format(
-                                pobj_idx, correct, num_choices))
+                                arg_label, correct, num_choices))
