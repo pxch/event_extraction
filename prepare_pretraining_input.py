@@ -38,6 +38,7 @@ input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
 model = Word2VecModel.load_model(
     args.word2vec, fvocab=args.word2vec_vocab, binary=True)
 
+# FIXME: fix bugs where pred_idx is -1 and get into the indexed corpus
 
 for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:

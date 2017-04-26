@@ -75,6 +75,7 @@ class Predicate(Token):
         pos = token.pos
         prt = ''
         if token.compounds:
+            # TODO: (done) check whether multiple compounds really exist in the data
             if len(token.compounds) > 1:
                 warn('Predicate token should contain at most one compound '
                      '(particle), found {}'.format(len(token.compounds)))

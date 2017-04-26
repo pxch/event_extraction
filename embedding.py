@@ -39,19 +39,20 @@ class Embedding:
             assert suffix != '', \
                 'Words in the embedding model have syntactic labels, ' \
                 'must provide suffix to the token'
-        if token.is_noun() or token.is_verb():
-            token_string_form = token.string_form(
-                    self.use_ner, self.use_lemma, self.include_compounds)
-            try:
-                return self.get_embedding(token_string_form + suffix)
-            except KeyError:
-                if suffix.startswith('_PREP'):
-                    try:
-                        return self.get_embedding(token_string_form + '_PREP')
-                    except KeyError:
-                        pass
-                pass
-        '''
+        # TODO: still get ner if the token is neither noun or verb
+        # if token.is_noun() or token.is_verb():
+        token_string_form = token.string_form(
+                self.use_ner, self.use_lemma, self.include_compounds)
+        try:
+            return self.get_embedding(token_string_form + suffix)
+        except KeyError:
+            if suffix.startswith('_PREP'):
+                try:
+                    return self.get_embedding(token_string_form + '_PREP')
+                except KeyError:
+                    pass
+            pass
+        ''',
         token_word = token.string_form(use_ner=use_ner, use_lemma=False,
                                        include_compounds=include_compounds)
         token_lemma = token.string_form(use_ner=use_ner, use_lemma=True,
@@ -95,6 +96,9 @@ class Embedding:
                 'Words in the embedding model have syntactic labels, ' \
                 'must provide suffix to the coreference'
         embedding = self.zeros()
+        # TODO: do not include_compounds when getting embedding for coref
+        include_compounds_bk = self.include_compounds
+        self.include_compounds = False
         if rep_only:
             embedding += self.get_mention_embedding(
                 coref.rep_mention, suffix, head_only)
@@ -103,4 +107,5 @@ class Embedding:
                 if mention_idx != exclude_mention_idx:
                     embedding += self.get_mention_embedding(
                         mention, suffix, head_only)
+        self.include_compounds = include_compounds_bk
         return embedding

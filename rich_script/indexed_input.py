@@ -45,6 +45,17 @@ class SingleTrainingInputMultiPobj(object):
     def __repr__(self):
         return 'SingleTrainingInputMultiPobj: ' + self.to_text()
 
+    def set_subj(self, subj_input):
+        self.subj_input = subj_input
+
+    def set_obj(self, obj_input):
+        self.obj_input = obj_input
+
+    def set_pobj(self, pobj_idx, pobj_input):
+        assert 0 <= pobj_idx < len(self.pobj_input_list), \
+            'pobj_idx {} out of range'.format(pobj_idx)
+        self.pobj_input_list[pobj_idx] = pobj_input
+
     def to_text(self):
         return '{},{},{}{}'.format(
             self.pred_input, self.subj_input, self.obj_input,

@@ -3,12 +3,14 @@ import re
 import document
 from entity import Entity
 from token import Token, ParseTokenError
-from util import unescape, get_class_name
+from util import unescape, get_class_name, consts
 
 
 class Argument(Token):
-    def __init__(self, word, lemma, pos, entity_idx=-1, mention_idx=-1):
+    # TODO: determine whether or not to include ner in Argument
+    def __init__(self, word, lemma, pos, ner='', entity_idx=-1, mention_idx=-1):
         super(Argument, self).__init__(word, lemma, pos)
+        self.ner = ner
         if not (isinstance(entity_idx, int) and entity_idx >= -1):
             raise ParseTokenError(
                 'entity_idx must be a natural number or -1 (no entity)')
@@ -42,6 +44,9 @@ class Argument(Token):
                 'entity_list must contains only Entity element'
             return entity_list[self.entity_idx].get_representation(
                 use_ner, use_lemma)
+        # TODO: return self.ner when self.ner is a valid ner tag
+        elif use_ner and self.ner != '':
+            return self.ner
         else:
             return super(Argument, self).get_representation(use_lemma)
 
@@ -94,6 +99,9 @@ class Argument(Token):
         word = token.word
         lemma = token.lemma
         pos = token.pos
+        ner = token.ner
+        if ner not in consts.VALID_NER_TAGS:
+            ner = ''
         coref_idx = token.coref.idx if token.coref else -1
         mention_idx = token.mention.mention_idx if token.mention else -1
-        return cls(word, lemma, pos, coref_idx, mention_idx)
+        return cls(word, lemma, pos, ner, coref_idx, mention_idx)

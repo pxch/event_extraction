@@ -95,7 +95,9 @@ class Mention(object):
                 'from_mention must be called with a {} instance'.format(
                     get_class_name(document.Mention)))
         # FIXME: use ner of head token as ner for the mention, might be wrong
+        # TODO: (done) use ner of head token as ner of mention, consistent
         ner = mention.head_token.ner
+        # TODO: (done) set non valid ner to empty string, consistent
         if ner not in consts.VALID_NER_TAGS:
             ner = ''
         return cls(
@@ -131,6 +133,7 @@ class Entity(object):
                         'cannot have more than one representative mentions')
         if self.rep_mention is None:
             raise ParseEntityError('no representative mention provided')
+        # TODO: just use ner of rep mention
         ner_counter = Counter()
         for mention in self.mentions:
             if mention.ner != '':
@@ -138,6 +141,7 @@ class Entity(object):
         if len(ner_counter):
             self.ner = ner_counter.most_common(1)[0][0]
         else:
+            # TODO: might switch to use ner of rep mention
             self.ner = ''
 
     def __eq__(self, other):
@@ -151,8 +155,11 @@ class Entity(object):
         return self.rep_mention
 
     def get_representation(self, use_ner=True, use_lemma=True):
+        # TODO: ignore self.ner, just use rep_mention's representation
+        '''
         if use_ner and self.ner != '':
             return self.ner
+        '''
         return self.get_rep_mention().get_representation(use_ner, use_lemma)
 
     def to_text(self):

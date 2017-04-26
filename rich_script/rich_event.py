@@ -1,7 +1,8 @@
 from event import Event
-from indexed_input import SingleTrainingInput
+from indexed_input import SingleTrainingInput, SingleTrainingInputMultiPobj
 from rich_argument import RichArgument
 from util import Word2VecModel, get_class_name
+from copy import deepcopy
 
 
 class RichEvent(object):
@@ -65,6 +66,7 @@ class RichEvent(object):
             return self.has_pobj_neg()
 
     def get_word2vec_training_seq(self, include_all_pobj=True):
+        # FIXME: fix the updated RichArgument class
         sequence = [self.pred_text + '-PRED']
         all_arg_list = []
         if self.rich_subj is not None:
@@ -81,6 +83,7 @@ class RichEvent(object):
         return sequence
 
     def get_pos_training_input(self):
+        # FIXME: fix the updated RichArgument class
         return SingleTrainingInput(
             self.pred_idx,
             self.rich_subj.pos_idx if self.rich_subj else -1,
@@ -88,7 +91,16 @@ class RichEvent(object):
             self.rich_pobj.pos_idx if self.rich_pobj else -1
         )
 
+    def get_pos_training_input_multi_pobj(self):
+        return SingleTrainingInputMultiPobj(
+            self.pred_idx,
+            self.rich_subj.get_pos_arg_index() if self.rich_subj else -1,
+            self.rich_obj.get_pos_arg_index() if self.rich_obj else -1,
+            [rich_pobj.get_pos_arg_index() for rich_pobj in self.rich_pobj_list]
+        )
+
     def get_neg_training_input(self, arg_type):
+        # FIXME: fix the updated RichArgument class
         assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
             'arg_type can only be 0/SUBJ, 1/OBJ, or 2/POBJ'
         neg_input_list = []
@@ -124,12 +136,44 @@ class RichEvent(object):
                     neg_input_list.append(neg_input)
         return neg_input_list
 
+    def get_neg_training_input_subj(self):
+        neg_input_list = []
+        if self.rich_subj is not None and self.rich_subj.has_entity:
+            pos_input = self.get_pos_training_input_multi_pobj()
+            for neg_idx in self.rich_subj.idx_list:
+                neg_input = deepcopy(pos_input)
+                neg_input.set_subj(neg_idx)
+                neg_input_list.append(neg_input)
+        return neg_input_list
+
+    def get_neg_training_input_obj(self):
+        neg_input_list = []
+        if self.rich_obj is not None and self.rich_obj.has_entity:
+            pos_input = self.get_pos_training_input_multi_pobj()
+            for neg_idx in self.rich_obj.idx_list:
+                neg_input = deepcopy(pos_input)
+                neg_input.set_obj(neg_idx)
+                neg_input_list.append(neg_input)
+        return neg_input_list
+
+    def get_neg_training_input_pobj(self, pobj_idx):
+        assert 0 <= pobj_idx < len(self.rich_pobj_list)
+        neg_input_list = []
+        if self.rich_pobj_list[pobj_idx].has_entity:
+            pos_input = self.get_pos_training_input_multi_pobj()
+            for neg_idx in self.rich_pobj_list[pobj_idx].idx_list:
+                neg_input = deepcopy(pos_input)
+                neg_input.set_pobj(pobj_idx, neg_idx)
+                neg_input_list.append(neg_input)
+        return neg_input_list
+
     @classmethod
     def build(cls, event, entity_list, use_lemma=True, include_neg=True,
               include_prt=True, use_entity=True, use_ner=True,
               include_prep=True):
         assert isinstance(event, Event), 'event must be a {} instance'.format(
             get_class_name(Event))
+        # TODO: (done) pred_text is consistent when include_neg = False
         pred_text = event.pred.get_representation(
             use_lemma=use_lemma, include_neg=include_neg,
             include_prt=include_prt)

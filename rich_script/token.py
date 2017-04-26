@@ -18,6 +18,12 @@ class Token(object):
         return not self.__eq__(other)
 
     def get_representation(self, use_lemma=True):
+        # TODO: add logic to return empty string when token is not noun or verb
+        if self.pos[:2] not in ['NN', 'VB']:
+            return ''
+        # TODO: (done) check verbs don't have ner tags
+        # (actually 3 of them have, but they are all VBG modifiers,
+        # so not counted as either predicate or argument)
         if use_lemma:
             return self.lemma.lower()
         else:
