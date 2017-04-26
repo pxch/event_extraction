@@ -4,8 +4,7 @@ from util import cos_sim
 
 import logging
 
-logging.basicConfig(
-    format='%(levelname) s : : %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname) s : : %(message)s', level=logging.INFO)
 
 logger = logging.getLogger('most_sim_event')
 
@@ -68,7 +67,7 @@ class MostSimEventEvaluator(BaseEvaluator):
         return arg_coref_idx == most_sim_idx
 
     def evaluate_script(self, script):
-        logger.info('Processing script #{}'.format(script.doc_name))
+        logger.debug('Processing script #{}'.format(script.doc_name))
 
         num_choices = len(script.corefs)
 
@@ -83,7 +82,7 @@ class MostSimEventEvaluator(BaseEvaluator):
                                 for event_embedding in event_embedding_list]
 
         for idx in range(len(event_embedding_list)):
-            logger.info('Processing event #{}'.format(idx))
+            logger.debug('Processing event #{}'.format(idx))
             event_embedding = event_embedding_list[idx]
             other_event_embeddings = \
                 all_event_embeddings[:idx] + all_event_embeddings[idx + 1:]
@@ -112,7 +111,9 @@ class MostSimEventEvaluator(BaseEvaluator):
                         correct,
                         num_choices
                     )
-                    logger.info('Processing SUBJ, correct = {}, num_choices = {}'.format(correct, num_choices))
+                    logger.debug(
+                        'Processing SUBJ, correct = {}, '
+                        'num_choices = {}'.format(correct, num_choices))
 
             # evaluate the object argument if it is not None
             # and is pointed to a coreference mention
@@ -138,7 +139,9 @@ class MostSimEventEvaluator(BaseEvaluator):
                         correct,
                         num_choices
                     )
-                    logger.info('Processing OBJ, correct = {}, num_choices = {}'.format(correct, num_choices))
+                    logger.debug(
+                        'Processing OBJ, correct = {}, '
+                        'num_choices = {}'.format(correct, num_choices))
 
             for pobj_idx in range(len(event_embedding.event.pobj_list)):
                 # evaluate the prepositional object argument
@@ -161,13 +164,14 @@ class MostSimEventEvaluator(BaseEvaluator):
                     if (not self.ignore_first_mention) or arg_mention_idx != 0:
                         correct = self.is_most_sim_event(
                             arg_label, arg_coref_idx, arg_mention_idx,
-                            script.corefs, embedding_wo_arg, other_event_embeddings)
+                            script.corefs, embedding_wo_arg,
+                            other_event_embeddings)
                         self.eval_stats.add_eval_result(
                             arg_label,
                             correct,
                             num_choices
                         )
-                        logger.info(
-                            'Processing POBJ #{}, correct = {}, num_choices = '
-                            '{}'.format(
+                        logger.debug(
+                            'Processing POBJ #{}, correct = {}, '
+                            'num_choices = {}'.format(
                                 pobj_idx, correct, num_choices))
