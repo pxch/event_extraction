@@ -7,9 +7,10 @@ from util import unescape, get_class_name, consts
 
 
 class Argument(Token):
-    # TODO: determine whether or not to include ner in Argument
     def __init__(self, word, lemma, pos, ner='', entity_idx=-1, mention_idx=-1):
         super(Argument, self).__init__(word, lemma, pos)
+        if not (ner == '' or ner in consts.VALID_NER_TAGS):
+            raise ParseTokenError('ner must be one of VALID_NER_TAGS or empty')
         self.ner = ner
         if not (isinstance(entity_idx, int) and entity_idx >= -1):
             raise ParseTokenError(
@@ -26,7 +27,7 @@ class Argument(Token):
 
     def __eq__(self, other):
         return self.word == other.word and self.lemma == other.lemma \
-               and self.pos == other.pos \
+               and self.pos == other.pos and self.ner == other.ner \
                and self.entity_idx == other.entity_idx \
                and self.mention_idx == other.mention_idx
 
@@ -44,7 +45,7 @@ class Argument(Token):
                 'entity_list must contains only Entity element'
             return entity_list[self.entity_idx].get_representation(
                 use_ner, use_lemma)
-        # TODO: return self.ner when self.ner is a valid ner tag
+        # arguments not pointing to any entity might also have ner tags
         elif use_ner and self.ner != '':
             return self.ner
         else:
@@ -67,12 +68,13 @@ class Argument(Token):
 
     def to_text(self):
         text = super(Argument, self).to_text()
+        text += '/{}'.format(self.ner if self.ner != '' else 'NONE')
         if self.entity_idx != -1 and self.mention_idx != -1:
             text += '//entity-{}-{}'.format(self.entity_idx, self.mention_idx)
         return text
 
     arg_re = re.compile(
-        r'^(?P<word>[^/]*)/(?P<lemma>[^/]*)/(?P<pos>[^/]*)'
+        r'^(?P<word>[^/]*)/(?P<lemma>[^/]*)/(?P<pos>[^/]*)/(?P<ner>[^/]*)'
         r'((?://entity-)(?P<entity_idx>\d+)(?:-)(?P<mention_idx>\d+))?$')
 
     @classmethod
@@ -86,6 +88,7 @@ class Argument(Token):
             unescape(groups['word']),
             unescape(groups['lemma']),
             unescape(groups['pos']),
+            groups['ner'] if groups['ner'] != 'NONE' else '',
             int(groups['entity_idx']) if groups['entity_idx'] else -1,
             int(groups['mention_idx']) if groups['mention_idx'] else -1
         )
