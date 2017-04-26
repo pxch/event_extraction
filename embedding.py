@@ -33,39 +33,23 @@ class Embedding:
             # returns None if out of vocabulary
             return None
 
-    # TODO: add variant of whether or not to use ner and include compounds
     def get_token_embedding(self, token, suffix=''):
         if self.syntax_label:
             assert suffix != '', \
                 'Words in the embedding model have syntactic labels, ' \
                 'must provide suffix to the token'
-        # TODO: still get ner if the token is neither noun or verb
-        # if token.is_noun() or token.is_verb():
         token_string_form = token.string_form(
                 self.use_ner, self.use_lemma, self.include_compounds)
         try:
             return self.get_embedding(token_string_form + suffix)
         except KeyError:
+            # TODO: might remove this piece to backtrack without prep word
             if suffix.startswith('_PREP'):
                 try:
                     return self.get_embedding(token_string_form + '_PREP')
                 except KeyError:
                     pass
             pass
-        ''',
-        token_word = token.string_form(use_ner=use_ner, use_lemma=False,
-                                       include_compounds=include_compounds)
-        token_lemma = token.string_form(use_ner=use_ner, use_lemma=True,
-                                        include_compounds=include_compounds)
-        if token.is_noun() or token.is_verb():
-            try:
-                return self.get_embedding(token_word + suffix)
-            except KeyError:
-                try:
-                    return self.get_embedding(token_lemma + suffix)
-                except KeyError:
-                    pass
-        '''
         # returns None if out of vocabulary
         return None
 
@@ -96,8 +80,8 @@ class Embedding:
                 'Words in the embedding model have syntactic labels, ' \
                 'must provide suffix to the coreference'
         embedding = self.zeros()
-        # TODO: do not include_compounds when getting embedding for coref
-        include_compounds_bk = self.include_compounds
+        # set include_compounds to False when getting embedding for coref
+        include_compounds_flag = self.include_compounds
         self.include_compounds = False
         if rep_only:
             embedding += self.get_mention_embedding(
@@ -107,5 +91,5 @@ class Embedding:
                 if mention_idx != exclude_mention_idx:
                     embedding += self.get_mention_embedding(
                         mention, suffix, head_only)
-        self.include_compounds = include_compounds_bk
+        self.include_compounds = include_compounds_flag
         return embedding

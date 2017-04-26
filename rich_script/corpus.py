@@ -154,9 +154,9 @@ class PairTuningCorpusIterator(object):
                       arg_type_input
                 data_point_index = 0
 
-        # TODO: Should return this last partial batch,
-        # TODO: but having a smaller batch is currently messing up training
-        # TODO: If you update this, allow for the triple option as well
+        # FIXME: Should return this last partial batch,
+        # but having a smaller batch is currently messing up training
+        # If you update this, allow for the triple option as well
         if False and data_point_index > 0:
             # We've partially filled a batch: yield this as the last item
             yield left_pred_input[:data_point_index], \

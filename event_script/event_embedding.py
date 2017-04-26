@@ -59,21 +59,18 @@ class EventEmbedding:
         return self.embedding
 
     def get_embedding_wo_subj(self):
-        # TODO: (done) switch to add from zero vector, no difference
         if self.subj_embedding is not None:
             return self.embedding - self.subj_embedding
         else:
             return self.embedding
 
     def get_embedding_wo_obj(self):
-        # TODO: (done) switch to add from zero vector, no difference
         if self.obj_embedding is not None:
             return self.embedding - self.obj_embedding
         else:
             return self.embedding
 
     def get_embedding_wo_pobj(self, pobj_idx):
-        # TODO: (done) switch to add from zero vector, no difference
         assert 0 <= pobj_idx < len(self.pobj_embedding_list), \
             'PObj index {} out of range'.format(pobj_idx)
         if self.pobj_embedding_list[pobj_idx] is not None:
