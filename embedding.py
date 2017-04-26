@@ -41,12 +41,12 @@ class Embedding:
         token_string_form = token.string_form(
                 self.use_ner, self.use_lemma, self.include_compounds)
         try:
-            return self.get_embedding(token_string_form + suffix)
+            return self.model[token_string_form + suffix]
         except KeyError:
-            # TODO: might remove this piece to backtrack without prep word
-            if suffix.startswith('_PREP'):
+            # backtrack when prep-pobj is out-of-vocab
+            if suffix.startswith('-PREP'):
                 try:
-                    return self.get_embedding(token_string_form + '_PREP')
+                    return self.model[token_string_form + '-PREP']
                 except KeyError:
                     pass
             pass
