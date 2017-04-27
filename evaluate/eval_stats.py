@@ -31,8 +31,9 @@ class EvalStats:
             result = '{} correct in {} .'.format(
                 self.num_positives, self.num_cases)
             if self.num_cases != 0:
-                result += ' Accuracy = {} . Avg # of choices = {} .'.format(
-                    float(self.num_positives) / self.num_cases,
+                result += ' Accuracy = {:.2f}% .'.format(
+                    float(self.num_positives) * 100. / self.num_cases)
+                result += ' Avg # of choices = {:.2f} .'.format(
                     float(sum(self.num_choices)) / self.num_cases)
             else:
                 result += ' Accuracy = 0 . Avg # of choices = 0 .'
