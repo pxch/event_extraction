@@ -69,7 +69,7 @@ class SingleTrainingInputMultiPobj(object):
         return '{},{},{}{}'.format(
             self.pred_input, self.subj_input, self.obj_input,
             ',{}'.format(','.join(
-                [pobj_input for pobj_input in self.pobj_input_list]))
+                [str(pobj_input) for pobj_input in self.pobj_input_list]))
             if self.pobj_input_list else '')
 
     @classmethod
