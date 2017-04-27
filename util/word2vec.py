@@ -19,8 +19,8 @@ class Word2VecModel(object):
             name = os.path.splitext(os.path.basename(fname))[0]
         word2vec = KeyedVectors.load_word2vec_format(
             fname, fvocab=fvocab, binary=binary)
-        # TODO: uncomment the following line
-        # word2vec.init_sims(replace=True)
+        # normalize word2vec vectors
+        word2vec.init_sims(replace=True)
         return cls(name=name, word2vec=word2vec)
 
     def save_model(self, directory, prefix='', save_vocab=True, binary=True):
@@ -40,12 +40,6 @@ class Word2VecModel(object):
     def get_id2word(self):
         return [word for (id, word) in sorted(
             [(v.index, word) for (word, v) in self.word2vec.vocab.items()])]
-
-    # TODO: remove the function, replace usages with self.word2vec.index2word
-    @staticmethod
-    def build_id2word(vocab):
-        return [word for (id, word) in sorted(
-            [(v.index, word) for (word, v) in vocab.items()])]
 
     def get_vector_matrix(self):
         return self.word2vec.syn0

@@ -82,8 +82,7 @@ def get_most_coherent(eval_vector_list, context_vector_list,
 class Word2VecEvaluator(BaseEvaluator):
     def __init__(self, model=None, use_lemma=True, include_neg=True,
                  include_prt=True, use_entity=True, use_ner=True,
-                 include_prep=True, include_type=True,
-                 ignore_first_mention=False, use_max_score=True):
+                 include_prep=True, include_type=True, use_max_score=True):
         BaseEvaluator.__init__(self)
         assert model is None or isinstance(model, Word2VecModel), \
             'word2vec must be None or a {} instance'.format(
@@ -96,7 +95,6 @@ class Word2VecEvaluator(BaseEvaluator):
         self.use_ner = use_ner
         self.include_prep = include_prep
         self.include_type = include_type
-        self.ignore_first_mention = ignore_first_mention
         self.use_max_score = use_max_score
 
     def set_model(self, model):
@@ -146,20 +144,22 @@ class Word2VecEvaluator(BaseEvaluator):
 
             eval_input_list_all = rich_event.get_eval_input_list_all()
             for rich_arg, eval_input_list in eval_input_list_all:
-                eval_vector_list = [get_event_vector(self.model, eval_input)
-                                    for eval_input in eval_input_list]
-                most_coherent_idx = get_most_coherent(
-                    eval_vector_list,
-                    context_vector_list,
-                    self.use_max_score
-                )
-                correct = (most_coherent_idx == rich_arg.target_idx)
-                num_choices = len(eval_input_list)
-                self.eval_stats.add_eval_result(
-                    rich_arg.arg_type,
-                    correct,
-                    num_choices
-                )
-                logger.debug(
-                    'Processing {}, correct = {}, num_choices = {}'.format(
-                        rich_arg.arg_type, correct, num_choices))
+                if (not self.ignore_first_mention) or \
+                        (not rich_arg.is_first_mention()):
+                    eval_vector_list = [get_event_vector(self.model, eval_input)
+                                        for eval_input in eval_input_list]
+                    most_coherent_idx = get_most_coherent(
+                        eval_vector_list,
+                        context_vector_list,
+                        self.use_max_score
+                    )
+                    correct = (most_coherent_idx == rich_arg.target_idx)
+                    num_choices = len(eval_input_list)
+                    self.eval_stats.add_eval_result(
+                        rich_arg.arg_type,
+                        correct,
+                        num_choices
+                    )
+                    logger.debug(
+                        'Processing {}, correct = {}, num_choices = {}'.format(
+                            rich_arg.arg_type, correct, num_choices))

@@ -84,17 +84,17 @@ class RichEvent(object):
     def get_pos_training_input(self):
         return SingleTrainingInput(
             self.pred_idx,
-            self.rich_subj.get_pos_idx() if self.rich_subj else -1,
-            self.rich_obj.get_pos_idx() if self.rich_obj else -1,
-            self.rich_pobj.get_pos_idx() if self.rich_pobj else -1
+            self.rich_subj.get_pos_wv() if self.rich_subj else -1,
+            self.rich_obj.get_pos_wv() if self.rich_obj else -1,
+            self.rich_pobj.get_pos_wv() if self.rich_pobj else -1
         )
 
     def get_pos_training_input_multi_pobj(self):
         return SingleTrainingInputMultiPobj(
             self.pred_idx,
-            self.rich_subj.get_pos_idx() if self.rich_subj else -1,
-            self.rich_obj.get_pos_idx() if self.rich_obj else -1,
-            [rich_pobj.get_pos_idx() for rich_pobj in self.rich_pobj_list]
+            self.rich_subj.get_pos_wv() if self.rich_subj else -1,
+            self.rich_obj.get_pos_wv() if self.rich_obj else -1,
+            [rich_pobj.get_pos_wv() for rich_pobj in self.rich_pobj_list]
         )
 
     def get_neg_training_input(self, arg_type):
@@ -104,19 +104,19 @@ class RichEvent(object):
         neg_input_list = []
         if arg_type == 0 or arg_type == 'SUBJ':
             if self.has_subj_neg():
-                for neg_idx in self.rich_subj.get_neg_idx_list():
+                for neg_idx in self.rich_subj.get_neg_wv_list():
                     neg_input = deepcopy(pos_input)
                     neg_input.set_subj(neg_idx)
                     neg_input_list.append(neg_input)
         elif arg_type == 1 or arg_type == 'OBJ':
             if self.has_obj_neg():
-                for neg_idx in self.rich_obj.get_neg_idx_list():
+                for neg_idx in self.rich_obj.get_neg_wv_list():
                     neg_input = deepcopy(pos_input)
                     neg_input.set_obj(neg_idx)
                     neg_input_list.append(neg_input)
         elif arg_type == 2 or arg_type == 'POBJ':
             if self.has_pobj_neg():
-                for neg_idx in self.rich_pobj.get_neg_idx_list():
+                for neg_idx in self.rich_pobj.get_neg_wv_list():
                     neg_input = deepcopy(pos_input)
                     neg_input.set_pobj(neg_idx)
                     neg_input_list.append(neg_input)
@@ -143,33 +143,34 @@ class RichEvent(object):
 
     def get_eval_input_list_subj(self):
         eval_input_list = []
-        if self.rich_subj is not None and self.rich_subj.has_entity():
+        if self.rich_subj is not None and self.rich_subj.has_neg:
             pos_input = self.get_pos_training_input_multi_pobj()
-            for neg_idx in self.rich_subj.candidate_idx_list:
-                neg_input = deepcopy(pos_input)
-                neg_input.set_subj(neg_idx)
-                eval_input_list.append(neg_input)
+            for candidate_wv in self.rich_subj.candidate_wv_list:
+                eval_input = deepcopy(pos_input)
+                eval_input.set_subj(candidate_wv)
+                eval_input_list.append(eval_input)
         return eval_input_list
 
     def get_eval_input_list_obj(self):
         eval_input_list = []
-        if self.rich_obj is not None and self.rich_obj.has_entity():
+        if self.rich_obj is not None and self.rich_obj.has_neg:
             pos_input = self.get_pos_training_input_multi_pobj()
-            for neg_idx in self.rich_obj.candidate_idx_list:
-                neg_input = deepcopy(pos_input)
-                neg_input.set_obj(neg_idx)
-                eval_input_list.append(neg_input)
+            for candidate_wv in self.rich_obj.candidate_wv_list:
+                eval_input = deepcopy(pos_input)
+                eval_input.set_obj(candidate_wv)
+                eval_input_list.append(eval_input)
         return eval_input_list
 
     def get_eval_input_list_pobj(self, pobj_idx):
         assert 0 <= pobj_idx < len(self.rich_pobj_list)
         eval_input_list = []
-        if self.rich_pobj_list[pobj_idx].has_entity():
+        rich_pobj = self.rich_pobj_list[pobj_idx]
+        if rich_pobj.has_neg:
             pos_input = self.get_pos_training_input_multi_pobj()
-            for neg_idx in self.rich_pobj_list[pobj_idx].candidate_idx_list:
-                neg_input = deepcopy(pos_input)
-                neg_input.set_pobj(pobj_idx, neg_idx)
-                eval_input_list.append(neg_input)
+            for candidate_wv in rich_pobj.candidate_wv_list:
+                eval_input = deepcopy(pos_input)
+                eval_input.set_pobj(pobj_idx, candidate_wv)
+                eval_input_list.append(eval_input)
         return eval_input_list
 
     @classmethod

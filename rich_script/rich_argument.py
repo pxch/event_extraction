@@ -27,7 +27,7 @@ class RichArgument(object):
         # boolean flag indicating whether the argument has negative candidates
         self.has_neg = (len(self.candidate_text_list) > 1)
         # list of word2vec indices for all candidates of the argument
-        self.candidate_idx_list = []
+        self.candidate_wv_list = []
 
     @classmethod
     def build(cls, arg_type, arg, entity_list, use_entity=True, use_ner=True,
@@ -53,18 +53,35 @@ class RichArgument(object):
 
     # get word2vec indices for all candidates
     def get_index(self, model, include_type=True):
-        # TODO: add logic to deal with cases when pos_idx == -1
-        # TODO: add logic to backtrack when pobj is out-of-vocab
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
-        if include_type:
-            self.candidate_idx_list = [
-                model.get_word_index(candidate_text + '-' + self.arg_type)
-                for candidate_text in self.candidate_text_list]
-        else:
-            self.candidate_idx_list = [
-                model.get_word_index(candidate_text)
-                for candidate_text in self.candidate_text_list]
+        self.candidate_wv_list = []
+        for candidate_text in self.candidate_text_list:
+            if include_type:
+                candidate_wv = model.get_word_index(
+                    candidate_text + '-' + self.arg_type)
+                # backtrack when prep-pobj is out-of-vocab
+                if candidate_wv == -1 and self.arg_type.startswith('PREP'):
+                    candidate_wv = model.get_word_index(
+                        candidate_text + '-PREP')
+            else:
+                candidate_wv = model.get_word_index(candidate_text)
+            self.candidate_wv_list.append(candidate_wv)
+        # TODO: add logic to deal with cases when pos_idx == -1
+        effective_candidate_idx_list = \
+            [candidate_idx for candidate_idx, candidate_wv
+             in enumerate(self.candidate_wv_list)
+             if candidate_wv != -1 or candidate_idx == self.target_idx]
+        self.candidate_text_list = \
+            [self.candidate_text_list[candidate_idx] for candidate_idx
+             in effective_candidate_idx_list]
+        self.candidate_wv_list = \
+            [self.candidate_wv_list[candidate_idx] for candidate_idx
+             in effective_candidate_idx_list]
+        self.target_idx = effective_candidate_idx_list.index(self.target_idx)
+        if self.candidate_wv_list[self.target_idx] == -1 or \
+                        len(self.candidate_wv_list) <= 1:
+            self.has_neg = False
 
     # get the text for the positive candidate
     def get_pos_text(self, include_type=True):
@@ -86,17 +103,17 @@ class RichArgument(object):
         return neg_text_list
 
     # get the word2vec index for the positive candidate, might be -1
-    def get_pos_idx(self):
-        return self.candidate_idx_list[self.target_idx]
+    def get_pos_wv(self):
+        return self.candidate_wv_list[self.target_idx]
 
     # get the word2vec indices for all negative candidates, might be empty
-    def get_neg_idx_list(self):
-        if len(self.candidate_idx_list) == 1:
+    def get_neg_wv_list(self):
+        if len(self.candidate_wv_list) == 1:
             return []
-        neg_idx_list = \
-            self.candidate_idx_list[:self.target_idx] + \
-            self.candidate_idx_list[self.target_idx+1:]
-        return neg_idx_list
+        neg_wv_list = \
+            self.candidate_wv_list[:self.target_idx] + \
+            self.candidate_wv_list[self.target_idx+1:]
+        return neg_wv_list
 
     # boolean flag indicating whether the argument points to an entity
     def has_entity(self):
