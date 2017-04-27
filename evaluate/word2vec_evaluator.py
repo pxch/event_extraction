@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from base_evaluator import BaseEvaluator
 from rich_script import RichArgument, RichScript, Script
 from rich_script import SingleTrainingInput, SingleTrainingInputMultiPobj
@@ -24,16 +22,18 @@ def get_arg_embedding(model, rich_arg):
     return pos_embedding, neg_embedding_list
 
 
-def get_event_vector(model, event_input, use_all_pobj=True):
+def get_event_vector(model, event_input, include_all_pobj=True):
     assert isinstance(model, Word2VecModel), \
         'model must be a {} instance'.format(get_class_name(Word2VecModel))
-    if use_all_pobj:
+    if include_all_pobj:
         assert isinstance(event_input, SingleTrainingInputMultiPobj), \
-            'event_input must be a {} instance when use_all_pobj=True'.format(
+            'event_input must be a {} instance ' \
+            'when include_all_pobj=True'.format(
                 get_class_name(SingleTrainingInputMultiPobj))
     else:
         assert isinstance(event_input, SingleTrainingInput), \
-            'event_input must be a {} instance when use_all_pobj=False'.format(
+            'event_input must be a {} instance ' \
+            'when include_all_pobj=False'.format(
                 get_class_name(SingleTrainingInput))
     vector = np.zeros(model.vector_size)
     pred_vector = model.get_index_vec(event_input.pred_input)
@@ -47,7 +47,7 @@ def get_event_vector(model, event_input, use_all_pobj=True):
     obj_vector = model.get_index_vec(event_input.obj_input)
     if obj_vector is not None:
         vector += obj_vector
-    if use_all_pobj:
+    if include_all_pobj:
         for pobj_input in event_input.pobj_input_list:
             pobj_vector = model.get_index_vec(pobj_input)
             if pobj_vector is not None:
@@ -82,7 +82,8 @@ def get_most_coherent(eval_vector_list, context_vector_list,
 class Word2VecEvaluator(BaseEvaluator):
     def __init__(self, model=None, use_lemma=True, include_neg=True,
                  include_prt=True, use_entity=True, use_ner=True,
-                 include_prep=True, include_type=True, use_max_score=True):
+                 include_prep=True, include_type=True, use_max_score=True,
+                 include_all_pobj=True):
         BaseEvaluator.__init__(self)
         assert model is None or isinstance(model, Word2VecModel), \
             'word2vec must be None or a {} instance'.format(
@@ -96,6 +97,7 @@ class Word2VecEvaluator(BaseEvaluator):
         self.include_prep = include_prep
         self.include_type = include_type
         self.use_max_score = use_max_score
+        self.include_all_pobj = include_all_pobj
 
     def set_model(self, model):
         assert isinstance(model, Word2VecModel), \
@@ -108,11 +110,13 @@ class Word2VecEvaluator(BaseEvaluator):
                'model = {}, use_lemma = {}, include_neg = {}, ' \
                'include_prt = {}, use_entity = {}, use_ner = {}, ' \
                'include_prep = {}, include_type = {}, ' \
-               'ignore_first_mention = {}, use_max_score = {}'.format(
+               'ignore_first_mention = {}, use_max_score = {}, ' \
+               'include_all_pobj = {}'.format(
                 self.model.name, self.use_lemma, self.include_neg,
                 self.include_prt, self.use_entity, self.use_ner,
                 self.include_prep, self.include_type,
-                self.ignore_first_mention, self.use_max_score)
+                self.ignore_first_mention, self.use_max_score,
+                self.include_all_pobj)
 
     def evaluate_script(self, script):
         assert isinstance(script, Script), \
@@ -133,21 +137,29 @@ class Word2VecEvaluator(BaseEvaluator):
         # remove events with None embedding (pred_idx == -1)
         rich_event_list = [rich_event for rich_event in rich_script.rich_events
                            if rich_event.pred_idx != -1]
-        pos_input_list = [rich_event.get_pos_training_input_multi_pobj()
-                          for rich_event in rich_event_list]
-        pos_vector_list = [get_event_vector(self.model, pos_input)
-                           for pos_input in pos_input_list]
+        pos_input_list = \
+            [rich_event.get_pos_training_input(
+                include_all_pobj=self.include_all_pobj)
+                for rich_event in rich_event_list]
+        pos_vector_list = \
+            [get_event_vector(
+                self.model, pos_input, include_all_pobj=self.include_all_pobj)
+                for pos_input in pos_input_list]
         for event_idx, rich_event in enumerate(rich_event_list):
             logger.debug('Processing event #{}'.format(event_idx))
             context_vector_list = \
                 pos_vector_list[:event_idx] + pos_vector_list[event_idx+1:]
 
-            eval_input_list_all = rich_event.get_eval_input_list_all()
+            eval_input_list_all = rich_event.get_eval_input_list_all(
+                include_all_pobj=self.include_all_pobj)
             for rich_arg, eval_input_list in eval_input_list_all:
                 if (not self.ignore_first_mention) or \
                         (not rich_arg.is_first_mention()):
-                    eval_vector_list = [get_event_vector(self.model, eval_input)
-                                        for eval_input in eval_input_list]
+                    eval_vector_list = \
+                        [get_event_vector(
+                            self.model, eval_input,
+                            include_all_pobj=self.include_all_pobj)
+                            for eval_input in eval_input_list]
                     most_coherent_idx = get_most_coherent(
                         eval_vector_list,
                         context_vector_list,

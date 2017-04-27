@@ -81,21 +81,21 @@ class RichEvent(object):
             sequence.append(arg.get_pos_text(include_type=True))
         return sequence
 
-    def get_pos_training_input(self):
-        return SingleTrainingInput(
-            self.pred_idx,
-            self.rich_subj.get_pos_wv() if self.rich_subj else -1,
-            self.rich_obj.get_pos_wv() if self.rich_obj else -1,
-            self.rich_pobj.get_pos_wv() if self.rich_pobj else -1
-        )
-
-    def get_pos_training_input_multi_pobj(self):
-        return SingleTrainingInputMultiPobj(
-            self.pred_idx,
-            self.rich_subj.get_pos_wv() if self.rich_subj else -1,
-            self.rich_obj.get_pos_wv() if self.rich_obj else -1,
-            [rich_pobj.get_pos_wv() for rich_pobj in self.rich_pobj_list]
-        )
+    def get_pos_training_input(self, include_all_pobj=True):
+        if include_all_pobj:
+            return SingleTrainingInputMultiPobj(
+                self.pred_idx,
+                self.rich_subj.get_pos_wv() if self.rich_subj else -1,
+                self.rich_obj.get_pos_wv() if self.rich_obj else -1,
+                [rich_pobj.get_pos_wv() for rich_pobj in self.rich_pobj_list]
+            )
+        else:
+            return SingleTrainingInput(
+                self.pred_idx,
+                self.rich_subj.get_pos_wv() if self.rich_subj else -1,
+                self.rich_obj.get_pos_wv() if self.rich_obj else -1,
+                self.rich_pobj.get_pos_wv() if self.rich_pobj else -1
+            )
 
     def get_neg_training_input(self, arg_type):
         assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
@@ -122,51 +122,69 @@ class RichEvent(object):
                     neg_input_list.append(neg_input)
         return neg_input_list
 
-    def get_eval_input_list_all(self):
+    def get_eval_input_list_all(self, include_all_pobj=True):
         # TODO: add support to evaluate with only one pobj
         results = []
 
-        subj_eval_input_list = self.get_eval_input_list_subj()
+        subj_eval_input_list = self.get_eval_input_list_subj(include_all_pobj)
         if subj_eval_input_list:
             results.append((self.rich_subj, subj_eval_input_list))
 
-        obj_eval_input_list = self.get_eval_input_list_obj()
+        obj_eval_input_list = self.get_eval_input_list_obj(include_all_pobj)
         if obj_eval_input_list:
             results.append((self.rich_obj, obj_eval_input_list))
 
-        for pobj_idx, rich_pobj in enumerate(self.rich_pobj_list):
-            pobj_eval_input_list = self.get_eval_input_list_pobj(pobj_idx)
+        if include_all_pobj:
+            for pobj_idx, rich_pobj in enumerate(self.rich_pobj_list):
+                pobj_eval_input_list = \
+                    self.get_eval_input_list_pobj_multi(pobj_idx)
+                if pobj_eval_input_list:
+                    results.append((rich_pobj, pobj_eval_input_list))
+        else:
+            pobj_eval_input_list = self.get_eval_input_list_pobj()
             if pobj_eval_input_list:
-                results.append((rich_pobj, pobj_eval_input_list))
+                results.append((self.rich_pobj, pobj_eval_input_list))
 
         return results
 
-    def get_eval_input_list_subj(self):
+    def get_eval_input_list_subj(self, include_all_pobj=True):
         eval_input_list = []
         if self.rich_subj is not None and self.rich_subj.has_neg:
-            pos_input = self.get_pos_training_input_multi_pobj()
+            pos_input = self.get_pos_training_input(
+                include_all_pobj=include_all_pobj)
             for candidate_wv in self.rich_subj.candidate_wv_list:
                 eval_input = deepcopy(pos_input)
                 eval_input.set_subj(candidate_wv)
                 eval_input_list.append(eval_input)
         return eval_input_list
 
-    def get_eval_input_list_obj(self):
+    def get_eval_input_list_obj(self, include_all_pobj=True):
         eval_input_list = []
         if self.rich_obj is not None and self.rich_obj.has_neg:
-            pos_input = self.get_pos_training_input_multi_pobj()
+            pos_input = self.get_pos_training_input(
+                include_all_pobj=include_all_pobj)
             for candidate_wv in self.rich_obj.candidate_wv_list:
                 eval_input = deepcopy(pos_input)
                 eval_input.set_obj(candidate_wv)
                 eval_input_list.append(eval_input)
         return eval_input_list
 
-    def get_eval_input_list_pobj(self, pobj_idx):
+    def get_eval_input_list_pobj(self):
+        eval_input_list = []
+        if self.rich_pobj is not None and self.rich_pobj.has_neg:
+            pos_input = self.get_pos_training_input(include_all_pobj=False)
+            for candidate_wv in self.rich_pobj.candidate_wv_list:
+                eval_input = deepcopy(pos_input)
+                eval_input.set_pobj(candidate_wv)
+                eval_input_list.append(eval_input)
+        return eval_input_list
+
+    def get_eval_input_list_pobj_multi(self, pobj_idx):
         assert 0 <= pobj_idx < len(self.rich_pobj_list)
         eval_input_list = []
         rich_pobj = self.rich_pobj_list[pobj_idx]
         if rich_pobj.has_neg:
-            pos_input = self.get_pos_training_input_multi_pobj()
+            pos_input = self.get_pos_training_input(include_all_pobj=True)
             for candidate_wv in rich_pobj.candidate_wv_list:
                 eval_input = deepcopy(pos_input)
                 eval_input.set_pobj(pobj_idx, candidate_wv)
