@@ -1,5 +1,5 @@
 from base_evaluator import BaseEvaluator
-from rich_script import RichArgument, RichScript, Script
+from rich_script import RichScript, Script
 from rich_script import SingleTrainingInput, SingleTrainingInputMultiPobj
 from util import Word2VecModel, get_class_name, cos_sim
 import numpy as np
@@ -9,17 +9,6 @@ import logging
 logging.basicConfig(format='%(levelname) s : : %(message)s', level=logging.INFO)
 
 logger = logging.getLogger('word2vec_evaluator')
-
-
-def get_arg_embedding(model, rich_arg):
-    assert isinstance(model, Word2VecModel), \
-        'model must be a {} instance'.format(get_class_name(Word2VecModel))
-    assert isinstance(rich_arg, RichArgument), \
-        'rich_arg must be a {} instance'.format(get_class_name(RichArgument))
-    pos_embedding = model.get_index_vec(rich_arg.pos_idx)
-    neg_embedding_list = \
-        [model.get_index_vec(neg_idx) for neg_idx in rich_arg.neg_idx_list]
-    return pos_embedding, neg_embedding_list
 
 
 def get_event_vector(model, event_input, include_all_pobj=True):
@@ -86,7 +75,7 @@ class Word2VecEvaluator(BaseEvaluator):
                  include_all_pobj=True):
         BaseEvaluator.__init__(self)
         assert model is None or isinstance(model, Word2VecModel), \
-            'word2vec must be None or a {} instance'.format(
+            'model must be None or a {} instance'.format(
                 get_class_name(Word2VecModel))
         self.model = model
         self.use_lemma = use_lemma
@@ -101,8 +90,7 @@ class Word2VecEvaluator(BaseEvaluator):
 
     def set_model(self, model):
         assert isinstance(model, Word2VecModel), \
-            'word2vec must be a {} instance'.format(
-                get_class_name(Word2VecModel))
+            'model must be a {} instance'.format(get_class_name(Word2VecModel))
         self.model = model
 
     def print_debug_message(self):
