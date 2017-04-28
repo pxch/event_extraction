@@ -1,4 +1,4 @@
-from corpus import PretrainingCorpusIterator, PairTuningCorpusIterator
+from indexed_corpus import PretrainingCorpusIterator, PairTuningCorpusIterator
 from event import Event
 from indexed_input import SingleTrainingInput, PairTrainingInput
 from indexed_input import SingleTrainingInputMultiPobj
