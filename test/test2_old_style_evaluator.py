@@ -1,7 +1,7 @@
 import pickle as pkl
 import sys
 
-import embedding
+from legacy import embedding
 from legacy.most_freq_coref_evaluator import MostFreqCorefEvaluator
 from legacy.most_sim_event_evaluator import MostSimEventEvaluator
 
