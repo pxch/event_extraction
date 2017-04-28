@@ -4,8 +4,11 @@ from util import get_class_name
 
 
 class MostFreqEntityEvaluator(BaseEvaluator):
-    def __init__(self):
-        BaseEvaluator.__init__(self)
+    def __init__(self, logger=None, ignore_first_mention=False):
+        super(MostFreqEntityEvaluator, self).__init__(
+            logger=logger,
+            ignore_first_mention=ignore_first_mention
+        )
 
     @staticmethod
     def is_most_freq_entity(entity_idx, entity_freqs):
@@ -14,9 +17,10 @@ class MostFreqEntityEvaluator(BaseEvaluator):
         entity_freqs[entity_idx] += 1
         return entity_idx == most_freq_entity_idx
 
-    def print_debug_message(self):
-        return 'Evaluation based on most frequent coreference chain, ' \
-               'ignore_first_mention = {}:'.format(self.ignore_first_mention)
+    def log_evaluator_info(self):
+        self.logger.info('Evaluation based on most frequent entity')
+        self.logger.info('Evaluator configs: ignore_first_mention = {}'.format(
+                self.ignore_first_mention))
 
     def evaluate_script(self, script):
         assert isinstance(script, rich_script.Script), \

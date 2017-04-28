@@ -11,15 +11,19 @@ all_simple_scripts = pkl.load(
 
 vector_file = \
     '/Users/pengxiang/corpora/spaces/event_scripts/' \
-    'entity_1_ner_0_prep_1_dim300vecs.bin'
+    'entity_1_ner_1_prep_1_dim300vecs.bin'
 vocab_file = \
     '/Users/pengxiang/corpora/spaces/event_scripts/' \
-    'entity_1_ner_0_prep_1_dim300vecs.vocab'
+    'entity_1_ner_1_prep_1_dim300vecs.vocab'
 
 word2vec = Word2VecModel.load_model(vector_file, fvocab=vocab_file)
 
 evaluator = Word2VecEvaluator(
-    include_neg=True, include_prep=True, use_ner=False, include_all_pobj=False)
+    ignore_first_mention=False,
+    include_prep=True,
+    use_ner=True,
+    include_all_pobj=False
+)
 
 evaluator.set_model(word2vec)
 

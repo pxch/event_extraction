@@ -15,7 +15,10 @@ event_comp_dir = \
 event_comp_model = EventCompositionModel.load_from_directory(event_comp_dir)
 
 evaluator = EventCompositionEvaluator(
-    include_neg=True, include_prep=True, use_ner=True)
+    ignore_first_mention=False,
+    include_prep=True,
+    use_ner=True
+)
 
 evaluator.set_model(event_comp_model)
 evaluator.evaluate(all_simple_scripts)
