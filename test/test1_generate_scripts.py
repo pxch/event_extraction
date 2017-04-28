@@ -1,10 +1,11 @@
 import pickle as pkl
+import sys
 
 import event_script
 import rich_script
 from dataset import read_all_docs_from_ontonotes
 
-date_tag = '04232330'
+date_tag = sys.argv[1]
 
 all_docs = read_all_docs_from_ontonotes('english-bn-cnn')
 
