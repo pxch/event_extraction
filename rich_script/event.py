@@ -1,7 +1,6 @@
 import re
 from warnings import warn
 
-import event_script
 from argument import Argument
 from predicate import Predicate
 from util import get_class_name
@@ -88,15 +87,6 @@ class Event(object):
                 if prep != '':
                     pobj_list.append((prep, Argument.from_text(pobj)))
         return cls(pred, subj, obj, pobj_list)
-
-    @classmethod
-    def from_event(cls, event):
-        if not isinstance(event, event_script.Event):
-            raise ParseEventError(
-                'from_event must be called with a {} instance'.format(
-                    get_class_name(event_script.Event)))
-        return cls.from_tokens(event.pred, event.neg, event.subj, event.obj,
-                               event.pobj_list)
 
     @classmethod
     def from_tokens(cls, pred_token, neg, subj_token, obj_token,

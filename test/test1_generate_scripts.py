@@ -21,8 +21,8 @@ all_scripts_dump_name = 'all_scripts_{}.pkl'.format(date_tag)
 pkl.dump(all_scripts, open(all_scripts_dump_name, 'w'))
 
 all_simple_scripts = []
-for script in all_scripts:
-    simple_script = rich_script.Script.from_script(script)
+for doc in all_docs:
+    simple_script = rich_script.Script.from_doc(doc)
     all_simple_scripts.append(simple_script)
 
 all_simple_scripts_dump_name = 'all_simple_scripts_{}.pkl'.format(date_tag)

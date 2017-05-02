@@ -2,10 +2,9 @@ from itertools import product
 from warnings import warn
 
 import document
-import event_script
 from entity import Entity
 from event import Event
-from util import consts, get_class_name, split_sections
+from util import get_class_name, split_sections
 
 
 class Script(object):
@@ -79,22 +78,6 @@ class Script(object):
         events = [Event.from_text(line) for line in event_lines]
 
         return cls(doc_name, entities, events)
-
-    @classmethod
-    def from_script(cls, ev_script):
-        if not isinstance(ev_script, event_script.EventScript):
-            raise ParseScriptError(
-                'from_script must be called with a {} instance'.format(
-                    get_class_name(event_script.EventScript)))
-        if not ev_script.events:
-            warn('EventScript {} has no events'.format(ev_script.doc_name))
-        if not ev_script.corefs:
-            warn('EventScript {} has no corefs'.format(ev_script.doc_name))
-        return cls(
-            ev_script.doc_name,
-            [Entity.from_coref(coref) for coref in ev_script.corefs],
-            [Event.from_event(event) for event in ev_script.events]
-        )
 
     @classmethod
     def from_doc(cls, doc):

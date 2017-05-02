@@ -1,5 +1,6 @@
-from util import consts, get_class_name
 import document
+from util import consts, get_class_name
+
 
 class Event:
     def __init__(self, pred, neg=False):
