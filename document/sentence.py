@@ -1,4 +1,5 @@
 from dependency import DependencyGraph
+from operator import itemgetter
 
 
 class Sentence(object):
@@ -63,7 +64,7 @@ class Sentence(object):
         results.extend(self.lookup_label('gov', pred_idx, 'nmod:agent'))
         # controlling subject
         results.extend(self.lookup_label('gov', pred_idx, 'nsubj:xsubj'))
-        return results
+        return sorted(results, key=lambda token: token.token_idx)
 
     # get list of all objective token indices for a predicate
     def get_obj_list(self, pred_idx):
@@ -73,7 +74,7 @@ class Sentence(object):
         results.extend(self.lookup_label('gov', pred_idx, 'nsubjpass'))
         # TODO: whether or not to include acl relation
         # results.extend(self.lookup_label('dep', pred_idx, 'acl'))
-        return results
+        return sorted(results, key=lambda token: token.token_idx)
 
     # get list of all prepositional objective token indices for a predicate
     def get_pobj_list(self, pred_idx):
@@ -86,4 +87,4 @@ class Sentence(object):
                 if prep_label != 'agent':
                     results.extend([(prep_label, self.get_token(idx))
                                     for idx in indices])
-        return results
+        return sorted(results, key=lambda pair: pair[1].token_idx)

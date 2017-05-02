@@ -113,10 +113,7 @@ class Script(object):
                     if pred_token.lemma == 'be':
                         continue
                     # FIXME: don't use predefined set of stop verbs
-                    '''
-                    if pred_token.lemma in consts.STOP_VERBS:
-                        continue
-                    '''
+                    # if pred_token.lemma in consts.STOP_VERBS: continue
                     # TODO: exclude verbs in quotes
                     # exclude modifying verbs
                     if sent.dep_graph.lookup_label(

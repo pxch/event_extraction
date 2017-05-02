@@ -22,7 +22,7 @@ class Mention(object):
             raise ParseEntityError(
                 'rep must be a boolean value, {} found'.format(rep))
         self.rep = rep
-        if not len(tokens) != end_token_idx - start_token_idx:
+        if not len(tokens) == end_token_idx - start_token_idx:
             raise ParseEntityError(
                 'number of tokens {} does not match start_token_idx {} '
                 'and end_token_idx {}'.format(
