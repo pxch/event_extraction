@@ -14,8 +14,7 @@ pkl.dump(all_docs, open(all_docs_dump_name, 'w'))
 
 all_scripts = []
 for doc in all_docs:
-    script = event_script.EventScript(doc.doc_name)
-    script.read_from_document(doc)
+    script = event_script.EventScript.construct(doc)
     all_scripts.append(script)
 
 all_scripts_dump_name = 'all_scripts_{}.pkl'.format(date_tag)

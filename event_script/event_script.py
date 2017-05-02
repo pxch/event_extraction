@@ -2,7 +2,7 @@ from itertools import product
 
 import document
 from event import Event
-from util import consts, get_class_name
+from util import get_class_name
 
 
 class EventScript:
@@ -68,15 +68,18 @@ class EventScript:
                         pobj_list  # prepositional object list
                     ))
 
-    def read_from_document(self, doc):
+    @classmethod
+    def construct(cls, doc):
         assert isinstance(doc, document.Document), \
             'read_from_document must be called with a {} instance'.format(
                 get_class_name(document.Document))
+        script = cls(doc.doc_name)
         for sent in doc.sents:
-            self.read_from_sentence(sent)
+            script.read_from_sentence(sent)
         for coref in doc.corefs:
-            self.add_coref(coref)
-        self.sort()
+            script.add_coref(coref)
+        script.sort()
+        return script
 
     def get_training_seq(self):
         sequence = []
