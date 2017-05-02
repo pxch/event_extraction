@@ -1,9 +1,9 @@
 import pickle as pkl
 import sys
 
-from legacy import embedding
-from legacy.most_freq_coref_evaluator import MostFreqCorefEvaluator
-from legacy.most_sim_event_evaluator import MostSimEventEvaluator
+import embedding
+from most_freq_coref_evaluator import MostFreqCorefEvaluator
+from most_sim_event_evaluator import MostSimEventEvaluator
 
 date_tag = sys.argv[1]
 

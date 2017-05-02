@@ -1,13 +1,9 @@
 import pickle as pkl
-import sys
 
 from evaluate.word2vec_evaluator import Word2VecEvaluator
 from util import Word2VecModel
 
-date_tag = sys.argv[1]
-
-all_simple_scripts = pkl.load(
-    open('all_simple_scripts_{}.pkl'.format(date_tag), 'r'))
+all_scripts = pkl.load(open('all_scripts.pkl', 'r'))
 
 vector_file = \
     '/Users/pengxiang/corpora/spaces/event_scripts/' \
@@ -27,7 +23,7 @@ evaluator = Word2VecEvaluator(
 
 evaluator.set_model(word2vec)
 
-evaluator.evaluate(all_simple_scripts)
+evaluator.evaluate(all_scripts)
 
 evaluator.set_ignore_first_mention(True)
-evaluator.evaluate(all_simple_scripts)
+evaluator.evaluate(all_scripts)
