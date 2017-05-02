@@ -10,19 +10,18 @@ class Argument(Token):
     def __init__(self, word, lemma, pos, ner='', entity_idx=-1, mention_idx=-1):
         super(Argument, self).__init__(word, lemma, pos)
         if not (ner == '' or ner in consts.VALID_NER_TAGS):
-            raise ParseTokenError('ner must be one of VALID_NER_TAGS or empty')
+            raise ParseTokenError('{} is not a valid ner tag'.format(ner))
         self.ner = ner
         if not (isinstance(entity_idx, int) and entity_idx >= -1):
             raise ParseTokenError(
                 'entity_idx must be a natural number or -1 (no entity)')
         self.entity_idx = entity_idx
-        if not isinstance(mention_idx, int):
-            raise ParseTokenError('mention_idx must be an integer')
-        if (not (entity_idx == -1 and mention_idx == -1)) \
-                and (not (entity_idx >= 0 and mention_idx >= 0)):
+        if (not isinstance(mention_idx, int)) or \
+                ((not (entity_idx == -1 and mention_idx == -1)) and
+                 (not (entity_idx >= 0 and mention_idx >= 0))):
             raise ParseTokenError(
-                'mention_idx must be a natural number when entity_idx is set, '
-                'or -1 when entity_idx is -1')
+                'mention_idx must be a natural number when entity_idx '
+                'is not -1, or -1 when entity_idx is -1')
         self.mention_idx = mention_idx
 
     def __eq__(self, other):
@@ -45,7 +44,7 @@ class Argument(Token):
                 'entity_list must contains only Entity element'
             return entity_list[self.entity_idx].get_representation(
                 use_ner, use_lemma)
-        # arguments not pointing to any entity might also have ner tags
+        # NOBUG: arguments not pointing to any entity might also have ner tags
         elif use_ner and self.ner != '':
             return self.ner
         else:

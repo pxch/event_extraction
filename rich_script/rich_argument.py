@@ -67,7 +67,8 @@ class RichArgument(object):
             else:
                 candidate_wv = model.get_word_index(candidate_text)
             self.candidate_wv_list.append(candidate_wv)
-        # TODO: add logic to deal with cases when pos_idx == -1
+        # remove non-indexed candidates from candidate_text_list and
+        # candidate_wv_list, also reset target_idx
         effective_candidate_idx_list = \
             [candidate_idx for candidate_idx, candidate_wv
              in enumerate(self.candidate_wv_list)

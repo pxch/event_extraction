@@ -9,8 +9,8 @@ class Mention(object):
     def __init__(self, sent_idx, start_token_idx, end_token_idx, head_token_idx,
                  rep, tokens, ner=''):
         self.sent_idx = sent_idx
-        if not (start_token_idx <= head_token_idx < end_token_idx):
-            raise ParseMentionError(
+        if not (0 <= start_token_idx <= head_token_idx < end_token_idx):
+            raise ParseEntityError(
                 'head_token_idx {} must be between start_token_idx {} '
                 'and end_token_idx {}'.format(
                     head_token_idx, start_token_idx, end_token_idx
@@ -19,45 +19,47 @@ class Mention(object):
         self.end_token_idx = end_token_idx
         self.head_token_idx = head_token_idx
         if not isinstance(rep, bool):
-            raise ParseMentionError('rep must be a boolean value')
+            raise ParseEntityError(
+                'rep must be a boolean value, {} found'.format(rep))
         self.rep = rep
-        if not tokens:
-            raise ParseMentionError('must provide at least one token')
+        if not len(tokens) != end_token_idx - start_token_idx:
+            raise ParseEntityError(
+                'number of tokens {} does not match start_token_idx {} '
+                'and end_token_idx {}'.format(
+                    len(tokens), start_token_idx, end_token_idx))
         if not all(isinstance(token, Token) for token in tokens):
-            raise ParseMentionError(
+            raise ParseEntityError(
                 'every token must be a {} instance, found {}'.format(
                     get_class_name(Token), [type(token) for token in tokens]))
         self.tokens = tokens
-        self.head_token = \
+        self._head_token = \
             self.tokens[self.head_token_idx - self.start_token_idx]
         if not (ner == '' or ner in consts.VALID_NER_TAGS):
-            raise ParseMentionError('ner {} is not a valid ner tag'.format(ner))
+            raise ParseEntityError('{} is not a valid ner tag'.format(ner))
         self.ner = ner
 
     def __eq__(self, other):
-        return self.sent_idx == other.sent_idx \
-               and self.start_token_idx == other.start_token_idx \
-               and self.end_token_idx == other.end_token_idx \
-               and self.head_token_idx == other.head_token_idx \
-               and self.rep == other.rep and self.ner == other.ner \
-               and all(token == other_token for token, other_token
-                       in zip(self.tokens, other.tokens)) \
-               and self.ner == other.ner
+        return self.sent_idx == other.sent_idx and \
+               self.start_token_idx == other.start_token_idx and \
+               self.end_token_idx == other.end_token_idx and \
+               self.head_token_idx == other.head_token_idx and \
+               self.rep == other.rep and self.ner == other.ner and \
+               all(token == other_token for token, other_token
+                   in zip(self.tokens, other.tokens)) and \
+               self.ner == other.ner
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_head_token(self):
-        return self.head_token
-
-    def get_ner(self):
-        return self.ner
+    @property
+    def head_token(self):
+        return self._head_token
 
     def get_representation(self, use_ner=True, use_lemma=True):
         if use_ner and self.ner != '':
             return self.ner
         else:
-            return self.head_token.get_representation(use_lemma)
+            return self._head_token.get_representation(use_lemma)
 
     def to_text(self):
         return '{}:{}:{}:{}:{}:{}:{}'.format(
@@ -74,7 +76,7 @@ class Mention(object):
     def from_text(cls, text):
         parts = [p.strip() for p in text.split(':')]
         if len(parts) < 7:
-            raise ParseMentionError(
+            raise ParseEntityError(
                 'expected at least 7 parts, separated by ;, got {}: {}'.format(
                     len(parts), text))
         sent_idx = int(parts[0])
@@ -91,10 +93,10 @@ class Mention(object):
     @classmethod
     def from_mention(cls, mention):
         if not isinstance(mention, document.Mention):
-            raise ParseMentionError(
+            raise ParseEntityError(
                 'from_mention must be called with a {} instance'.format(
                     get_class_name(document.Mention)))
-        # FIXME: use ner of head token as ner for the mention, might be wrong
+        # NOBUG: just use ner of the head token, should be correct
         ner = mention.head_token.ner
         if ner not in consts.VALID_NER_TAGS:
             ner = ''
@@ -107,10 +109,6 @@ class Mention(object):
             [Token.from_token(token) for token in mention.tokens],
             ner
         )
-
-
-class ParseMentionError(Exception):
-    pass
 
 
 class Entity(object):
@@ -131,7 +129,8 @@ class Entity(object):
                         'cannot have more than one representative mentions')
         if self.rep_mention is None:
             raise ParseEntityError('no representative mention provided')
-        # FIXME: consider just use the ner of rep mention
+        # NOBUG: set self.ner to be the most frequent ner of all mentions
+        # might be different than the ner of rep_mention
         ner_counter = Counter()
         for mention in self.mentions:
             if mention.ner != '':
@@ -152,6 +151,7 @@ class Entity(object):
         return self.rep_mention
 
     def get_representation(self, use_ner=True, use_lemma=True):
+        # FIXME: self.ner might be different from rep_mention.ner
         return self.rep_mention.get_representation(use_ner, use_lemma)
 
     def to_text(self):
@@ -174,4 +174,3 @@ class Entity(object):
 
 class ParseEntityError(Exception):
     pass
-

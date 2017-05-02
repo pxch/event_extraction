@@ -25,7 +25,7 @@ class RichEvent(object):
         # select the first argument with entity linking from rich_pobj_list
         # as the rich_pobj
         # FIXME: seems the self.rich_pobj is not set correctly here
-        # FIXME: need to reset after call get_index()
+        # need to reset after call get_index()
         self.rich_pobj = None
         for rich_pobj in self.rich_pobj_list:
             if rich_pobj.has_neg:
@@ -123,7 +123,6 @@ class RichEvent(object):
         return neg_input_list
 
     def get_eval_input_list_all(self, include_all_pobj=True):
-        # TODO: add support to evaluate with only one pobj
         results = []
 
         subj_eval_input_list = self.get_eval_input_list_subj(include_all_pobj)

@@ -18,9 +18,8 @@ class Token(object):
         return not self.__eq__(other)
 
     def get_representation(self, use_lemma=True):
-        # TODO: return empty string when token is not noun or verb
-        if self.pos[:2] not in ['NN', 'VB']:
-            return ''
+        # NOFIX: do not return empty string when token is not noun or verb
+        # if self.pos[:2] not in ['NN', 'VB']: return ''
         if use_lemma:
             return self.lemma.lower()
         else:

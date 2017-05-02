@@ -27,10 +27,6 @@ class Event(object):
             raise ParseEventError('every pobj must be a {} instance'.format(
                 get_class_name(Argument)))
         self.pobj_list = pobj_list
-        self.pred_text = ''
-        self.subj_text = ''
-        self.obj_text = ''
-        self.pobj_text_list = []
 
     def __eq__(self, other):
         return self.pred == other.pred and self.subj == other.subj and \
