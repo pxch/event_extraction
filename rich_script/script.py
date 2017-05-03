@@ -155,11 +155,11 @@ class ScriptCorpus(object):
         self.scripts.append(script)
 
     def to_text(self):
-        return '\n###DOC###\n'.join(script.to_text() for script in self.scripts)
+        return '\n###DOC###\n\n'.join(script.to_text() for script in self.scripts)
 
     @classmethod
     def from_text(cls, text):
         script_corpus = cls()
-        for script_text in text.split('\n###DOC###\n'):
+        for script_text in text.split('\n###DOC###\n\n'):
             script_corpus.add_script(Script.from_text(script_text))
         return script_corpus
