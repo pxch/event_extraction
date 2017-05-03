@@ -1,4 +1,4 @@
-from evaluate.base_evaluator import BaseEvaluator
+from base_evaluator import BaseEvaluator
 
 
 class MostFreqCorefEvaluator(BaseEvaluator):

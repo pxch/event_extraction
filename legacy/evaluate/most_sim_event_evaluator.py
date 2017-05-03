@@ -1,7 +1,7 @@
 import logging
 
-from evaluate.base_evaluator import BaseEvaluator
-from event_script import EventEmbedding
+from base_evaluator import BaseEvaluator
+from legacy.event_script import EventEmbedding
 from util import cos_sim
 
 logging.basicConfig(format='%(levelname) s : : %(message)s', level=logging.INFO)
