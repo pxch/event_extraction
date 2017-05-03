@@ -1,6 +1,6 @@
 import pickle as pkl
 
-from dataset import read_all_docs_from_ontonotes
+from ontonotes import read_all_docs_from_ontonotes
 from rich_script import Script
 
 all_docs = read_all_docs_from_ontonotes('english-bn-cnn')

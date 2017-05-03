@@ -1,6 +1,7 @@
 from copy import deepcopy
-from lxml import etree
 from os.path import basename, splitext
+
+from lxml import etree
 
 from document import *
 from util import consts

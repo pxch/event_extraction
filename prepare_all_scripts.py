@@ -3,8 +3,8 @@ from bz2 import BZ2File
 from os import listdir
 from os.path import isfile, join
 
+from corenlp import read_doc_from_corenlp
 from rich_script import Script, ScriptCorpus
-from dataset import read_doc_from_corenlp
 
 input_path = sys.argv[1]
 output_path = sys.argv[2]
