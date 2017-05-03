@@ -1,5 +1,6 @@
 from dependency import DependencyGraph
-from operator import itemgetter
+from token import Token
+from util import get_class_name
 
 
 class Sentence(object):
@@ -15,6 +16,9 @@ class Sentence(object):
         self.dep_graph = None
 
     def add_token(self, token):
+        assert isinstance(token, Token), \
+            'add_token must be called with a {} instance'.format(
+                get_class_name(Token))
         # set the sent_idx attrib of the token
         token.set_attrib('sent_idx', self.idx)
         # set the token_idx attrib of the token

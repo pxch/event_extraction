@@ -88,7 +88,7 @@ class Token(object):
         if self.mention is not None:
             warn('Token {} has existing mention {}'.format(self, self.mention))
             if self.mention.end_token_idx - self.mention.start_token_idx > \
-                            mention.end_token_idx - mention.start_token_idx:
+                    mention.end_token_idx - mention.start_token_idx:
                 warn(
                     'The new mention {} is nested in the exising mention, '
                     'ignore the new mention'.format(mention))
@@ -98,4 +98,3 @@ class Token(object):
                      'mention, override the existing mention'.format(mention))
         self.coref = coref
         self.mention = mention
-

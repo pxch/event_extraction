@@ -1,5 +1,8 @@
 from warnings import warn
 
+from mention import Mention
+from util import get_class_name
+
 
 class Coreference(object):
     def __init__(self, idx):
@@ -11,6 +14,9 @@ class Coreference(object):
         self.rep_mention = None
 
     def add_mention(self, mention):
+        assert isinstance(mention, Mention), \
+            'add_mention must be called with a {} instance'.format(
+                get_class_name(Mention))
         # set the coref_idx attrib of the mention
         mention.set_attrib('coref_idx', self.idx)
         # set the mention_idx attrib of the mention
@@ -22,7 +28,11 @@ class Coreference(object):
     def get_mention(self, idx):
         assert 0 <= idx < len(self.mentions), \
             '{} out of mention index'.format(idx)
-        return self.mentions[idx]
+        result = self.mentions[idx]
+        assert isinstance(result, Mention), \
+            'return value of get_mention must be a {} instance'.format(
+                get_class_name(Mention))
+        return result
 
     def __str__(self):
         return ' '.join([str(mention) for mention in self.mentions])
@@ -57,4 +67,3 @@ class Coreference(object):
         rep_idx = cand_indices[cand_length.index(max(cand_length))]
         self.rep_mention = self.get_mention(rep_idx)
         self.rep_mention.set_attrib('rep', True)
-

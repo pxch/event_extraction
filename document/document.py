@@ -1,3 +1,8 @@
+from sentence import Sentence
+from coreference import Coreference
+from util import get_class_name
+
+
 class Document(object):
     def __init__(self, doc_name):
         self.doc_name = doc_name
@@ -5,22 +10,36 @@ class Document(object):
         self.corefs = []
 
     def add_sent(self, sent):
+        assert isinstance(sent, Sentence), \
+            'add_sent must be called with a {} instance'.format(
+                get_class_name(Sentence))
         sent.build_dep_graph()
         sent.process_verb_prt()
         self.sents.append(sent)
 
     def add_coref(self, coref):
+        assert isinstance(coref, Coreference), \
+            'add_coref must be called with a {} instance'.format(
+                get_class_name(Coreference))
         self.corefs.append(coref)
 
     def get_sent(self, idx):
         assert 0 <= idx < len(self.sents), \
             '{} out of sentence index'.format(idx)
-        return self.sents[idx]
+        result = self.sents[idx]
+        assert isinstance(result, Sentence), \
+            'return value of get_sent must be a {} instance'.format(
+                get_class_name(Sentence))
+        return result
 
     def get_coref(self, idx):
         assert 0 <= idx < len(self.corefs), \
             '{} out of coreference index'.format(idx)
-        return self.corefs[idx]
+        result = self.corefs[idx]
+        assert isinstance(result, Coreference), \
+            'return value of get_coref must be a {} instance'.format(
+                get_class_name(Coreference))
+        return result
 
     def get_token(self, sent_idx, token_idx):
         return self.get_sent(sent_idx).get_token(token_idx)

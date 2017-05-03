@@ -64,4 +64,3 @@ class Mention(object):
         if self.head_token_idx != -1 and self.head_token is None:
             self.head_token = token_list[self.head_token_idx]
             self.head_text = self.head_token.word
-
