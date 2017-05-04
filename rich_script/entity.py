@@ -119,15 +119,15 @@ class Entity(object):
             raise ParseEntityError('every mention must be a {} instance'.format(
                 get_class_name(Mention)))
         self.mentions = mentions
-        self.rep_mention = None
+        self._rep_mention = None
         for mention in self.mentions:
             if mention.rep:
-                if self.rep_mention is None:
-                    self.rep_mention = mention
+                if self._rep_mention is None:
+                    self._rep_mention = mention
                 else:
                     raise ParseEntityError(
                         'cannot have more than one representative mentions')
-        if self.rep_mention is None:
+        if self._rep_mention is None:
             raise ParseEntityError('no representative mention provided')
         # NOBUG: set self.ner to be the most frequent ner of all mentions
         # might be different than the ner of rep_mention
@@ -147,12 +147,13 @@ class Entity(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_rep_mention(self):
-        return self.rep_mention
+    @property
+    def rep_mention(self):
+        return self._rep_mention
 
     def get_representation(self, use_ner=True, use_lemma=True):
-        # FIXME: self.ner might be different from rep_mention.ner
-        return self.rep_mention.get_representation(use_ner, use_lemma)
+        # FIXME: self.ner might be different from _rep_mention.ner
+        return self._rep_mention.get_representation(use_ner, use_lemma)
 
     def to_text(self):
         return ' :: '.join([mention.to_text() for mention in self.mentions])
