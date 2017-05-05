@@ -153,5 +153,5 @@ def write_counter(counter, fout):
 
 def prune_counter(counter, thres=1):
     for word, count in dropwhile(
-            lambda word_count: word_count[1] > thres, counter.most_common()):
+            lambda word_count: word_count[1] >= thres, counter.most_common()):
         del counter[word]
