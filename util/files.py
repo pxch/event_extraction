@@ -137,8 +137,11 @@ class GroupedIntTuplesReader(GroupedIntListsReader):
 def read_counter(fin):
     counter = Counter()
     for line in fin.readlines():
-        word, count = line.strip().split('\t')
-        counter[word] = int(count)
+        parts = line.strip().split('\t')
+        if len(parts) == 2:
+            word = parts[0]
+            count = int(parts[1])
+            counter[word] = count
     return counter
 
 
