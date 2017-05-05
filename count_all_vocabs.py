@@ -1,9 +1,11 @@
 import argparse
 from bz2 import BZ2File
+from collections import defaultdict, Counter
 from os import listdir
 from os.path import isfile, join
-from collections import defaultdict, Counter
+
 from rich_script import ScriptCorpus
+from util import write_counter
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory for ScriptCorpus files')
@@ -31,6 +33,5 @@ for input_f in input_files:
 
 for key in all_vocab:
     fout = BZ2File(join(args.output_path, key + '.bz2'), 'w')
-    for word, count in all_vocab[key].most_common():
-        fout.write('{}\t{}\n'.format(word, count))
+    write_counter(all_vocab[key], fout)
     fout.close()

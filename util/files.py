@@ -1,3 +1,6 @@
+from collections import Counter
+
+
 def split_sections(input_iter, section_heads):
     """
     Divide up the lines of a file by searching for the given section heads
@@ -129,3 +132,16 @@ class GroupedIntTuplesReader(GroupedIntListsReader):
     def __iter__(self):
         for grp in GroupedIntListsReader.__iter__(self):
             yield [tuple(lst) for lst in grp]
+
+
+def read_counter(fin):
+    counter = Counter()
+    for line in fin.readlines():
+        word, count = line.strip().split('\t')
+        counter[word] = int(count)
+    return counter
+
+
+def write_counter(counter, fout):
+    for word, count in counter.most_common():
+        fout.write('{}\t{}\n'.format(word, count))
