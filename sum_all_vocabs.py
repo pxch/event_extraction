@@ -19,15 +19,15 @@ all_vocab = defaultdict(Counter)
 
 for input_dir in input_dirs:
     print 'Reading vocabulary count from {}'.format(input_dir)
-    with BZ2File(join(input_dir, 'argument'), 'r') as fin:
+    with BZ2File(join(input_dir, 'argument.bz2'), 'r') as fin:
         all_vocab['argument'] += read_counter(fin)
-    with BZ2File(join(input_dir, 'name_entity'), 'r') as fin:
+    with BZ2File(join(input_dir, 'name_entity.bz2'), 'r') as fin:
         all_vocab['name_entity'] += read_counter(fin)
-    with BZ2File(join(input_dir, 'name_entity_tag'), 'r') as fin:
+    with BZ2File(join(input_dir, 'name_entity_tag.bz2'), 'r') as fin:
         all_vocab['name_entity_tag'] += read_counter(fin)
-    with BZ2File(join(input_dir, 'predicate'), 'r') as fin:
+    with BZ2File(join(input_dir, 'predicate.bz2'), 'r') as fin:
         all_vocab['predicate'] += read_counter(fin)
-    with BZ2File(join(input_dir, 'preposition'), 'r') as fin:
+    with BZ2File(join(input_dir, 'preposition.bz2'), 'r') as fin:
         all_vocab['preposition'] += read_counter(fin)
 
 for key in all_vocab:
