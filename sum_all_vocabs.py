@@ -3,8 +3,7 @@ from bz2 import BZ2File
 from collections import defaultdict, Counter
 from os import listdir
 from os.path import isdir, join
-
-from util import read_counter, write_counter
+from util import prune_counter, read_counter, write_counter
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory to read vocabulary counts')
@@ -21,14 +20,19 @@ for input_dir in input_dirs:
     print 'Reading vocabulary count from {}'.format(input_dir)
     with BZ2File(join(input_dir, 'argument.bz2'), 'r') as fin:
         all_vocab['argument'] += read_counter(fin)
+        prune_counter(all_vocab['argument'], 1)
     with BZ2File(join(input_dir, 'name_entity.bz2'), 'r') as fin:
         all_vocab['name_entity'] += read_counter(fin)
+        prune_counter(all_vocab['name_entity'], 1)
     with BZ2File(join(input_dir, 'name_entity_tag.bz2'), 'r') as fin:
         all_vocab['name_entity_tag'] += read_counter(fin)
+        prune_counter(all_vocab['name_entity_tag'], 1)
     with BZ2File(join(input_dir, 'predicate.bz2'), 'r') as fin:
         all_vocab['predicate'] += read_counter(fin)
+        prune_counter(all_vocab['predicate'], 1)
     with BZ2File(join(input_dir, 'preposition.bz2'), 'r') as fin:
         all_vocab['preposition'] += read_counter(fin)
+        prune_counter(all_vocab['preposition'], 1)
 
 for key in all_vocab:
     fout = BZ2File(join(args.output_path, key + '.bz2'), 'w')

@@ -1,4 +1,5 @@
 from collections import Counter
+from itertools import dropwhile
 
 
 def split_sections(input_iter, section_heads):
@@ -148,3 +149,9 @@ def read_counter(fin):
 def write_counter(counter, fout):
     for word, count in counter.most_common():
         fout.write('{}\t{}\n'.format(word, count))
+
+
+def prune_counter(counter, thres=1):
+    for word, count in dropwhile(
+            lambda word_count: word_count[1] <= thres, counter.most_common()):
+        del counter[word]
