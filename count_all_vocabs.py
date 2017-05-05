@@ -30,7 +30,7 @@ for input_f in input_files:
                 all_vocab[key] += vocab[key]
 
 for key in all_vocab:
-    fout = BZ2File(join(args.output_path, key), 'w')
+    fout = BZ2File(join(args.output_path, key + '.bz2'), 'w')
     for word, count in all_vocab[key].most_common():
         fout.write('{}\t{}\n'.format(word, count))
     fout.close()
