@@ -26,10 +26,24 @@ class Predicate(Token):
     def get_representation(
             self, use_lemma=True, include_neg=True, include_prt=True):
         result = super(Predicate, self).get_representation(use_lemma)
-        if include_neg and self.neg:
-            result = 'not_' + result
         if include_prt and self.prt:
             result += '_' + self.prt
+        if include_neg and self.neg:
+            result = 'not_' + result
+        return result
+
+    def get_repr_universal(self, pred_vocab_list):
+        candidates = [super(Predicate, self).get_representation(use_lemma=True)]
+        if self.prt:
+            candidates.append(candidates[0] + '_' + self.prt)
+        if self.neg:
+            for idx in range(len(candidates)):
+                candidates.append('not_' + candidates[idx])
+        result = 'UNK'
+        for candidate in reversed(candidates):
+            if candidate in pred_vocab_list:
+                result = candidate
+                break
         return result
 
     def to_text(self):

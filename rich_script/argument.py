@@ -42,6 +42,21 @@ class Argument(Token):
         else:
             return super(Argument, self).get_representation(use_lemma=use_lemma)
 
+    def get_repr_universal(self, arg_vocab_list, ner_vocab_list):
+        assert arg_vocab_list, 'arg_vocab_list cannot be empty'
+        assert ner_vocab_list, 'ner_vocab_list cannot be empty'
+        if self.entity_idx != -1:
+            warn('Calling Argument.get_repr_universal when Argument.entity_idx '
+                 'is not -1, should call Entity.get_repr_universal instead')
+        result = super(Argument, self).get_representation(use_lemma=True)
+        if self.ner != '':
+            if result not in ner_vocab_list:
+                result = self.ner
+        else:
+            if result not in arg_vocab_list:
+                result = 'UNK'
+        return result
+
     def get_entity(self, entity_list):
         if self.entity_idx != -1:
             assert self.entity_idx < len(entity_list), \

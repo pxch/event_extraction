@@ -59,7 +59,19 @@ class Mention(object):
         if use_ner and self.ner != '':
             return self.ner
         else:
-            return self._head_token.get_representation(use_lemma)
+            return self._head_token.get_representation(use_lemma=use_lemma)
+
+    def get_repr_universal(self, arg_vocab_list, ner_vocab_list):
+        assert arg_vocab_list, 'arg_vocab_list cannot be empty'
+        assert ner_vocab_list, 'ner_vocab_list cannot be empty'
+        result = self._head_token.get_representation(use_lemma=True)
+        if self.ner != '':
+            if result not in ner_vocab_list:
+                result = self.ner
+        else:
+            if result not in arg_vocab_list:
+                result = 'UNK'
+        return result
 
     def to_text(self):
         return '{}:{}:{}:{}:{}:{}:{}'.format(
@@ -154,6 +166,10 @@ class Entity(object):
     def get_representation(self, use_ner=True, use_lemma=True):
         # FIXME: self.ner might be different from _rep_mention.ner
         return self._rep_mention.get_representation(use_ner, use_lemma)
+
+    def get_repr_universal(self, arg_vocab_list, ner_vocab_list):
+        return self._rep_mention.get_repr_universal(
+            arg_vocab_list, ner_vocab_list)
 
     def to_text(self):
         return ' :: '.join([mention.to_text() for mention in self.mentions])
