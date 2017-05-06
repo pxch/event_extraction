@@ -33,22 +33,15 @@ class Argument(Token):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_representation(self, use_entity=False, entity_list=None,
-                           use_ner=True, use_lemma=True):
-        assert (not use_entity) or entity_list, \
-            'entity_list cannot be None or empty when use_entity is specified'
-        if use_entity and self.entity_idx != -1:
-            assert 0 <= self.entity_idx < len(entity_list), \
-                'entity_idx {} out of range'.format(self.entity_idx)
-            assert all(isinstance(entity, Entity) for entity in entity_list), \
-                'entity_list must contains only Entity element'
-            return entity_list[self.entity_idx].get_representation(
-                use_ner, use_lemma)
-        # NOBUG: arguments not pointing to any entity might also have ner tags
-        elif use_ner and self.ner != '':
+    def get_representation(
+            self, use_entity=False, use_ner=True, use_lemma=True):
+        assert (not use_entity) or self.entity_idx == -1, \
+            'cannot call Argument.get_representation with use_entity=True ' \
+            'when Argument.entity_idx != -1'
+        if use_ner and self.ner != '':
             return self.ner
         else:
-            return super(Argument, self).get_representation(use_lemma)
+            return super(Argument, self).get_representation(use_lemma=use_lemma)
 
     def get_entity(self, entity_list):
         if self.entity_idx != -1:

@@ -45,8 +45,8 @@ class RichArgument(object):
             mention_idx = arg.mention_idx
         else:
             candidate_text_list = [
-                arg.get_representation(use_entity=False, entity_list=None,
-                                       use_ner=use_ner, use_lemma=use_lemma)]
+                arg.get_representation(
+                    use_entity=False, use_ner=use_ner,use_lemma=use_lemma)]
             entity_idx = -1
             mention_idx = -1
         return cls(arg_type, candidate_text_list, entity_idx, mention_idx)
