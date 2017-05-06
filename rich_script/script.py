@@ -73,7 +73,7 @@ class Script(object):
                     vocab_count['name_entity_tag'][mention.ner] += 1
             else:
                 arg_representation = arg.get_representation(
-                    use_entity=False, use_ner=False, use_lemma=use_lemma)
+                    use_ner=False, use_lemma=use_lemma)
                 vocab_count['argument'][arg_representation] += 1
                 if arg.ner != '':
                     vocab_count['name_entity'][arg_representation] += 1

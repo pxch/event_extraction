@@ -1,7 +1,7 @@
 import re
+from warnings import warn
 
 import document
-from entity import Entity
 from token import Token, ParseTokenError
 from util import unescape, get_class_name, consts
 
@@ -33,11 +33,10 @@ class Argument(Token):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_representation(
-            self, use_entity=False, use_ner=True, use_lemma=True):
-        assert (not use_entity) or self.entity_idx == -1, \
-            'cannot call Argument.get_representation with use_entity=True ' \
-            'when Argument.entity_idx != -1'
+    def get_representation(self, use_ner=True, use_lemma=True):
+        if self.entity_idx != -1:
+            warn('Calling Argument.get_representation when Argument.entity_idx '
+                 'is not -1, should call Entity.get_representation instead')
         if use_ner and self.ner != '':
             return self.ner
         else:
