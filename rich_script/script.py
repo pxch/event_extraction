@@ -48,37 +48,37 @@ class Script(object):
                         '{} in {} has mention_idx {} out of range'.format(
                             arg.to_text(), event.to_text(), arg.mention_idx)
 
-    def get_vocab(self, use_lemma=True):
-        vocab = defaultdict(Counter)
+    def get_vocab_count(self, use_lemma=True):
+        vocab_count = defaultdict(Counter)
         all_args = []
         for event in self.events:
             # add the predicate of each event
             pred_representation = event.pred.get_representation(
                 use_lemma=use_lemma, include_prt=True, include_neg=True)
-            vocab['predicate'][pred_representation] += 1
+            vocab_count['predicate'][pred_representation] += 1
 
             # add all prepositions of each event
             for prep, _ in event.pobj_list:
                 if prep != '':
-                    vocab['preposition'][prep] += 1
+                    vocab_count['preposition'][prep] += 1
             all_args.extend(event.get_all_args(include_arg_type=False))
         for arg in all_args:
             if arg.entity_idx != -1:
                 mention = self.entities[arg.entity_idx].rep_mention
                 arg_representation = mention.get_representation(
                     use_ner=False, use_lemma=use_lemma)
-                vocab['argument'][arg_representation] += 1
+                vocab_count['argument'][arg_representation] += 1
                 if mention.ner != '':
-                    vocab['name_entity'][arg_representation] += 1
-                    vocab['name_entity_tag'][mention.ner] += 1
+                    vocab_count['name_entity'][arg_representation] += 1
+                    vocab_count['name_entity_tag'][mention.ner] += 1
             else:
                 arg_representation = arg.get_representation(
                     use_entity=False, use_ner=False, use_lemma=use_lemma)
-                vocab['argument'][arg_representation] += 1
+                vocab_count['argument'][arg_representation] += 1
                 if arg.ner != '':
-                    vocab['name_entity'][arg_representation] += 1
-                    vocab['name_entity_tag'][arg.ner] += 1
-        return vocab
+                    vocab_count['name_entity'][arg_representation] += 1
+                    vocab_count['name_entity_tag'][arg.ner] += 1
+        return vocab_count
 
     def to_text(self):
         entities_text = '\n'.join(['entity-{:0>3d}\t{}'.format(

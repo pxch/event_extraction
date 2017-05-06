@@ -20,18 +20,18 @@ input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
                       if isfile(join(args.input_path, f))
                       and f.endswith('.bz2')])
 
-all_vocab = defaultdict(Counter)
+all_vocab_count = defaultdict(Counter)
 
 for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
         script_corpus = ScriptCorpus.from_text(fin.read())
         for script in script_corpus.scripts:
             print 'Reading script {}'.format(script.doc_name)
-            vocab = script.get_vocab(use_lemma=args.use_lemma)
-            for key in vocab:
-                all_vocab[key] += vocab[key]
+            vocab_count = script.get_all_vocab_count(use_lemma=args.use_lemma)
+            for key in vocab_count:
+                all_vocab_count[key] += vocab_count[key]
 
-for key in all_vocab:
+for key in all_vocab_count:
     fout = BZ2File(join(args.output_path, key + '.bz2'), 'w')
-    write_counter(all_vocab[key], fout)
+    write_counter(all_vocab_count[key], fout)
     fout.close()
