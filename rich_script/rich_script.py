@@ -94,3 +94,24 @@ class RichScript(object):
             )
             rich_events.append(rich_event)
         return cls(script.doc_name, rich_events, len(script.entities))
+
+    @classmethod
+    def build_with_vocab_list(cls, script, pred_vocab_list, arg_vocab_list,
+                              ner_vocab_list, prep_vocab_list, use_entity=True):
+        assert isinstance(script, Script), \
+            'script must be a {} instance'.format(get_class_name(Script))
+        rich_events = []
+        if not script.has_entities():
+            use_entity = False
+        for event in script.events:
+            rich_event = RichEvent.build_with_vocab_list(
+                event,
+                pred_vocab_list=pred_vocab_list,
+                arg_vocab_list=arg_vocab_list,
+                ner_vocab_list=ner_vocab_list,
+                prep_vocab_list=prep_vocab_list,
+                entity_list=script.entities,
+                use_entity=use_entity,
+            )
+            rich_events.append(rich_event)
+        return cls(script.doc_name, rich_events, len(script.entities))

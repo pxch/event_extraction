@@ -218,3 +218,28 @@ class RichEvent(object):
             rich_pobj_list.append(rich_pobj)
         return cls(pred_text, rich_subj, rich_obj, rich_pobj_list)
 
+    @classmethod
+    def build_with_vocab_list(
+            cls, event, pred_vocab_list, arg_vocab_list, ner_vocab_list,
+            prep_vocab_list, entity_list, use_entity=True):
+        assert isinstance(event, Event), 'event must be a {} instance'.format(
+            get_class_name(Event))
+        pred_text = event.pred.get_repr_universal(pred_vocab_list)
+        rich_subj = None
+        if event.subj is not None:
+            rich_subj = RichArgument.build_with_vocab_list(
+                'SUBJ', event.subj, arg_vocab_list, ner_vocab_list,
+                entity_list, use_entity=use_entity)
+        rich_obj = None
+        if event.obj is not None:
+            rich_obj = RichArgument.build_with_vocab_list(
+                'OBJ', event.obj, arg_vocab_list, ner_vocab_list,
+                entity_list, use_entity=use_entity)
+        rich_pobj_list = []
+        for prep, pobj in event.pobj_list:
+            arg_type = 'PREP_' + prep if prep in prep_vocab_list else 'PREP'
+            rich_pobj = RichArgument.build_with_vocab_list(
+                arg_type, pobj, arg_vocab_list, ner_vocab_list,
+                entity_list, use_entity=use_entity)
+            rich_pobj_list.append(rich_pobj)
+        return cls(pred_text, rich_subj, rich_obj, rich_pobj_list)
