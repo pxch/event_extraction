@@ -155,3 +155,13 @@ def prune_counter(counter, thres=1):
     for word, count in dropwhile(
             lambda word_count: word_count[1] >= thres, counter.most_common()):
         del counter[word]
+
+
+def read_vocab_list(vocab_list_file):
+    vocab_list = []
+    with open(vocab_list_file, 'r') as fin:
+        for line in fin.readlines():
+            line = line.strip()
+            if line:
+                vocab_list.append(line)
+    return vocab_list
