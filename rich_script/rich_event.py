@@ -22,15 +22,8 @@ class RichEvent(object):
             'every rich_pobj must be a {} instance'.format(
                 get_class_name(RichArgument))
         self.rich_pobj_list = rich_pobj_list
-        # select the first argument with entity linking from rich_pobj_list
-        # as the rich_pobj
-        # FIXME: seems the self.rich_pobj is not set correctly here
-        # need to reset after call get_index()
+        # NOBUG: only set rich_pobj after call get_index()
         self.rich_pobj = None
-        for rich_pobj in self.rich_pobj_list:
-            if rich_pobj.has_neg:
-                self.rich_pobj = rich_pobj
-                break
 
     def get_index(self, model, include_type=True):
         assert isinstance(model, Word2VecModel), \
@@ -45,15 +38,21 @@ class RichEvent(object):
             self.rich_obj.get_index(model, include_type=include_type)
         for rich_pobj in self.rich_pobj_list:
             rich_pobj.get_index(model, include_type=include_type)
+        # select the first argument with indexed positive candidate and at least
+        # one indexed negative candidate from rich_pobj_list as the rich_pobj
+        for rich_pobj in self.rich_pobj_list:
+            if rich_pobj.has_neg():
+                self.rich_pobj = rich_pobj
+                break
 
     def has_subj_neg(self):
-        return self.rich_subj is not None and self.rich_subj.has_neg
+        return self.rich_subj is not None and self.rich_subj.has_neg()
 
     def has_obj_neg(self):
-        return self.rich_obj is not None and self.rich_obj.has_neg
+        return self.rich_obj is not None and self.rich_obj.has_neg()
 
     def has_pobj_neg(self):
-        return self.rich_pobj is not None and self.rich_pobj.has_neg
+        return self.rich_pobj is not None and self.rich_pobj.has_neg()
 
     def has_neg(self, arg_type):
         assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
@@ -148,7 +147,7 @@ class RichEvent(object):
 
     def get_eval_input_list_subj(self, include_all_pobj=True):
         eval_input_list = []
-        if self.rich_subj is not None and self.rich_subj.has_neg:
+        if self.rich_subj is not None and self.rich_subj.has_neg():
             pos_input = self.get_pos_training_input(
                 include_all_pobj=include_all_pobj)
             for candidate_wv in self.rich_subj.candidate_wv_list:
@@ -159,7 +158,7 @@ class RichEvent(object):
 
     def get_eval_input_list_obj(self, include_all_pobj=True):
         eval_input_list = []
-        if self.rich_obj is not None and self.rich_obj.has_neg:
+        if self.rich_obj is not None and self.rich_obj.has_neg():
             pos_input = self.get_pos_training_input(
                 include_all_pobj=include_all_pobj)
             for candidate_wv in self.rich_obj.candidate_wv_list:
@@ -170,7 +169,7 @@ class RichEvent(object):
 
     def get_eval_input_list_pobj(self):
         eval_input_list = []
-        if self.rich_pobj is not None and self.rich_pobj.has_neg:
+        if self.rich_pobj is not None and self.rich_pobj.has_neg():
             pos_input = self.get_pos_training_input(include_all_pobj=False)
             for candidate_wv in self.rich_pobj.candidate_wv_list:
                 eval_input = deepcopy(pos_input)
@@ -182,7 +181,7 @@ class RichEvent(object):
         assert 0 <= pobj_idx < len(self.rich_pobj_list)
         eval_input_list = []
         rich_pobj = self.rich_pobj_list[pobj_idx]
-        if rich_pobj.has_neg:
+        if rich_pobj.has_neg():
             pos_input = self.get_pos_training_input(include_all_pobj=True)
             for candidate_wv in rich_pobj.candidate_wv_list:
                 eval_input = deepcopy(pos_input)

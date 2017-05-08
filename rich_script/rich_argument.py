@@ -17,17 +17,14 @@ class RichArgument(object):
         self.arg_type = arg_type
         # list of texts for all candidates of the argument
         self.candidate_text_list = candidate_text_list
+        # list of word2vec indices for all candidates of the argument
+        self.candidate_wv_list = []
         # index of the entity the argument points to, -1 if no entity/mention
         self.entity_idx = entity_idx
         # index of the mention the argument points to, -1 if no entity/mention
         self.mention_idx = mention_idx
-
         # index of target candidate in the candidate list
         self.target_idx = max(self.entity_idx, 0)
-        # boolean flag indicating whether the argument has negative candidates
-        self.has_neg = (len(self.candidate_text_list) > 1)
-        # list of word2vec indices for all candidates of the argument
-        self.candidate_wv_list = []
 
     @classmethod
     def build(cls, arg_type, arg, entity_list, use_entity=True, use_ner=True,
@@ -100,9 +97,10 @@ class RichArgument(object):
             [self.candidate_wv_list[candidate_idx] for candidate_idx
              in effective_candidate_idx_list]
         self.target_idx = effective_candidate_idx_list.index(self.target_idx)
-        if self.candidate_wv_list[self.target_idx] == -1 or \
-                        len(self.candidate_wv_list) <= 1:
-            self.has_neg = False
+
+    # boolean flag indicating whether the argument has negative candidates
+    def has_neg(self):
+        return len(self.candidate_wv_list) > 1 and self.get_pos_wv() != -1
 
     # get the text for the positive candidate
     def get_pos_text(self, include_type=True):
