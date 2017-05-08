@@ -22,7 +22,7 @@ class RichEvent(object):
             'every rich_pobj must be a {} instance'.format(
                 get_class_name(RichArgument))
         self.rich_pobj_list = rich_pobj_list
-        # NOBUG: only set rich_pobj after call get_index()
+        # NOBUG: only set rich_pobj after calling get_index()
         self.rich_pobj = None
 
     def get_index(self, model, include_type=True):
@@ -45,24 +45,15 @@ class RichEvent(object):
                 self.rich_pobj = rich_pobj
                 break
 
-    def has_subj_neg(self):
-        return self.rich_subj is not None and self.rich_subj.has_neg()
-
-    def has_obj_neg(self):
-        return self.rich_obj is not None and self.rich_obj.has_neg()
-
-    def has_pobj_neg(self):
-        return self.rich_pobj is not None and self.rich_pobj.has_neg()
-
     def has_neg(self, arg_type):
-        assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
-            'arg_type can only be 0/SUBJ, 1/OBJ, or 2/POBJ'
-        if arg_type == 0 or arg_type == 'SUBJ':
-            return self.has_subj_neg()
-        elif arg_type == 1 or arg_type == 'OBJ':
-            return self.has_obj_neg()
-        elif arg_type == 2 or arg_type == 'POBJ':
-            return self.has_pobj_neg()
+        assert arg_type in [0, 1, 2], \
+            'arg_type can only be 0 (for SUBJ), 1 (for OBJ), or 2 (for POBJ)'
+        if arg_type == 0:
+            return self.rich_subj is not None and self.rich_subj.has_neg()
+        elif arg_type == 1:
+            return self.rich_obj is not None and self.rich_obj.has_neg()
+        else:
+            return self.rich_pobj is not None and self.rich_pobj.has_neg()
 
     def get_word2vec_training_seq(self, include_all_pobj=True):
         sequence = [self.pred_text + '-PRED']
@@ -97,24 +88,24 @@ class RichEvent(object):
             )
 
     def get_neg_training_input(self, arg_type):
-        assert arg_type in [0, 1, 2, 'SUBJ', 'OBJ', 'POBJ'], \
-            'arg_type can only be 0/SUBJ, 1/OBJ, or 2/POBJ'
+        assert arg_type in [0, 1, 2], \
+            'arg_type can only be 0 (for SUBJ), 1 (for OBJ), or 2 (for POBJ)'
         pos_input = self.get_pos_training_input()
         neg_input_list = []
-        if arg_type == 0 or arg_type == 'SUBJ':
-            if self.has_subj_neg():
+        if arg_type == 0:
+            if self.has_neg(arg_type):
                 for neg_idx in self.rich_subj.get_neg_wv_list():
                     neg_input = deepcopy(pos_input)
                     neg_input.set_subj(neg_idx)
                     neg_input_list.append(neg_input)
-        elif arg_type == 1 or arg_type == 'OBJ':
-            if self.has_obj_neg():
+        elif arg_type == 1:
+            if self.has_neg(arg_type):
                 for neg_idx in self.rich_obj.get_neg_wv_list():
                     neg_input = deepcopy(pos_input)
                     neg_input.set_obj(neg_idx)
                     neg_input_list.append(neg_input)
-        elif arg_type == 2 or arg_type == 'POBJ':
-            if self.has_pobj_neg():
+        else:
+            if self.has_neg(arg_type):
                 for neg_idx in self.rich_pobj.get_neg_wv_list():
                     neg_input = deepcopy(pos_input)
                     neg_input.set_pobj(neg_idx)
