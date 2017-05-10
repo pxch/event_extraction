@@ -1,10 +1,10 @@
 import argparse
 from bz2 import BZ2File
 from os import listdir
-from os.path import isfile, join
-from util import consts, read_vocab_list
+from os.path import isfile, join, dirname, realpath
 
 from rich_script import RichScript, ScriptCorpus
+from util import consts, read_vocab_list
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory to read ScriptCorpus files')
@@ -22,22 +22,28 @@ input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
                       if isfile(join(args.input_path, f))
                       and f.endswith('.bz2')])
 
+cur_dir_path = dirname(realpath(__file__))
+
 if args.pred_vocab:
     pred_vocab_list = read_vocab_list(args.pred_vocab)
 else:
-    pred_vocab_list = read_vocab_list(consts.PRED_VOCAB_LIST_FILE)
+    pred_vocab_list = read_vocab_list(
+        join(cur_dir_path, consts.PRED_VOCAB_LIST_FILE))
 if args.arg_vocab:
     arg_vocab_list = read_vocab_list(args.arg_vocab)
 else:
-    arg_vocab_list = read_vocab_list(consts.ARG_VOCAB_LIST_FILE)
+    arg_vocab_list = read_vocab_list(
+        join(cur_dir_path, consts.ARG_VOCAB_LIST_FILE))
 if args.ner_vocab:
     ner_vocab_list = read_vocab_list(args.ner_vocab)
 else:
-    ner_vocab_list = read_vocab_list(consts.NER_VOCAB_LIST_FILE)
+    ner_vocab_list = read_vocab_list(
+        join(cur_dir_path, consts.NER_VOCAB_LIST_FILE))
 if args.prep_vocab:
     prep_vocab_list = read_vocab_list(args.prep_vocab)
 else:
-    prep_vocab_list = read_vocab_list(consts.PREP_VOCAB_LIST_FILE)
+    prep_vocab_list = read_vocab_list(
+        join(cur_dir_path, consts.PREP_VOCAB_LIST_FILE))
 
 for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
