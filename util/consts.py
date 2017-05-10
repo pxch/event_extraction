@@ -101,7 +101,7 @@ ESCAPE_CHAR_MAP = {
     '-': '@dash@',
     '_': '@underscore@'}
 
-PRED_VOCAB_LIST_FILE = 'predicate_min_100'
-ARG_VOCAB_LIST_FILE = 'argument_min_500'
-NER_VOCAB_LIST_FILE = 'name_entity_min_500'
-PREP_VOCAB_LIST_FILE = 'preposition'
+PRED_VOCAB_LIST_FILE = './vocab_list/predicate_min_100'
+ARG_VOCAB_LIST_FILE = './vocab_list/argument_min_500'
+NER_VOCAB_LIST_FILE = './vocab_list/name_entity_min_500'
+PREP_VOCAB_LIST_FILE = './vocab_list/preposition'
