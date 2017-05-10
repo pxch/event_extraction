@@ -49,6 +49,7 @@ for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
         script_corpus = ScriptCorpus.from_text(fin.read())
         for script in script_corpus.scripts:
+            print 'Reading script {}'.format(script.doc_name)
             rich_script = RichScript.build_with_vocab_list(
                 script,
                 pred_vocab_list=pred_vocab_list,
