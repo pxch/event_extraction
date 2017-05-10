@@ -2,7 +2,7 @@ import numpy as np
 
 from event_coherence_evaluator import EventCoherenceEvaluator
 from event_composition import EventCompositionModel
-from rich_script import SingleTrainingInput
+from rich_script import IndexedEvent
 from util import get_class_name
 
 
@@ -41,11 +41,11 @@ class EventCompositionEvaluator(EventCoherenceEvaluator):
         num_context = len(context_input_list)
 
         if arg_type == 'SUBJ':
-            arg_type_input = np.asarray([0] * num_context).astype(np.int32)
-        elif arg_type == 'OBJ':
             arg_type_input = np.asarray([1] * num_context).astype(np.int32)
-        elif arg_type.startswith('PREP'):
+        elif arg_type == 'OBJ':
             arg_type_input = np.asarray([2] * num_context).astype(np.int32)
+        elif arg_type.startswith('PREP'):
+            arg_type_input = np.asarray([3] * num_context).astype(np.int32)
         else:
             raise ValueError(
                 'arg_type {} must be SUBJ/OBJ or starts with PREP'.format(
@@ -56,18 +56,18 @@ class EventCompositionEvaluator(EventCoherenceEvaluator):
         obj_input_a = np.zeros(num_context, dtype=np.int32)
         pobj_input_a = np.zeros(num_context, dtype=np.int32)
         for context_idx, context_input in enumerate(context_input_list):
-            assert isinstance(context_input, SingleTrainingInput), \
+            assert isinstance(context_input, IndexedEvent), \
                 'context_input must be a {} instance'.format(
-                    get_class_name(SingleTrainingInput))
+                    get_class_name(IndexedEvent))
             pred_input_a[context_idx] = context_input.pred_input
             subj_input_a[context_idx] = context_input.subj_input
             obj_input_a[context_idx] = context_input.obj_input
             pobj_input_a[context_idx] = context_input.pobj_input
 
         for eval_input in eval_input_list:
-            assert isinstance(eval_input, SingleTrainingInput), \
+            assert isinstance(eval_input, IndexedEvent), \
                 'eval_input must be a {} instance'.format(
-                    get_class_name(SingleTrainingInput))
+                    get_class_name(IndexedEvent))
             pred_input_b = np.asarray(
                 [eval_input.pred_input] * num_context).astype(np.int32)
             subj_input_b = np.asarray(

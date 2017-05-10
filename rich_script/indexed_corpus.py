@@ -5,7 +5,7 @@ from os.path import isdir, isfile, join
 
 import numpy
 
-from indexed_input import SingleTrainingInput, PairTrainingInput
+from indexed_event import IndexedEvent, IndexedEventTriple
 
 
 class IndexedCorpusReader(object):
@@ -14,9 +14,9 @@ class IndexedCorpusReader(object):
             'corpus_type can only be pretraining on pair_tuning'
         self.corpus_type = corpus_type
         if corpus_type == 'pretraining':
-            self.from_text_fn = SingleTrainingInput.from_text
+            self.from_text_fn = IndexedEvent.from_text
         else:
-            self.from_text_fn = PairTrainingInput.from_text
+            self.from_text_fn = IndexedEventTriple.from_text
         assert isdir(corpus_dir), '{} is not a directory'.format(corpus_dir)
         self.corpus_dir = corpus_dir
         try:

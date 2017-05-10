@@ -74,8 +74,7 @@ class EventCoherenceEvaluator(BaseEvaluator):
         rich_event_list = [rich_event for rich_event in rich_script.rich_events
                            if rich_event.pred_idx != -1]
         pos_input_list = \
-            [rich_event.get_pos_training_input(
-                include_all_pobj=self.include_all_pobj)
+            [rich_event.get_pos_input(include_all_pobj=self.include_all_pobj)
                 for rich_event in rich_event_list]
         for event_idx, rich_event in enumerate(rich_event_list):
             self.logger.debug('Processing event #{}'.format(event_idx))

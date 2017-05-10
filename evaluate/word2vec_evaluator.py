@@ -1,7 +1,7 @@
 import numpy as np
 
 from event_coherence_evaluator import EventCoherenceEvaluator
-from rich_script import SingleTrainingInput, SingleTrainingInputMultiPobj
+from rich_script import IndexedEvent, IndexedEventMultiPobj
 from util import Word2VecModel, get_class_name, cos_sim
 
 
@@ -53,37 +53,29 @@ class Word2VecEvaluator(EventCoherenceEvaluator):
 
     def get_event_vector(self, event_input, include_all_pobj=True):
         if include_all_pobj:
-            assert isinstance(event_input, SingleTrainingInputMultiPobj), \
+            assert isinstance(event_input, IndexedEventMultiPobj), \
                 'event_input must be a {} instance ' \
                 'when include_all_pobj=True'.format(
-                    get_class_name(SingleTrainingInputMultiPobj))
+                    get_class_name(IndexedEventMultiPobj))
         else:
-            assert isinstance(event_input, SingleTrainingInput), \
+            assert isinstance(event_input, IndexedEvent), \
                 'event_input must be a {} instance ' \
                 'when include_all_pobj=False'.format(
-                    get_class_name(SingleTrainingInput))
+                    get_class_name(IndexedEvent))
+        # initialize event vector to be all zero
         vector = np.zeros(self.embedding_model.vector_size)
-        pred_vector = self.embedding_model.get_index_vec(event_input.pred_input)
+        # add vector for predicate
+        pred_vector = self.embedding_model.get_index_vec(
+            event_input.get_predicate())
         if pred_vector is not None:
             vector += pred_vector
         else:
             return None
-        subj_vector = self.embedding_model.get_index_vec(event_input.subj_input)
-        if subj_vector is not None:
-            vector += subj_vector
-        obj_vector = self.embedding_model.get_index_vec(event_input.obj_input)
-        if obj_vector is not None:
-            vector += obj_vector
-        if include_all_pobj:
-            for pobj_input in event_input.pobj_input_list:
-                pobj_vector = self.embedding_model.get_index_vec(pobj_input)
-                if pobj_vector is not None:
-                    vector += pobj_vector
-        else:
-            pobj_vector = self.embedding_model.get_index_vec(
-                event_input.pobj_input)
-            if pobj_vector is not None:
-                vector += pobj_vector
+        # add vectors for all arguments
+        for arg_input in event_input.get_all_argument():
+            arg_vector = self.embedding_model.get_index_vec(arg_input)
+            if arg_vector is not None:
+                vector += arg_vector
         return vector
 
     def evaluate_event(self, eval_input_list_all, context_input_list):
@@ -92,7 +84,8 @@ class Word2VecEvaluator(EventCoherenceEvaluator):
                 context_input, include_all_pobj=self.include_all_pobj)
                 for context_input in context_input_list]
         for rich_arg, eval_input_list in eval_input_list_all:
-            if (not self.ignore_first_mention) or (not rich_arg.is_first_mention()):
+            if (not self.ignore_first_mention) or \
+                    (not rich_arg.is_first_mention()):
                 eval_vector_list = \
                     [self.get_event_vector(
                         eval_input, include_all_pobj=self.include_all_pobj)

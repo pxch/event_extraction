@@ -1,8 +1,9 @@
+from copy import deepcopy
+
 from event import Event
-from indexed_input import SingleTrainingInput, SingleTrainingInputMultiPobj
+from indexed_event import IndexedEvent, IndexedEventMultiPobj
 from rich_argument import RichArgument
 from util import Word2VecModel, get_class_name
-from copy import deepcopy
 
 
 class RichEvent(object):
@@ -45,140 +46,104 @@ class RichEvent(object):
                 self.rich_pobj = rich_pobj
                 break
 
-    def has_neg(self, arg_type):
-        assert arg_type in [0, 1, 2], \
-            'arg_type can only be 0 (for SUBJ), 1 (for OBJ), or 2 (for POBJ)'
-        if arg_type == 0:
-            return self.rich_subj is not None and self.rich_subj.has_neg()
-        elif arg_type == 1:
-            return self.rich_obj is not None and self.rich_obj.has_neg()
-        else:
-            return self.rich_pobj is not None and self.rich_pobj.has_neg()
-
-    def get_word2vec_training_seq(self, include_all_pobj=True):
-        sequence = [self.pred_text + '-PRED']
-        all_arg_list = []
-        if self.rich_subj is not None:
-            all_arg_list.append(self.rich_subj)
-        if self.rich_obj is not None:
-            all_arg_list.append(self.rich_obj)
+    def get_arg_idx_list(self, include_all_pobj=False):
+        # add arg_idx for rich_subj (1) and rich_obj (2)
+        arg_idx_list = [1, 2]
         if include_all_pobj:
-            all_arg_list.extend(self.rich_pobj_list)
+            # add arg_idx for all arguments in rich_pobj_list (4, 5, ...)
+            for pobj_idx in range(len(self.rich_pobj_list)):
+                arg_idx_list.append(4 + pobj_idx)
         else:
-            if self.rich_pobj is not None:
-                all_arg_list.append(self.rich_pobj)
-        for arg in all_arg_list:
-            sequence.append(arg.get_pos_text(include_type=True))
+            # add arg_idx for rich_pobj (3)
+            arg_idx_list.append(3)
+        return arg_idx_list
+
+    def get_argument(self, arg_idx):
+        assert arg_idx in [1, 2, 3] or \
+               (arg_idx - 4) in range(len(self.rich_pobj_list)), \
+               'arg_idx can only be 1 (for rich_subj), 2 (for rich_obj), ' \
+               '3 (for rich_pobj), or 4, 5, ... (for all arguments ' \
+               'in rich_pobj_list)'
+        if arg_idx == 1:
+            return self.rich_subj
+        elif arg_idx == 2:
+            return self.rich_obj
+        elif arg_idx == 3:
+            return self.rich_pobj
+        else:
+            return self.rich_pobj_list[arg_idx - 4]
+
+    def has_neg(self, arg_idx):
+        argument = self.get_argument(arg_idx)
+        return argument is not None and argument.has_neg()
+
+    def get_word2vec_training_seq(
+            self, include_type=True, include_all_pobj=True):
+        sequence = [self.pred_text + '-PRED']
+        arg_idx_list = self.get_arg_idx_list(include_all_pobj=include_all_pobj)
+        for arg_idx in arg_idx_list:
+            argument = self.get_argument(arg_idx)
+            if argument is not None:
+                sequence.append(
+                    argument.get_pos_text(include_type=include_type))
         return sequence
 
-    def get_pos_training_input(self, include_all_pobj=True):
+    def get_pos_input(self, include_all_pobj=False):
+        # return None when the predicate is not indexed (pred_idx == -1)
+        if self.pred_idx == -1:
+            return None
+        # TODO: remove support for include_all_pobj
         if include_all_pobj:
-            return SingleTrainingInputMultiPobj(
+            return IndexedEventMultiPobj(
                 self.pred_idx,
                 self.rich_subj.get_pos_wv() if self.rich_subj else -1,
                 self.rich_obj.get_pos_wv() if self.rich_obj else -1,
                 [rich_pobj.get_pos_wv() for rich_pobj in self.rich_pobj_list]
             )
         else:
-            return SingleTrainingInput(
+            return IndexedEvent(
                 self.pred_idx,
                 self.rich_subj.get_pos_wv() if self.rich_subj else -1,
                 self.rich_obj.get_pos_wv() if self.rich_obj else -1,
                 self.rich_pobj.get_pos_wv() if self.rich_pobj else -1
             )
 
-    def get_neg_training_input(self, arg_type):
-        assert arg_type in [0, 1, 2], \
-            'arg_type can only be 0 (for SUBJ), 1 (for OBJ), or 2 (for POBJ)'
-        pos_input = self.get_pos_training_input()
+    def get_neg_input_list(self, arg_idx):
+        # return empty list when the predicate is not indexed (pred_idx == -1)
+        if self.pred_idx == -1:
+            return []
+        assert arg_idx in [1, 2, 3], \
+            'arg_idx can only be 1 (for SUBJ), 2 (for OBJ) or 3 (for POBJ)'
+        pos_input = self.get_pos_input(include_all_pobj=False)
         neg_input_list = []
-        if arg_type == 0:
-            if self.has_neg(arg_type):
-                for neg_idx in self.rich_subj.get_neg_wv_list():
-                    neg_input = deepcopy(pos_input)
-                    neg_input.set_subj(neg_idx)
-                    neg_input_list.append(neg_input)
-        elif arg_type == 1:
-            if self.has_neg(arg_type):
-                for neg_idx in self.rich_obj.get_neg_wv_list():
-                    neg_input = deepcopy(pos_input)
-                    neg_input.set_obj(neg_idx)
-                    neg_input_list.append(neg_input)
-        else:
-            if self.has_neg(arg_type):
-                for neg_idx in self.rich_pobj.get_neg_wv_list():
-                    neg_input = deepcopy(pos_input)
-                    neg_input.set_pobj(neg_idx)
-                    neg_input_list.append(neg_input)
+        if self.has_neg(arg_idx):
+            argument = self.get_argument(arg_idx)
+            for neg_arg in argument.get_neg_wv_list():
+                neg_input = deepcopy(pos_input)
+                neg_input.set_argument(arg_idx, neg_arg)
+                neg_input_list.append(neg_input)
         return neg_input_list
 
     def get_eval_input_list_all(self, include_all_pobj=True):
-        results = []
-
-        subj_eval_input_list = self.get_eval_input_list_subj(include_all_pobj)
-        if subj_eval_input_list:
-            results.append((self.rich_subj, subj_eval_input_list))
-
-        obj_eval_input_list = self.get_eval_input_list_obj(include_all_pobj)
-        if obj_eval_input_list:
-            results.append((self.rich_obj, obj_eval_input_list))
-
-        if include_all_pobj:
-            for pobj_idx, rich_pobj in enumerate(self.rich_pobj_list):
-                pobj_eval_input_list = \
-                    self.get_eval_input_list_pobj_multi(pobj_idx)
-                if pobj_eval_input_list:
-                    results.append((rich_pobj, pobj_eval_input_list))
-        else:
-            pobj_eval_input_list = self.get_eval_input_list_pobj()
-            if pobj_eval_input_list:
-                results.append((self.rich_pobj, pobj_eval_input_list))
-
-        return results
-
-    def get_eval_input_list_subj(self, include_all_pobj=True):
-        eval_input_list = []
-        if self.rich_subj is not None and self.rich_subj.has_neg():
-            pos_input = self.get_pos_training_input(
-                include_all_pobj=include_all_pobj)
-            for candidate_wv in self.rich_subj.candidate_wv_list:
-                eval_input = deepcopy(pos_input)
-                eval_input.set_subj(candidate_wv)
-                eval_input_list.append(eval_input)
-        return eval_input_list
-
-    def get_eval_input_list_obj(self, include_all_pobj=True):
-        eval_input_list = []
-        if self.rich_obj is not None and self.rich_obj.has_neg():
-            pos_input = self.get_pos_training_input(
-                include_all_pobj=include_all_pobj)
-            for candidate_wv in self.rich_obj.candidate_wv_list:
-                eval_input = deepcopy(pos_input)
-                eval_input.set_obj(candidate_wv)
-                eval_input_list.append(eval_input)
-        return eval_input_list
-
-    def get_eval_input_list_pobj(self):
-        eval_input_list = []
-        if self.rich_pobj is not None and self.rich_pobj.has_neg():
-            pos_input = self.get_pos_training_input(include_all_pobj=False)
-            for candidate_wv in self.rich_pobj.candidate_wv_list:
-                eval_input = deepcopy(pos_input)
-                eval_input.set_pobj(candidate_wv)
-                eval_input_list.append(eval_input)
-        return eval_input_list
-
-    def get_eval_input_list_pobj_multi(self, pobj_idx):
-        assert 0 <= pobj_idx < len(self.rich_pobj_list)
-        eval_input_list = []
-        rich_pobj = self.rich_pobj_list[pobj_idx]
-        if rich_pobj.has_neg():
-            pos_input = self.get_pos_training_input(include_all_pobj=True)
-            for candidate_wv in rich_pobj.candidate_wv_list:
-                eval_input = deepcopy(pos_input)
-                eval_input.set_pobj(pobj_idx, candidate_wv)
-                eval_input_list.append(eval_input)
-        return eval_input_list
+        # return empty list when the predicate is not indexed (pred_idx == -1)
+        if self.pred_idx == -1:
+            return []
+        # TODO: remove support for include_all_pobj
+        pos_input = self.get_pos_input(include_all_pobj=include_all_pobj)
+        eval_input_list_all = []
+        if pos_input is None:
+            return eval_input_list_all
+        arg_idx_list = self.get_arg_idx_list(include_all_pobj=include_all_pobj)
+        for arg_idx in arg_idx_list:
+            eval_input_list = []
+            if self.has_neg(arg_idx):
+                argument = self.get_argument(arg_idx)
+                for candidate_arg in argument.candidate_wv_list:
+                    eval_input = deepcopy(pos_input)
+                    eval_input.set_argument(arg_idx, candidate_arg)
+                    eval_input_list.append(eval_input)
+                eval_input_list_all.append((argument, eval_input_list))
+        return eval_input_list_all
 
     @classmethod
     def build(cls, event, entity_list, use_lemma=True, include_neg=True,

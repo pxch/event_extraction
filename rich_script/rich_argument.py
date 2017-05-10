@@ -8,7 +8,7 @@ class RichArgument(object):
             'arg_type {} must be SUBJ/OBJ or starts with PREP'.format(arg_type)
         assert candidate_text_list, 'candidate_text_list cannot be empty'
         assert 0 <= entity_idx < len(candidate_text_list) or \
-               (len(candidate_text_list) == 1 and entity_idx == -1), \
+            (len(candidate_text_list) == 1 and entity_idx == -1), \
             'entity_idx must be between 0 and len(candidate_text_list), ' \
             'or -1 when len(candidate_text_list) = 1'
         assert mention_idx >= 0 or (entity_idx == -1 and mention_idx == -1), \
@@ -42,7 +42,7 @@ class RichArgument(object):
             mention_idx = arg.mention_idx
         else:
             candidate_text_list = [
-                arg.get_representation(use_ner=use_ner,use_lemma=use_lemma)]
+                arg.get_representation(use_ner=use_ner, use_lemma=use_lemma)]
             entity_idx = -1
             mention_idx = -1
         return cls(arg_type, candidate_text_list, entity_idx, mention_idx)
@@ -129,6 +129,8 @@ class RichArgument(object):
     def get_neg_wv_list(self):
         if len(self.candidate_wv_list) == 1:
             return []
+        # might contain duplicate input as self.get_pos_wv(),
+        # so need some extra features to help disambiguate
         neg_wv_list = \
             self.candidate_wv_list[:self.target_idx] + \
             self.candidate_wv_list[self.target_idx+1:]
