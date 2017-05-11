@@ -32,7 +32,7 @@ class Predicate(Token):
             result = 'not_' + result
         return result
 
-    def get_repr_universal(self, pred_vocab_list):
+    def get_repr_with_vocab_list(self, pred_vocab_list):
         candidates = [super(Predicate, self).get_representation(use_lemma=True)]
         if self.prt:
             candidates.append(candidates[0] + '_' + self.prt)
@@ -41,7 +41,7 @@ class Predicate(Token):
                 candidates.append('not_' + candidates[idx])
         result = 'UNK'
         for candidate in reversed(candidates):
-            if candidate in pred_vocab_list:
+            if (not pred_vocab_list) or candidate in pred_vocab_list:
                 result = candidate
                 break
         return result

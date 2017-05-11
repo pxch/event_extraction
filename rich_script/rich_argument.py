@@ -57,13 +57,13 @@ class RichArgument(object):
             assert 0 <= arg.entity_idx < len(entity_list), \
                 'entity_idx {} out of range'.format(arg.entity_idx)
             candidate_text_list = [
-                entity.get_repr_universal(arg_vocab_list, ner_vocab_list)
+                entity.get_repr_with_vocab_list(arg_vocab_list, ner_vocab_list)
                 for entity in entity_list]
             entity_idx = arg.entity_idx
             mention_idx = arg.mention_idx
         else:
             candidate_text_list = [
-                arg.get_repr_universal(arg_vocab_list, ner_vocab_list)]
+                arg.get_repr_with_vocab_list(arg_vocab_list, ner_vocab_list)]
             entity_idx = -1
             mention_idx = -1
         return cls(arg_type, candidate_text_list, entity_idx, mention_idx)

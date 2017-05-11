@@ -179,7 +179,7 @@ class RichEvent(object):
             prep_vocab_list, entity_list, use_entity=True):
         assert isinstance(event, Event), 'event must be a {} instance'.format(
             get_class_name(Event))
-        pred_text = event.pred.get_repr_universal(pred_vocab_list)
+        pred_text = event.pred.get_repr_with_vocab_list(pred_vocab_list)
         rich_subj = None
         if event.subj is not None:
             rich_subj = RichArgument.build_with_vocab_list(
