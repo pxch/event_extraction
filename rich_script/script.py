@@ -128,8 +128,9 @@ class Script(object):
                     # exclude "be" verbs
                     if pred_token.lemma == 'be':
                         continue
-                    # FIXME: don't use predefined set of stop verbs
-                    # if pred_token.lemma in consts.STOP_VERBS: continue
+                    # NOBUG: do not exclude stop verbs now, as both negation and
+                    # particle need to be counted in detecting a stop verb,
+                    # which should be excluded in constructing RichScript
                     # TODO: exclude verbs in quotes
                     # exclude modifying verbs
                     if sent.dep_graph.lookup_label(

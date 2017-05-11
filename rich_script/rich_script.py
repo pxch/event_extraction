@@ -3,7 +3,7 @@ import random
 from indexed_event import IndexedEventTriple
 from rich_event import RichEvent
 from script import Script
-from util import Word2VecModel, get_class_name
+from util import Word2VecModel, consts, get_class_name
 
 
 class RichScript(object):
@@ -124,7 +124,8 @@ class RichScript(object):
                 use_ner=use_ner,
                 include_prep=include_prep
             )
-            rich_events.append(rich_event)
+            if rich_event.pred_text not in consts.STOP_PREDS:
+                rich_events.append(rich_event)
         return cls(script.doc_name, rich_events, len(script.entities))
 
     @classmethod
@@ -145,5 +146,6 @@ class RichScript(object):
                 entity_list=script.entities,
                 use_entity=use_entity,
             )
-            rich_events.append(rich_event)
+            if rich_event.pred_text not in consts.STOP_PREDS:
+                rich_events.append(rich_event)
         return cls(script.doc_name, rich_events, len(script.entities))
