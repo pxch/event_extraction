@@ -56,7 +56,8 @@ for input_f in input_files:
                 arg_vocab_list=arg_vocab_list,
                 ner_vocab_list=ner_vocab_list,
                 prep_vocab_list=prep_vocab_list,
-                use_entity=True
+                use_entity=True,
+                filter_stop_events=False
             )
             sequence = rich_script.get_word2vec_training_seq(
                 include_type=True,

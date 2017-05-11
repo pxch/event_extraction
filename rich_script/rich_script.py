@@ -107,7 +107,8 @@ class RichScript(object):
 
     @classmethod
     def build(cls, script, use_lemma=True, include_neg=True, include_prt=True,
-              use_entity=True, use_ner=True, include_prep=True):
+              use_entity=True, use_ner=True, include_prep=True,
+              filter_stop_events=False):
         assert isinstance(script, Script), \
             'script must be a {} instance'.format(get_class_name(Script))
         rich_events = []
@@ -124,13 +125,15 @@ class RichScript(object):
                 use_ner=use_ner,
                 include_prep=include_prep
             )
-            if rich_event.pred_text not in consts.STOP_PREDS:
+            if (not filter_stop_events) or \
+                    (rich_event.pred_text not in consts.STOP_PREDS):
                 rich_events.append(rich_event)
         return cls(script.doc_name, rich_events, len(script.entities))
 
     @classmethod
     def build_with_vocab_list(cls, script, pred_vocab_list, arg_vocab_list,
-                              ner_vocab_list, prep_vocab_list, use_entity=True):
+                              ner_vocab_list, prep_vocab_list, use_entity=True,
+                              filter_stop_events=False):
         assert isinstance(script, Script), \
             'script must be a {} instance'.format(get_class_name(Script))
         rich_events = []
@@ -146,6 +149,7 @@ class RichScript(object):
                 entity_list=script.entities,
                 use_entity=use_entity,
             )
-            if rich_event.pred_text not in consts.STOP_PREDS:
+            if (not filter_stop_events) or \
+                    (rich_event.pred_text not in consts.STOP_PREDS):
                 rich_events.append(rich_event)
         return cls(script.doc_name, rich_events, len(script.entities))
