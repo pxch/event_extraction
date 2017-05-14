@@ -96,8 +96,8 @@ class RichEntity(object):
         )
         return cls(core, salience)
 
-    def get_index(self, model, arg_type=''):
-        return self.core.get_index(model, arg_type)
+    def get_index(self, model, arg_type='', use_unk=True):
+        return self.core.get_index(model, arg_type, use_unk=use_unk)
 
     def get_text_with_vocab_list(self, arg_vocab_list=None,
                                  ner_vocab_list=None):

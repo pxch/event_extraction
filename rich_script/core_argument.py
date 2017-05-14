@@ -45,7 +45,7 @@ class CoreArgument(object):
             candidates.append(text)
         return candidates
 
-    def get_index(self, model, arg_type=''):
+    def get_index(self, model, arg_type='', use_unk=True):
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
         # add candidates from self.word
@@ -55,10 +55,10 @@ class CoreArgument(object):
         if self.ner != '':
             candidates.extend(
                 CoreArgument.get_candidates_by_arg_type(self.ner, arg_type))
-        # TODO: determine whether to include UNK index or just return -1
-        # add candidates from UNK token
-        candidates.extend(
-            CoreArgument.get_candidates_by_arg_type('UNK', arg_type))
+        # add UNK to the candidates if use_unk is set to True
+        if use_unk:
+            candidates.extend(
+                CoreArgument.get_candidates_by_arg_type('UNK', arg_type))
         index = -1
         # iterate through all candidates, and return the first one that exists
         # in the vocabulary of the Word2Vec model, otherwise return -1

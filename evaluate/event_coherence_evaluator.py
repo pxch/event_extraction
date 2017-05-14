@@ -61,7 +61,8 @@ class EventCoherenceEvaluator(BaseEvaluator):
             filter_stop_events=self.filter_stop_events
         )
 
-        rich_script.get_index(self.embedding_model, self.include_type)
+        rich_script.get_index(
+            self.embedding_model, include_type=self.include_type, use_unk=True)
         # get list of indexed events in the script
         rich_event_list = rich_script.get_indexed_events()
         # skip evaluation when number of indexed events is smaller than 2

@@ -52,7 +52,7 @@ for input_f in input_files:
                 use_lemma=args.use_lemma,
                 filter_stop_events=False
             )
-            rich_script.get_index(model)
+            rich_script.get_index(model, include_type=True, use_unk=True)
             pair_tuning_inputs = rich_script.get_pair_tuning_input_list(
                 neg_type=args.neg_type)
             if len(pair_tuning_inputs) > 0:

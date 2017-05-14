@@ -47,7 +47,7 @@ for input_f in input_files:
                 use_lemma=args.use_lemma,
                 filter_stop_events=False
             )
-            rich_script.get_index(model)
+            rich_script.get_index(model, include_type=True, use_unk=True)
             pretraining_inputs = rich_script.get_pretraining_input_list()
             if len(pretraining_inputs) > 0:
                 fout.write('\n'.join(map(str, pretraining_inputs)) + '\n')

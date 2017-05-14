@@ -43,14 +43,15 @@ class RichPredicate(object):
             # candidates.append('UNK')
         return self.candidates
 
-    def get_index(self, model, include_type=False):
+    def get_index(self, model, include_type=True, use_unk=True):
         # TODO: add logic to process stop predicates
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
         index = -1
         candidates = self.get_candidates()
-        # TODO: determine whether to include UNK index of just return -1
-        candidates.append('UNK')
+        # add UNK to the candidates if use_unk is set to True
+        if use_unk:
+            candidates.append('UNK')
         if include_type:
             candidates = [candidate + '-PRED' for candidate in candidates]
         for text in candidates:

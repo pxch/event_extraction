@@ -14,11 +14,12 @@ class RichScript(object):
         self.num_events = len(self.rich_events)
         self.num_entities = num_entities
 
-    def get_index(self, model, include_type=True):
+    def get_index(self, model, include_type=True, use_unk=True):
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
         for rich_event in self.rich_events:
-            rich_event.get_index(model, include_type=include_type)
+            rich_event.get_index(
+                model, include_type=include_type, use_unk=use_unk)
 
     # return list of events with indexed predicate (rich_pred.wv != -1)
     def get_indexed_events(self):

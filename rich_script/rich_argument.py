@@ -39,7 +39,7 @@ class BaseRichArgument(object):
 
     # get word2vec indices for all candidates
     @abc.abstractmethod
-    def get_index(self, model, include_type=True):
+    def get_index(self, model, include_type=True, use_unk=True):
         return
 
     # get the text for the positive candidate
@@ -89,11 +89,12 @@ class RichArgument(BaseRichArgument):
     def __init__(self, arg_type, core):
         super(RichArgument, self).__init__(arg_type, core)
 
-    def get_index(self, model, include_type=True):
+    def get_index(self, model, include_type=True, use_unk=True):
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
         self.core_wv = \
-            self.core.get_index(model, self.arg_type if include_type else '')
+            self.core.get_index(
+                model, self.arg_type if include_type else '', use_unk=use_unk)
 
     def get_pos_text(self, arg_vocab_list=None, ner_vocab_list=None,
                      include_type=True):
@@ -153,14 +154,15 @@ class RichArgumentWithEntity(BaseRichArgument):
         # list of indices of entities with valid word2vec index (not -1)
         self.valid_entity_idx_list = []
 
-    def get_index(self, model, include_type=True):
+    def get_index(self, model, include_type=True, use_unk=True):
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
         self.core_wv = \
-            self.core.get_index(model, self.arg_type if include_type else '')
+            self.core.get_index(
+                model, self.arg_type if include_type else '', use_unk=use_unk)
         for rich_entity in self.rich_entity_list:
             self.entity_wv_list.append(rich_entity.get_index(
-                model, self.arg_type if include_type else ''))
+                model, self.arg_type if include_type else '', use_unk=use_unk))
         self.valid_entity_idx_list = \
             [entity_idx for entity_idx, entity_wv
              in enumerate(self.entity_wv_list) if entity_wv != -1]
