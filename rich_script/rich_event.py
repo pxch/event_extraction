@@ -93,7 +93,7 @@ class RichEvent(object):
         return sequence
 
     def get_pos_input(self, include_all_pobj=False):
-        # return None when the predicate is not indexed (pred_idx == -1)
+        # return None when the predicate is not indexed
         if self.rich_pred.get_wv() == -1:
             return None
         # TODO: remove support for include_all_pobj
@@ -113,7 +113,7 @@ class RichEvent(object):
             )
 
     def get_neg_input_list(self, arg_idx):
-        # return empty list when the predicate is not indexed (pred_idx == -1)
+        # return empty list when the predicate is not indexed
         if self.rich_pred.get_wv() == -1:
             return []
         assert arg_idx in [1, 2, 3], \
@@ -122,14 +122,14 @@ class RichEvent(object):
         neg_input_list = []
         if self.has_neg(arg_idx):
             argument = self.get_argument(arg_idx)
-            for neg_arg in argument.get_neg_wv_list():
+            for arg_wv in argument.get_neg_wv_list():
                 neg_input = deepcopy(pos_input)
-                neg_input.set_argument(arg_idx, neg_arg)
+                neg_input.set_argument(arg_idx, arg_wv)
                 neg_input_list.append(neg_input)
         return neg_input_list
 
     def get_eval_input_list_all(self, include_all_pobj=True):
-        # return empty list when the predicate is not indexed (pred_idx == -1)
+        # return empty list when the predicate is not indexed
         if self.rich_pred.get_wv() == -1:
             return []
         # TODO: remove support for include_all_pobj
@@ -142,9 +142,9 @@ class RichEvent(object):
             eval_input_list = []
             if self.has_neg(arg_idx):
                 argument = self.get_argument(arg_idx)
-                for candidate_arg in argument.candidate_wv_list:
+                for arg_wv in argument.get_all_wv_list():
                     eval_input = deepcopy(pos_input)
-                    eval_input.set_argument(arg_idx, candidate_arg)
+                    eval_input.set_argument(arg_idx, arg_wv)
                     eval_input_list.append(eval_input)
                 eval_input_list_all.append((argument, eval_input_list))
         return eval_input_list_all

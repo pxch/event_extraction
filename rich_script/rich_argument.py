@@ -64,6 +64,16 @@ class BaseRichArgument(object):
     def get_neg_wv_list(self):
         return
 
+    # get the word2vec indices for all candidates (both positive and negative)
+    @abc.abstractmethod
+    def get_all_wv_list(self):
+        return
+
+    # get the index of positive wv in self.get_all_wv_list()
+    @abc.abstractmethod
+    def get_target_idx(self):
+        return
+
     # boolean flag indicating whether the argument has negative candidates
     @abc.abstractmethod
     def has_neg(self):
@@ -102,6 +112,12 @@ class RichArgument(BaseRichArgument):
 
     def get_neg_wv_list(self):
         return []
+
+    def get_all_wv_list(self):
+        return [self.core_wv]
+
+    def get_target_idx(self):
+        return 0
 
     def has_neg(self):
         return False
@@ -183,6 +199,15 @@ class RichArgumentWithEntity(BaseRichArgument):
                 continue
             neg_wv_list.append(self.entity_wv_list[entity_idx])
         return neg_wv_list
+
+    def get_all_wv_list(self):
+        all_wv_list = []
+        for entity_idx in self.valid_entity_idx_list:
+            all_wv_list.append(self.entity_wv_list[entity_idx])
+        return all_wv_list
+
+    def get_target_idx(self):
+        return self.valid_entity_idx_list.index(self.entity_idx)
 
     def has_neg(self):
         return len(self.valid_entity_idx_list) > 1 and self.get_pos_wv() != -1

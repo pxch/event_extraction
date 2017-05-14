@@ -20,7 +20,7 @@ class RichScript(object):
         for rich_event in self.rich_events:
             rich_event.get_index(model, include_type=include_type)
 
-    # return list of events with indexed predicate (pred_idx != -1)
+    # return list of events with indexed predicate (rich_pred.wv != -1)
     def get_indexed_events(self):
         return [rich_event for rich_event in self.rich_events
                 if rich_event.rich_pred.get_wv() != -1]
@@ -80,11 +80,7 @@ class RichScript(object):
                             random.choice(left_input_idx_list)]
                         results.append(
                             IndexedEventTriple(
-                                left_input,
-                                pos_input,
-                                neg_input,
-                                arg_idx
-                            ))
+                                left_input, pos_input, neg_input, arg_idx))
                     else:
                         neg_input_list = pos_event.get_neg_input_list(arg_idx)
                         for neg_input in neg_input_list:
@@ -93,21 +89,15 @@ class RichScript(object):
                                     random.choice(left_input_idx_list)]
                                 results.append(
                                     IndexedEventTriple(
-                                        left_input,
-                                        pos_input,
-                                        neg_input,
-                                        arg_idx
-                                    ))
+                                        left_input, pos_input, neg_input,
+                                        arg_idx))
                             else:
                                 for left_input_idx in left_input_idx_list:
                                     left_input = pos_input_list[left_input_idx]
                                     results.append(
                                         IndexedEventTriple(
-                                            left_input,
-                                            pos_input,
-                                            neg_input,
-                                            arg_idx
-                                        ))
+                                            left_input, pos_input, neg_input,
+                                            arg_idx))
         return results
 
     @classmethod

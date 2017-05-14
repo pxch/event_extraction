@@ -90,7 +90,7 @@ class Word2VecEvaluator(EventCoherenceEvaluator):
                     context_vector_list,
                     self.use_max_score
                 )
-                correct = (most_coherent_idx == rich_arg.target_idx)
+                correct = (most_coherent_idx == rich_arg.get_target_idx())
                 num_choices = len(eval_input_list)
                 self.eval_stats.add_eval_result(
                     rich_arg.arg_type,

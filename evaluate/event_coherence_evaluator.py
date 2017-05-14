@@ -62,9 +62,12 @@ class EventCoherenceEvaluator(BaseEvaluator):
         )
 
         rich_script.get_index(self.embedding_model, self.include_type)
-        # remove events with None embedding (pred_idx == -1)
-        rich_event_list = [rich_event for rich_event in rich_script.rich_events
-                           if rich_event.pred_idx != -1]
+        # get list of indexed events in the script
+        rich_event_list = rich_script.get_indexed_events()
+        # skip evaluation when number of indexed events is smaller than 2
+        # (i.e., no context events to be compared to)
+        if len(rich_event_list) < 2:
+            return
         pos_input_list = \
             [rich_event.get_pos_input(include_all_pobj=self.include_all_pobj)
                 for rich_event in rich_event_list]
