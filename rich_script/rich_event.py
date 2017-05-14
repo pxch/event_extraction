@@ -112,7 +112,7 @@ class RichEvent(object):
                 self.rich_pobj.get_pos_wv() if self.rich_pobj else -1
             )
 
-    def get_neg_input_list(self, arg_idx):
+    def get_neg_input_list(self, arg_idx, include_salience=True):
         # return empty list when the predicate is not indexed
         if self.rich_pred.get_wv() == -1:
             return []
@@ -122,13 +122,19 @@ class RichEvent(object):
         neg_input_list = []
         if self.has_neg(arg_idx):
             argument = self.get_argument(arg_idx)
-            for arg_wv in argument.get_neg_wv_list():
+            neg_wv_list = argument.get_neg_wv_list()
+            neg_salience_list = argument.get_neg_salience_list()
+            for arg_wv, arg_salience in zip(neg_wv_list, neg_salience_list):
                 neg_input = deepcopy(pos_input)
                 neg_input.set_argument(arg_idx, arg_wv)
-                neg_input_list.append(neg_input)
+                if include_salience:
+                    neg_input_list.append((neg_input, arg_salience))
+                else:
+                    neg_input_list.append(neg_input)
         return neg_input_list
 
     def get_eval_input_list_all(self, include_all_pobj=True):
+        # TODO: determine whether to include salience information as necessary
         # return empty list when the predicate is not indexed
         if self.rich_pred.get_wv() == -1:
             return []

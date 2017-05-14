@@ -1,6 +1,7 @@
 import abc
 from copy import deepcopy
 
+from rich_entity import EntitySalience
 from util import get_class_name
 
 
@@ -151,24 +152,32 @@ class IndexedEventMultiPobj(BaseIndexedEvent):
 
 
 class IndexedEventTriple(object):
-    def __init__(self, left_list, pos_list, neg_list, arg_idx):
-        assert isinstance(left_list, IndexedEvent), \
-            'left_list must be a {} instance'.format(
+    def __init__(self, left_event, pos_event, neg_event, arg_idx, pos_salience,
+                 neg_salience):
+        assert isinstance(left_event, IndexedEvent), \
+            'left_event must be a {} instance'.format(
                 get_class_name(IndexedEvent))
-        self.left_list = deepcopy(left_list)
-        assert isinstance(pos_list, IndexedEvent), \
-            'pos_input must be a {} instance'.format(
+        self.left_event = deepcopy(left_event)
+        assert isinstance(pos_event, IndexedEvent), \
+            'pos_event must be a {} instance'.format(
                 get_class_name(IndexedEvent))
-        self.pos_list = deepcopy(pos_list)
-        assert isinstance(neg_list, IndexedEvent), \
-            'neg_input must be a {} instance'.format(
+        self.pos_event = deepcopy(pos_event)
+        assert isinstance(neg_event, IndexedEvent), \
+            'neg_event must be a {} instance'.format(
                 get_class_name(IndexedEvent))
-        self.neg_list = deepcopy(neg_list)
+        self.neg_event = deepcopy(neg_event)
         assert arg_idx in [1, 2, 3], \
             'arg_type must be 1 (for subj), 2 (for obj), or 3 (for pobj)'
         self.arg_idx = arg_idx
-        # TODO: add extra features for entity saliency
-        self.saliency_features = None
+        # extra features for entity salience
+        assert isinstance(pos_salience, EntitySalience), \
+            'pos_salience must be a {} instance'.format(
+                get_class_name(EntitySalience))
+        self.pos_salience = pos_salience
+        assert isinstance(neg_salience, EntitySalience), \
+            'neg_salience must be a {} instance'.format(
+                get_class_name(EntitySalience))
+        self.neg_salience = neg_salience
 
     def __str__(self):
         return self.to_text()
@@ -177,16 +186,21 @@ class IndexedEventTriple(object):
         return 'Indexed Event Triple: ' + self.to_text()
 
     def to_text(self):
-        return ' / '.join([self.left_list.to_text(), self.pos_list.to_text(),
-                           self.neg_list.to_text(), str(self.arg_idx)])
+        return ' / '.join([self.left_event.to_text(), self.pos_event.to_text(),
+                           self.neg_event.to_text(), str(self.arg_idx),
+                           self.pos_salience.to_text(),
+                           self.neg_salience.to_text()])
 
     @classmethod
     def from_text(cls, text):
         parts = text.strip().split(' / ')
-        assert len(parts) == 4, \
-            'expecting 4 parts separated by " / ", found {}'.format(len(parts))
-        left_list = IndexedEvent.from_text(parts[0])
-        pos_list = IndexedEvent.from_text(parts[1])
-        neg_list = IndexedEvent.from_text(parts[2])
+        assert len(parts) == 6, \
+            'expecting 6 parts separated by " / ", found {}'.format(len(parts))
+        left_event = IndexedEvent.from_text(parts[0])
+        pos_event = IndexedEvent.from_text(parts[1])
+        neg_event = IndexedEvent.from_text(parts[2])
         arg_idx = int(parts[3])
-        return cls(left_list, pos_list, neg_list, arg_idx)
+        pos_salience = EntitySalience.from_text(parts[4])
+        neg_salience = EntitySalience.from_text(parts[5])
+        return cls(left_event, pos_event, neg_event, arg_idx, pos_salience,
+                   neg_salience)

@@ -177,6 +177,9 @@ class RichArgumentWithEntity(BaseRichArgument):
     def get_pos_wv(self):
         return self.entity_wv_list[self.entity_idx]
 
+    def get_pos_salience(self):
+        return self.rich_entity_list[self.entity_idx].get_salience()
+
     def get_neg_text_list(self, arg_vocab_list=None, ner_vocab_list=None,
                           include_type=True):
         neg_text_list = []
@@ -200,11 +203,27 @@ class RichArgumentWithEntity(BaseRichArgument):
             neg_wv_list.append(self.entity_wv_list[entity_idx])
         return neg_wv_list
 
+    def get_neg_salience_list(self):
+        neg_salience_list = []
+        for entity_idx in self.valid_entity_idx_list:
+            if entity_idx == self.entity_idx:
+                continue
+            neg_salience_list.append(
+                self.rich_entity_list[entity_idx].get_salience())
+        return neg_salience_list
+
     def get_all_wv_list(self):
         all_wv_list = []
         for entity_idx in self.valid_entity_idx_list:
             all_wv_list.append(self.entity_wv_list[entity_idx])
         return all_wv_list
+
+    def get_all_salience_list(self):
+        all_salience_list = []
+        for entity_idx in self.valid_entity_idx_list:
+            all_salience_list.append(
+                self.rich_entity_list[entity_idx].get_salience())
+        return all_salience_list
 
     def get_target_idx(self):
         return self.valid_entity_idx_list.index(self.entity_idx)

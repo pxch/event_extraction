@@ -73,31 +73,33 @@ class RichScript(object):
                 range(pos_idx, len(self.get_indexed_events()))
             for arg_idx in [1, 2, 3]:
                 if pos_event.has_neg(arg_idx):
+                    pos_salience = \
+                        pos_event.get_argument(arg_idx).get_pos_salience()
                     if neg_sample_type == 'one':
-                        neg_input = random.choice(
-                            pos_event.get_neg_input_list(arg_idx))
+                        neg_input, neg_salience = random.choice(
+                            pos_event.get_neg_input_list(
+                                arg_idx, include_salience=True))
                         left_input = pos_input_list[
                             random.choice(left_input_idx_list)]
-                        results.append(
-                            IndexedEventTriple(
-                                left_input, pos_input, neg_input, arg_idx))
+                        results.append(IndexedEventTriple(
+                            left_input, pos_input, neg_input,
+                            arg_idx, pos_salience, neg_salience))
                     else:
-                        neg_input_list = pos_event.get_neg_input_list(arg_idx)
-                        for neg_input in neg_input_list:
+                        neg_input_list = pos_event.get_neg_input_list(
+                            arg_idx, include_salience=True)
+                        for neg_input, neg_salience in neg_input_list:
                             if neg_sample_type == 'neg':
                                 left_input = pos_input_list[
                                     random.choice(left_input_idx_list)]
-                                results.append(
-                                    IndexedEventTriple(
-                                        left_input, pos_input, neg_input,
-                                        arg_idx))
+                                results.append(IndexedEventTriple(
+                                    left_input, pos_input, neg_input,
+                                    arg_idx, pos_salience, neg_salience))
                             else:
                                 for left_input_idx in left_input_idx_list:
                                     left_input = pos_input_list[left_input_idx]
-                                    results.append(
-                                        IndexedEventTriple(
-                                            left_input, pos_input, neg_input,
-                                            arg_idx))
+                                    results.append(IndexedEventTriple(
+                                        left_input, pos_input, neg_input,
+                                        arg_idx, pos_salience, neg_salience))
         return results
 
     @classmethod
