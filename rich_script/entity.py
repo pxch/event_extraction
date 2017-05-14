@@ -3,6 +3,7 @@ from collections import Counter
 import document
 from token import Token
 from util import consts, get_class_name
+from core_argument import CoreArgument
 
 
 class Mention(object):
@@ -55,21 +56,9 @@ class Mention(object):
     def head_token(self):
         return self._head_token
 
-    def get_representation(self, use_ner=True, use_lemma=True):
-        if use_ner and self.ner != '':
-            return self.ner
-        else:
-            return self._head_token.get_representation(use_lemma=use_lemma)
-
-    def get_repr_with_vocab_list(self, arg_vocab_list, ner_vocab_list):
-        result = self._head_token.get_representation(use_lemma=True)
-        if self.ner != '':
-            if ner_vocab_list and result not in ner_vocab_list:
-                result = self.ner
-        else:
-            if arg_vocab_list and result not in arg_vocab_list:
-                result = 'UNK'
-        return result
+    def get_core_argument(self, use_lemma=True):
+        word = self._head_token.get_representation(use_lemma=use_lemma)
+        return CoreArgument(word, self.ner)
 
     def to_text(self):
         return '{}:{}:{}:{}:{}:{}:{}'.format(
@@ -161,13 +150,9 @@ class Entity(object):
     def rep_mention(self):
         return self._rep_mention
 
-    def get_representation(self, use_ner=True, use_lemma=True):
+    def get_core_argument(self, use_lemma=True):
         # FIXME: self.ner might be different from _rep_mention.ner
-        return self._rep_mention.get_representation(use_ner, use_lemma)
-
-    def get_repr_with_vocab_list(self, arg_vocab_list, ner_vocab_list):
-        return self._rep_mention.get_repr_with_vocab_list(
-            arg_vocab_list, ner_vocab_list)
+        return self._rep_mention.get_core_argument(use_lemma=use_lemma)
 
     def to_text(self):
         return ' :: '.join([mention.to_text() for mention in self.mentions])

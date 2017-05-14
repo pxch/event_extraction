@@ -2,26 +2,29 @@ from copy import deepcopy
 
 from event import Event
 from indexed_event import IndexedEvent, IndexedEventMultiPobj
-from rich_argument import RichArgument
+from rich_argument import BaseRichArgument
+from rich_predicate import RichPredicate
 from util import Word2VecModel, get_class_name
 
 
 class RichEvent(object):
-    def __init__(self, pred_text, rich_subj, rich_obj, rich_pobj_list):
-        self.pred_text = pred_text
-        self.pred_idx = -1
-        assert rich_subj is None or isinstance(rich_subj, RichArgument), \
+    def __init__(self, rich_pred, rich_subj, rich_obj, rich_pobj_list):
+        assert isinstance(rich_pred, RichPredicate), \
+            'rich_pred must be a {} instance'.format(
+                get_class_name(RichPredicate))
+        self.rich_pred = rich_pred
+        assert rich_subj is None or isinstance(rich_subj, BaseRichArgument), \
             'rich_subj must be None or a {} instance'.format(
-                get_class_name(RichArgument))
+                get_class_name(BaseRichArgument))
         self.rich_subj = rich_subj
-        assert rich_obj is None or isinstance(rich_obj, RichArgument), \
+        assert rich_obj is None or isinstance(rich_obj, BaseRichArgument), \
             'rich_obj must be None or a {} instance'.format(
-                get_class_name(RichArgument))
+                get_class_name(BaseRichArgument))
         self.rich_obj = rich_obj
-        assert all(isinstance(rich_pobj, RichArgument) for rich_pobj
+        assert all(isinstance(rich_pobj, BaseRichArgument) for rich_pobj
                    in rich_pobj_list), \
             'every rich_pobj must be a {} instance'.format(
-                get_class_name(RichArgument))
+                get_class_name(BaseRichArgument))
         self.rich_pobj_list = rich_pobj_list
         # NOBUG: only set rich_pobj after calling get_index()
         self.rich_pobj = None
@@ -29,10 +32,7 @@ class RichEvent(object):
     def get_index(self, model, include_type=True):
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
-        if include_type:
-            self.pred_idx = model.get_word_index(self.pred_text + '-PRED')
-        else:
-            self.pred_idx = model.get_word_index(self.pred_text)
+        self.rich_pred.get_index(model, include_type=include_type)
         if self.rich_subj is not None:
             self.rich_subj.get_index(model, include_type=include_type)
         if self.rich_obj is not None:
@@ -78,31 +78,35 @@ class RichEvent(object):
         return argument is not None and argument.has_neg()
 
     def get_word2vec_training_seq(
-            self, include_type=True, include_all_pobj=True):
-        sequence = [self.pred_text + '-PRED']
+            self, pred_vocab_list, arg_vocab_list, ner_vocab_list,
+            include_type=True, include_all_pobj=True):
+        sequence = [self.rich_pred.get_text(pred_vocab_list=pred_vocab_list,
+                                            include_type=include_type)]
         arg_idx_list = self.get_arg_idx_list(include_all_pobj=include_all_pobj)
         for arg_idx in arg_idx_list:
             argument = self.get_argument(arg_idx)
             if argument is not None:
                 sequence.append(
-                    argument.get_pos_text(include_type=include_type))
+                    argument.get_pos_text(arg_vocab_list=arg_vocab_list,
+                                          ner_vocab_list=ner_vocab_list,
+                                          include_type=include_type))
         return sequence
 
     def get_pos_input(self, include_all_pobj=False):
         # return None when the predicate is not indexed (pred_idx == -1)
-        if self.pred_idx == -1:
+        if self.rich_pred.get_wv() == -1:
             return None
         # TODO: remove support for include_all_pobj
         if include_all_pobj:
             return IndexedEventMultiPobj(
-                self.pred_idx,
+                self.rich_pred.get_wv(),
                 self.rich_subj.get_pos_wv() if self.rich_subj else -1,
                 self.rich_obj.get_pos_wv() if self.rich_obj else -1,
                 [rich_pobj.get_pos_wv() for rich_pobj in self.rich_pobj_list]
             )
         else:
             return IndexedEvent(
-                self.pred_idx,
+                self.rich_pred.get_wv(),
                 self.rich_subj.get_pos_wv() if self.rich_subj else -1,
                 self.rich_obj.get_pos_wv() if self.rich_obj else -1,
                 self.rich_pobj.get_pos_wv() if self.rich_pobj else -1
@@ -110,7 +114,7 @@ class RichEvent(object):
 
     def get_neg_input_list(self, arg_idx):
         # return empty list when the predicate is not indexed (pred_idx == -1)
-        if self.pred_idx == -1:
+        if self.rich_pred.get_wv() == -1:
             return []
         assert arg_idx in [1, 2, 3], \
             'arg_idx can only be 1 (for SUBJ), 2 (for OBJ) or 3 (for POBJ)'
@@ -126,7 +130,7 @@ class RichEvent(object):
 
     def get_eval_input_list_all(self, include_all_pobj=True):
         # return empty list when the predicate is not indexed (pred_idx == -1)
-        if self.pred_idx == -1:
+        if self.rich_pred.get_wv() == -1:
             return []
         # TODO: remove support for include_all_pobj
         pos_input = self.get_pos_input(include_all_pobj=include_all_pobj)
@@ -146,55 +150,22 @@ class RichEvent(object):
         return eval_input_list_all
 
     @classmethod
-    def build(cls, event, entity_list, use_lemma=True, include_neg=True,
-              include_prt=True, use_entity=True, use_ner=True,
-              include_prep=True):
+    def build(cls, event, rich_entity_list, prep_vocab_list, use_lemma=True):
         assert isinstance(event, Event), 'event must be a {} instance'.format(
             get_class_name(Event))
-        pred_text = event.pred.get_representation(
-            use_lemma=use_lemma, include_neg=include_neg,
-            include_prt=include_prt)
+        rich_pred = RichPredicate.build(event.pred, use_lemma=use_lemma)
         rich_subj = None
         if event.subj is not None:
-            rich_subj = RichArgument.build(
-                'SUBJ', event.subj, entity_list, use_entity=use_entity,
-                use_ner=use_ner, use_lemma=use_lemma)
+            rich_subj = BaseRichArgument.build(
+                'SUBJ', event.subj, rich_entity_list, use_lemma=use_lemma)
         rich_obj = None
         if event.obj is not None:
-            rich_obj = RichArgument.build(
-                'OBJ', event.obj, entity_list, use_entity=use_entity,
-                use_ner=use_ner, use_lemma=use_lemma)
-        rich_pobj_list = []
-        for prep, pobj in event.pobj_list:
-            arg_type = 'PREP_' + prep if include_prep else 'PREP'
-            rich_pobj = RichArgument.build(
-                arg_type, pobj, entity_list, use_entity=use_entity,
-                use_ner=use_ner, use_lemma=use_lemma)
-            rich_pobj_list.append(rich_pobj)
-        return cls(pred_text, rich_subj, rich_obj, rich_pobj_list)
-
-    @classmethod
-    def build_with_vocab_list(
-            cls, event, pred_vocab_list, arg_vocab_list, ner_vocab_list,
-            prep_vocab_list, entity_list, use_entity=True):
-        assert isinstance(event, Event), 'event must be a {} instance'.format(
-            get_class_name(Event))
-        pred_text = event.pred.get_repr_with_vocab_list(pred_vocab_list)
-        rich_subj = None
-        if event.subj is not None:
-            rich_subj = RichArgument.build_with_vocab_list(
-                'SUBJ', event.subj, arg_vocab_list, ner_vocab_list,
-                entity_list, use_entity=use_entity)
-        rich_obj = None
-        if event.obj is not None:
-            rich_obj = RichArgument.build_with_vocab_list(
-                'OBJ', event.obj, arg_vocab_list, ner_vocab_list,
-                entity_list, use_entity=use_entity)
+            rich_obj = BaseRichArgument.build(
+                'OBJ', event.obj, rich_entity_list, use_lemma=use_lemma)
         rich_pobj_list = []
         for prep, pobj in event.pobj_list:
             arg_type = 'PREP_' + prep if prep in prep_vocab_list else 'PREP'
-            rich_pobj = RichArgument.build_with_vocab_list(
-                arg_type, pobj, arg_vocab_list, ner_vocab_list,
-                entity_list, use_entity=use_entity)
+            rich_pobj = BaseRichArgument.build(
+                arg_type, pobj, rich_entity_list, use_lemma=use_lemma)
             rich_pobj_list.append(rich_pobj)
-        return cls(pred_text, rich_subj, rich_obj, rich_pobj_list)
+        return cls(rich_pred, rich_subj, rich_obj, rich_pobj_list)

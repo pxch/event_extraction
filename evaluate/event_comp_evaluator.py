@@ -7,22 +7,17 @@ from util import get_class_name
 
 
 class EventCompositionEvaluator(EventCoherenceEvaluator):
-    def __init__(self, logger=None, ignore_first_mention=False, use_lemma=True,
-                 include_neg=True, include_prt=True, use_entity=True,
-                 use_ner=True, include_prep=True, include_type=True,
-                 use_max_score=True):
+    def __init__(self, logger=None, ignore_first_mention=False,
+                 use_lemma=True, include_type=True, use_max_score=True,
+                 filter_stop_events=True):
         super(EventCompositionEvaluator, self).__init__(
             logger=logger,
             ignore_first_mention=ignore_first_mention,
             use_lemma=use_lemma,
-            include_neg=include_neg,
-            include_prt=include_prt,
-            use_entity=use_entity,
-            use_ner=use_ner,
-            include_prep=include_prep,
             include_type=include_type,
             use_max_score=use_max_score,
-            include_all_pobj=False
+            include_all_pobj=False,
+            filter_stop_events=filter_stop_events
         )
 
     def set_model(self, model):

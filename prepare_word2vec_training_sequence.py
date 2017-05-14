@@ -50,16 +50,16 @@ for input_f in input_files:
         script_corpus = ScriptCorpus.from_text(fin.read())
         for script in script_corpus.scripts:
             print 'Reading script {}'.format(script.doc_name)
-            rich_script = RichScript.build_with_vocab_list(
+            rich_script = RichScript.build(
                 script,
-                pred_vocab_list=pred_vocab_list,
-                arg_vocab_list=arg_vocab_list,
-                ner_vocab_list=ner_vocab_list,
                 prep_vocab_list=prep_vocab_list,
-                use_entity=True,
+                use_lemma=True,
                 filter_stop_events=False
             )
             sequence = rich_script.get_word2vec_training_seq(
+                pred_vocab_list=pred_vocab_list,
+                arg_vocab_list=arg_vocab_list,
+                ner_vocab_list=ner_vocab_list,
                 include_type=True,
                 include_all_pobj=True
             )

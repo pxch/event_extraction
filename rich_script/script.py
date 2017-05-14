@@ -48,13 +48,27 @@ class Script(object):
                         '{} in {} has mention_idx {} out of range'.format(
                             arg.to_text(), event.to_text(), arg.mention_idx)
 
+    def get_token_count(self, use_lemma=True):
+        token_count = defaultdict(int)
+        for event in self.events:
+            for arg in event.get_all_args(include_arg_type=False):
+                if arg.entity_idx == -1:
+                    token_count[
+                        arg.get_representation(use_lemma=use_lemma)] += 1
+        for entity in self.entities:
+            for mention in entity.mentions:
+                for token in mention.tokens:
+                    token_count[
+                        token.get_representation(use_lemma=use_lemma)] += 1
+        return token_count
+
     def get_vocab_count(self, use_lemma=True):
         vocab_count = defaultdict(Counter)
         all_args = []
         for event in self.events:
             # add the predicate of each event
-            pred_representation = event.pred.get_representation(
-                use_lemma=use_lemma, include_prt=True, include_neg=True)
+            pred_representation = event.pred.get_full_representation(
+                use_lemma=use_lemma)
             vocab_count['predicate'][pred_representation] += 1
 
             # add all prepositions of each event
@@ -65,15 +79,14 @@ class Script(object):
         for arg in all_args:
             if arg.entity_idx != -1:
                 mention = self.entities[arg.entity_idx].rep_mention
-                arg_representation = mention.get_representation(
-                    use_ner=False, use_lemma=use_lemma)
+                arg_representation = \
+                    mention.head_token.get_representation(use_lemma=use_lemma)
                 vocab_count['argument'][arg_representation] += 1
                 if mention.ner != '':
                     vocab_count['name_entity'][arg_representation] += 1
                     vocab_count['name_entity_tag'][mention.ner] += 1
             else:
-                arg_representation = arg.get_representation(
-                    use_ner=False, use_lemma=use_lemma)
+                arg_representation = arg.get_representation(use_lemma=use_lemma)
                 vocab_count['argument'][arg_representation] += 1
                 if arg.ner != '':
                     vocab_count['name_entity'][arg_representation] += 1

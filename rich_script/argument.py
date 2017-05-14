@@ -2,6 +2,7 @@ import re
 from warnings import warn
 
 import document
+from core_argument import CoreArgument
 from token import Token, ParseTokenError
 from util import unescape, get_class_name, consts
 
@@ -33,28 +34,12 @@ class Argument(Token):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_representation(self, use_ner=True, use_lemma=True):
+    def get_core_argument(self, use_lemma=True):
         if self.entity_idx != -1:
-            warn('Calling get_representation when entity_idx is not -1, '
-                 'should call Entity.get_representation instead')
-        if use_ner and self.ner != '':
-            return self.ner
-        else:
-            return super(Argument, self).get_representation(use_lemma=use_lemma)
-
-    def get_repr_with_vocab_list(self, arg_vocab_list=None,
-                                 ner_vocab_list=None):
-        if self.entity_idx != -1:
-            warn('Calling get_repr_with_vocab_list when entity_idx is not -1,'
-                 'should call Entity.get_repr_with_vocab_list instead')
-        result = super(Argument, self).get_representation(use_lemma=True)
-        if self.ner != '':
-            if ner_vocab_list and result not in ner_vocab_list:
-                result = self.ner
-        else:
-            if arg_vocab_list and result not in arg_vocab_list:
-                result = 'UNK'
-        return result
+            warn('Calling get_core_argument when entity_idx is not -1,'
+                 'should call Entity.get_core_argument instead')
+        word = super(Argument, self).get_representation(use_lemma=use_lemma)
+        return CoreArgument(word, self.ner)
 
     def get_entity(self, entity_list):
         if self.entity_idx != -1:

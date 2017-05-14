@@ -23,6 +23,7 @@ class MostFreqEntityEvaluator(BaseEvaluator):
                 self.ignore_first_mention))
 
     def evaluate_script(self, script):
+        # TODO: add logic to exclude stop events in evaluate_script
         assert isinstance(script, rich_script.Script), \
             'evaluate_script must be called with a {} instance'.format(
                 get_class_name(rich_script.Script))

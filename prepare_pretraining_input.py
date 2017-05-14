@@ -1,31 +1,20 @@
 import argparse
 from bz2 import BZ2File
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, dirname, realpath
 
 from rich_script import RichScript, ScriptCorpus
-from util import Word2VecModel
+from util import Word2VecModel, consts, read_vocab_list
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory for ScriptCorpus files')
 parser.add_argument('output_path', help='path to write training sequence')
 parser.add_argument('word2vec', help='path to word2vec vector file')
 parser.add_argument('word2vec_vocab', help='path to word2vec vocab file')
+parser.add_argument('--prep_vocab', help='path to preposition vocab file')
 parser.add_argument('--use_lemma', action='store_true',
                     help='if turned on, use the lemma form of a token,'
                          'otherwise use the word form')
-parser.add_argument('--include_neg', action='store_true',
-                    help='include negation for predicate when applicable')
-parser.add_argument('--include_prt', action='store_true',
-                    help='include particle for predicate when applicable')
-parser.add_argument('--use_entity', action='store_true',
-                    help='if turned on, use entity representation for arguments'
-                         'with entity_idx, otherwise use token representation')
-parser.add_argument('--use_ner', action='store_true',
-                    help='if turned on, use ner tag for entities, otherwise use'
-                         'head_token of rep_mention')
-parser.add_argument('--include_prep', action='store_true',
-                    help='include preposition word in pobj representations')
 
 args = parser.parse_args()
 
@@ -38,6 +27,14 @@ input_files = sorted([join(args.input_path, f) for f in listdir(args.input_path)
 model = Word2VecModel.load_model(
     args.word2vec, fvocab=args.word2vec_vocab, binary=True)
 
+cur_dir_path = dirname(realpath(__file__))
+
+if args.prep_vocab:
+    prep_vocab_list = read_vocab_list(args.prep_vocab)
+else:
+    prep_vocab_list = read_vocab_list(
+        join(cur_dir_path, consts.PREP_VOCAB_LIST_FILE))
+
 # FIXME: fix bugs where pred_idx is -1 and get into the indexed corpus
 
 for input_f in input_files:
@@ -46,15 +43,12 @@ for input_f in input_files:
         for script in script_corpus.scripts:
             rich_script = RichScript.build(
                 script,
+                prep_vocab_list=prep_vocab_list,
                 use_lemma=args.use_lemma,
-                include_neg=args.include_neg,
-                include_prt=args.include_prt,
-                use_entity=args.use_entity,
-                use_ner=args.use_ner,
-                include_prep=args.include_prep
+                filter_stop_events=False
             )
             rich_script.get_index(model)
-            pretraining_inputs = rich_script.get_pretraining_input()
+            pretraining_inputs = rich_script.get_pretraining_input_list()
             if len(pretraining_inputs) > 0:
                 fout.write('\n'.join(map(str, pretraining_inputs)) + '\n')
 

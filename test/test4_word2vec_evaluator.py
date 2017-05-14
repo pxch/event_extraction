@@ -15,11 +15,7 @@ vocab_file = \
 word2vec = Word2VecModel.load_model(vector_file, fvocab=vocab_file)
 
 evaluator = Word2VecEvaluator(
-    ignore_first_mention=False,
-    include_prep=True,
-    use_ner=True,
-    include_all_pobj=False
-)
+    ignore_first_mention=False, include_all_pobj=False)
 
 evaluator.set_model(word2vec)
 

@@ -2,16 +2,15 @@ import abc
 
 from base_evaluator import BaseEvaluator
 from rich_script import RichScript, Script
-from util import get_class_name
+from util import consts, get_class_name, read_vocab_list
 
 
 class EventCoherenceEvaluator(BaseEvaluator):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, logger=None, ignore_first_mention=False, use_lemma=True,
-                 include_neg=True, include_prt=True, use_entity=True,
-                 use_ner=True, include_prep=True, include_type=True,
-                 use_max_score=True, include_all_pobj=True):
+                 include_type=True, use_max_score=True, include_all_pobj=True,
+                 filter_stop_events=True):
         super(EventCoherenceEvaluator, self).__init__(
             logger=logger,
             ignore_first_mention=ignore_first_mention
@@ -20,14 +19,10 @@ class EventCoherenceEvaluator(BaseEvaluator):
         self.model = None
         self.embedding_model = None
         self.use_lemma = use_lemma
-        self.include_neg = include_neg
-        self.include_prt = include_prt
-        self.use_entity = use_entity
-        self.use_ner = use_ner
-        self.include_prep = include_prep
         self.include_type = include_type
         self.use_max_score = use_max_score
         self.include_all_pobj = include_all_pobj
+        self.filter_stop_events = filter_stop_events
 
     @abc.abstractmethod
     def set_model(self, model):
@@ -38,17 +33,14 @@ class EventCoherenceEvaluator(BaseEvaluator):
             'Evaluation based on most coherent event, model = {}'.format(
                 self.model_name))
         self.logger.info(
-            'Embedding configs: use_lemma = {}, include_neg = {}, '
-            'include_prt = {}, use_entity = {}, use_ner = {}, '
-            'include_prep = {}, include_type = {}'.format(
-                self.use_lemma, self.include_neg, self.include_prt,
-                self.use_entity, self.use_ner, self.include_prep,
-                self.include_type))
+            'Embedding configs: use_lemma = {}, include_type = {}'.format(
+                self.use_lemma, self.include_type))
         self.logger.info(
             'Evaluator configs: ignore_first_mention = {}, '
-            'use_max_score = {}, include_all_pobj = {}'.format(
+            'use_max_score = {}, include_all_pobj = {}, '
+            'filter_stop_events = {}'.format(
                 self.ignore_first_mention, self.use_max_score,
-                self.include_all_pobj))
+                self.include_all_pobj, self.filter_stop_events))
 
     @abc.abstractmethod
     def evaluate_event(self, eval_input_list_all, context_input_list):
@@ -60,15 +52,15 @@ class EventCoherenceEvaluator(BaseEvaluator):
                 get_class_name(Script))
         self.logger.debug('Processing script {}'.format(script.doc_name))
 
+        prep_vocab_list = read_vocab_list(consts.PREP_VOCAB_LIST_FILE)
+
         rich_script = RichScript.build(
             script,
+            prep_vocab_list=prep_vocab_list,
             use_lemma=self.use_lemma,
-            include_neg=self.include_neg,
-            include_prt=self.include_prt,
-            use_entity=self.use_entity,
-            use_ner=self.use_ner,
-            include_prep=self.include_prep
+            filter_stop_events=self.filter_stop_events
         )
+
         rich_script.get_index(self.embedding_model, self.include_type)
         # remove events with None embedding (pred_idx == -1)
         rich_event_list = [rich_event for rich_event in rich_script.rich_events

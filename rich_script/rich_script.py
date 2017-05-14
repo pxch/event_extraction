@@ -1,6 +1,7 @@
 import random
 
 from indexed_event import IndexedEventTriple
+from rich_entity import RichEntity
 from rich_event import RichEvent
 from script import Script
 from util import Word2VecModel, consts, get_class_name
@@ -22,14 +23,18 @@ class RichScript(object):
     # return list of events with indexed predicate (pred_idx != -1)
     def get_indexed_events(self):
         return [rich_event for rich_event in self.rich_events
-                if rich_event.pred_idx != -1]
+                if rich_event.rich_pred.get_wv() != -1]
 
     def get_word2vec_training_seq(
-            self, include_type=True, include_all_pobj=True):
+            self, pred_vocab_list, arg_vocab_list, ner_vocab_list,
+            include_type=True, include_all_pobj=True):
         sequence = []
         for rich_event in self.rich_events:
             sequence.extend(
                 rich_event.get_word2vec_training_seq(
+                    pred_vocab_list=pred_vocab_list,
+                    arg_vocab_list=arg_vocab_list,
+                    ner_vocab_list=ner_vocab_list,
                     include_type=include_type,
                     include_all_pobj=include_all_pobj))
         return sequence
@@ -106,50 +111,27 @@ class RichScript(object):
         return results
 
     @classmethod
-    def build(cls, script, use_lemma=True, include_neg=True, include_prt=True,
-              use_entity=True, use_ner=True, include_prep=True,
+    def build(cls, script, prep_vocab_list, use_lemma=True,
               filter_stop_events=False):
         assert isinstance(script, Script), \
             'script must be a {} instance'.format(get_class_name(Script))
+        # FIXME: should use the token count of original document
+        token_count_dict = script.get_token_count(use_lemma=use_lemma)
+        rich_entity_list = []
+        for entity in script.entities:
+            rich_entity = RichEntity.build(entity, token_count_dict,
+                                           use_lemma=use_lemma)
+            rich_entity_list.append(rich_entity)
         rich_events = []
-        if not script.has_entities():
-            use_entity = False
         for event in script.events:
             rich_event = RichEvent.build(
                 event,
-                script.entities,
-                use_lemma=use_lemma,
-                include_neg=include_neg,
-                include_prt=include_prt,
-                use_entity=use_entity,
-                use_ner=use_ner,
-                include_prep=include_prep
-            )
-            if (not filter_stop_events) or \
-                    (rich_event.pred_text not in consts.STOP_PREDS):
-                rich_events.append(rich_event)
-        return cls(script.doc_name, rich_events, len(script.entities))
-
-    @classmethod
-    def build_with_vocab_list(cls, script, pred_vocab_list, arg_vocab_list,
-                              ner_vocab_list, prep_vocab_list, use_entity=True,
-                              filter_stop_events=False):
-        assert isinstance(script, Script), \
-            'script must be a {} instance'.format(get_class_name(Script))
-        rich_events = []
-        if not script.has_entities():
-            use_entity = False
-        for event in script.events:
-            rich_event = RichEvent.build_with_vocab_list(
-                event,
-                pred_vocab_list=pred_vocab_list,
-                arg_vocab_list=arg_vocab_list,
-                ner_vocab_list=ner_vocab_list,
+                rich_entity_list=rich_entity_list,
                 prep_vocab_list=prep_vocab_list,
-                entity_list=script.entities,
-                use_entity=use_entity,
+                use_lemma=use_lemma
             )
             if (not filter_stop_events) or \
-                    (rich_event.pred_text not in consts.STOP_PREDS):
+                    (rich_event.rich_pred.get_text(include_type=False)
+                     not in consts.STOP_PREDS):
                 rich_events.append(rich_event)
-        return cls(script.doc_name, rich_events, len(script.entities))
+        return cls(script.doc_name, rich_events, len(rich_entity_list))

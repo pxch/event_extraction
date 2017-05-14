@@ -23,27 +23,12 @@ class Predicate(Token):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get_representation(
-            self, use_lemma=True, include_neg=True, include_prt=True):
-        result = super(Predicate, self).get_representation(use_lemma)
-        if include_prt and self.prt:
-            result += '_' + self.prt
-        if include_neg and self.neg:
-            result = 'not_' + result
-        return result
-
-    def get_repr_with_vocab_list(self, pred_vocab_list):
-        candidates = [super(Predicate, self).get_representation(use_lemma=True)]
+    def get_full_representation(self, use_lemma=True):
+        result = super(Predicate, self).get_representation(use_lemma=use_lemma)
         if self.prt:
-            candidates.append(candidates[0] + '_' + self.prt)
+            result += '_' + self.prt
         if self.neg:
-            for idx in range(len(candidates)):
-                candidates.append('not_' + candidates[idx])
-        result = 'UNK'
-        for candidate in reversed(candidates):
-            if (not pred_vocab_list) or candidate in pred_vocab_list:
-                result = candidate
-                break
+            result = 'not_' + result
         return result
 
     def to_text(self):

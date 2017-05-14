@@ -28,21 +28,16 @@ def get_most_coherent(eval_vector_list, context_vector_list,
 
 class Word2VecEvaluator(EventCoherenceEvaluator):
     def __init__(self, logger=None, ignore_first_mention=False, use_lemma=True,
-                 include_neg=True, include_prt=True, use_entity=True,
-                 use_ner=True, include_prep=True, include_type=True,
-                 use_max_score=True, include_all_pobj=True):
+                 include_type=True, use_max_score=True, include_all_pobj=True,
+                 filter_stop_events=True):
         super(Word2VecEvaluator, self).__init__(
             logger=logger,
             ignore_first_mention=ignore_first_mention,
             use_lemma=use_lemma,
-            include_neg=include_neg,
-            include_prt=include_prt,
-            use_entity=use_entity,
-            use_ner=use_ner,
-            include_prep=include_prep,
             include_type=include_type,
             use_max_score=use_max_score,
-            include_all_pobj=include_all_pobj
+            include_all_pobj=include_all_pobj,
+            filter_stop_events=filter_stop_events
         )
 
     def set_model(self, model):
