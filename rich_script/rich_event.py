@@ -29,11 +29,13 @@ class RichEvent(object):
         # NOBUG: only set rich_pobj after calling get_index()
         self.rich_pobj = None
 
-    def get_index(self, model, include_type=True, use_unk=True):
+    def get_index(self, model, include_type=True, use_unk=True,
+                  pred_count_dict=None):
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
         self.rich_pred.get_index(
-            model, include_type=include_type, use_unk=use_unk)
+            model, include_type=include_type, use_unk=use_unk,
+            pred_count_dict=pred_count_dict)
         if self.rich_subj is not None:
             self.rich_subj.get_index(
                 model, include_type=include_type, use_unk=use_unk)

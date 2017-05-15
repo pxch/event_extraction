@@ -1,5 +1,8 @@
+import math
+import random
+
 from predicate import Predicate
-from util import Word2VecModel, get_class_name
+from util import Word2VecModel, consts, get_class_name
 
 
 class RichPredicate(object):
@@ -43,17 +46,29 @@ class RichPredicate(object):
             # candidates.append('UNK')
         return self.candidates
 
-    def get_index(self, model, include_type=True, use_unk=True):
+    def get_index(self, model, include_type=True, use_unk=True,
+                  pred_count_dict=None):
         # TODO: add logic to process stop predicates
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
-        index = -1
         candidates = self.get_candidates()
         # add UNK to the candidates if use_unk is set to True
         if use_unk:
             candidates.append('UNK')
+
+        # drop the predicate (return index -1) if its frequency is too high
+        # use the threshold of count as consts.PRED_COUNT_THRES (100,000)
+        if candidates and pred_count_dict:
+            pred_count = pred_count_dict.get(candidates[0], 0)
+            if pred_count > consts.PRED_COUNT_THRES:
+                if random.random() < 1.0 - math.sqrt(
+                                float(consts.PRED_COUNT_THRES) / pred_count):
+                    self.wv = -1
+                    return
+
         if include_type:
             candidates = [candidate + '-PRED' for candidate in candidates]
+        index = -1
         for text in candidates:
             index = model.get_word_index(text)
             if index != -1:

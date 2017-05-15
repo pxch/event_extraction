@@ -4,7 +4,7 @@ from os import listdir
 from os.path import isfile, join, dirname, realpath
 
 from rich_script import RichScript, ScriptCorpus
-from util import Word2VecModel, consts, read_vocab_list
+from util import Word2VecModel, consts, read_counter, read_vocab_list
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_path', help='directory for ScriptCorpus files')
@@ -40,6 +40,9 @@ else:
     prep_vocab_list = read_vocab_list(
         join(cur_dir_path, consts.PREP_VOCAB_LIST_FILE))
 
+with open(join(cur_dir_path, consts.PRED_VOCAB_COUNT_FILE)) as fin:
+    pred_count_dict = read_counter(fin)
+
 # FIXME: fix bugs where pred_idx is -1 and get into the indexed corpus
 
 for input_f in input_files:
@@ -52,7 +55,8 @@ for input_f in input_files:
                 use_lemma=args.use_lemma,
                 filter_stop_events=False
             )
-            rich_script.get_index(model, include_type=True, use_unk=True)
+            rich_script.get_index(model, include_type=True, use_unk=True,
+                                  pred_count_dict=pred_count_dict)
             pair_tuning_inputs = rich_script.get_pair_tuning_input_list(
                 neg_type=args.neg_type)
             if len(pair_tuning_inputs) > 0:

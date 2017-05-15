@@ -131,3 +131,6 @@ PRED_VOCAB_LIST_FILE = './vocab_list/predicate_min_100'
 ARG_VOCAB_LIST_FILE = './vocab_list/argument_min_500'
 NER_VOCAB_LIST_FILE = './vocab_list/name_entity_min_500'
 PREP_VOCAB_LIST_FILE = './vocab_list/preposition'
+
+PRED_VOCAB_COUNT_FILE = './vocab_list/predicate_min_100_count'
+PRED_COUNT_THRES = 100000
