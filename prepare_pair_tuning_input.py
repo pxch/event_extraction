@@ -15,6 +15,9 @@ parser.add_argument('--prep_vocab', help='path to preposition vocab file')
 parser.add_argument('--use_lemma', action='store_true',
                     help='if turned on, use the lemma form of a token,'
                          'otherwise use the word form')
+parser.add_argument('--subsampling', action='store_true',
+                    help='if turned on, most frequent predicates would be '
+                         'randomly subsampled according to their frequency')
 parser.add_argument('--neg_type', default='neg',
                     help='how to select negative samples, options: '
                          'one (one negative event and one left event), '
@@ -40,8 +43,10 @@ else:
     prep_vocab_list = read_vocab_list(
         join(cur_dir_path, consts.PREP_VOCAB_LIST_FILE))
 
-with open(join(cur_dir_path, consts.PRED_VOCAB_COUNT_FILE)) as fin:
-    pred_count_dict = read_counter(fin)
+pred_count_dict = None
+if args.subsampling:
+    with open(join(cur_dir_path, consts.PRED_VOCAB_COUNT_FILE)) as fin:
+        pred_count_dict = read_counter(fin)
 
 # FIXME: fix bugs where pred_idx is -1 and get into the indexed corpus
 
