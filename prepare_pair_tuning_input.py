@@ -18,7 +18,7 @@ parser.add_argument('--use_lemma', action='store_true',
 parser.add_argument('--subsampling', action='store_true',
                     help='if turned on, most frequent predicates would be '
                          'randomly subsampled according to their frequency')
-parser.add_argument('--neg_type', default='neg',
+parser.add_argument('--neg_sample_type', default='neg',
                     help='how to select negative samples, options: '
                          'one (one negative event and one left event), '
                          'neg (one left event for every negative event), '
@@ -63,7 +63,7 @@ for input_f in input_files:
             rich_script.get_index(model, include_type=True, use_unk=True,
                                   pred_count_dict=pred_count_dict)
             pair_tuning_inputs = rich_script.get_pair_tuning_input_list(
-                neg_type=args.neg_type)
+                neg_sample_type=args.neg_sample_type)
             if len(pair_tuning_inputs) > 0:
                 fout.write('\n'.join(map(str, pair_tuning_inputs)) + '\n')
 
