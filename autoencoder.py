@@ -3,7 +3,8 @@ import time
 import numpy
 import theano
 import theano.tensor as T
-from theano.tensor.shared_randomstreams import RandomStreams
+# from theano.tensor.shared_randomstreams import RandomStreams
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 from util import get_console_logger
 
@@ -274,7 +275,7 @@ class DenoisingAutoencoder(object):
         if input is None:
             # we use a matrix because we expect a minibatch of several
             # examples, each example being a row
-            self.x = T.dmatrix(name='input')
+            self.x = T.matrix(name='input')
         else:
             self.x = input
 
