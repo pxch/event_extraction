@@ -9,7 +9,7 @@ from util import Word2VecModel, get_class_name
 
 class EventCompositionModel(object):
     def __init__(self, word2vec, event_vector_layer_sizes=None,
-                 pair_projection_layer_sizes=None):
+                 pair_composition_layer_sizes=None):
         assert isinstance(word2vec, Word2VecModel), \
             'word2vec must be a {} instance'.format(
                 get_class_name(Word2VecModel))
@@ -22,10 +22,10 @@ class EventCompositionModel(object):
             )
         else:
             self.event_vector_network = None
-        if pair_projection_layer_sizes:
+        if pair_composition_layer_sizes:
             self.pair_composition_network = PairCompositionNetwork(
                 event_vector_network=self.event_vector_network,
-                layer_sizes=pair_projection_layer_sizes
+                layer_sizes=pair_composition_layer_sizes
             )
         else:
             self.pair_composition_network = None
@@ -128,3 +128,5 @@ class EventCompositionModel(object):
             with open(pair_composition_weights_file, 'r') as f:
                 pair_composition_weights = pkl.load(f)
             model.pair_composition_network.set_weights(pair_composition_weights)
+
+        return model

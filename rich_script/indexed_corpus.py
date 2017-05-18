@@ -6,6 +6,7 @@ from os.path import isdir, isfile, join
 import numpy
 
 from indexed_event import IndexedEvent, IndexedEventTriple
+from util import consts
 
 
 class IndexedCorpusReader(object):
@@ -117,24 +118,34 @@ class PairTuningCorpusIterator(object):
         neg_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         neg_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         neg_pobj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
-        arg_type_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        pos_entity_salience_input = numpy.zeros(
+            [self.batch_size, consts.NUM_SALIENCE_FEATURES],
+            dtype=numpy.int32)
+        neg_entity_salience_input = numpy.zeros(
+            [self.batch_size, consts.NUM_SALIENCE_FEATURES],
+            dtype=numpy.int32)
 
         data_point_index = 0
 
         for pair_input in self.reader:
-            left_pred_input[data_point_index] = pair_input.left_input.pred_input
-            left_subj_input[data_point_index] = pair_input.left_input.subj_input
-            left_obj_input[data_point_index] = pair_input.left_input.obj_input
-            left_pobj_input[data_point_index] = pair_input.left_input.pobj_input
-            pos_pred_input[data_point_index] = pair_input.pos_input.pred_input
-            pos_subj_input[data_point_index] = pair_input.pos_input.subj_input
-            pos_obj_input[data_point_index] = pair_input.pos_input.obj_input
-            pos_pobj_input[data_point_index] = pair_input.pos_input.pobj_input
-            neg_pred_input[data_point_index] = pair_input.neg_input.pred_input
-            neg_subj_input[data_point_index] = pair_input.neg_input.subj_input
-            neg_obj_input[data_point_index] = pair_input.neg_input.obj_input
-            neg_pobj_input[data_point_index] = pair_input.neg_input.pobj_input
-            arg_type_input[data_point_index] = pair_input.arg_type
+            left_pred_input[data_point_index] = pair_input.left_event.pred_input
+            left_subj_input[data_point_index] = pair_input.left_event.subj_input
+            left_obj_input[data_point_index] = pair_input.left_event.obj_input
+            left_pobj_input[data_point_index] = pair_input.left_event.pobj_input
+            pos_pred_input[data_point_index] = pair_input.pos_event.pred_input
+            pos_subj_input[data_point_index] = pair_input.pos_event.subj_input
+            pos_obj_input[data_point_index] = pair_input.pos_event.obj_input
+            pos_pobj_input[data_point_index] = pair_input.pos_event.pobj_input
+            neg_pred_input[data_point_index] = pair_input.neg_event.pred_input
+            neg_subj_input[data_point_index] = pair_input.neg_event.subj_input
+            neg_obj_input[data_point_index] = pair_input.neg_event.obj_input
+            neg_pobj_input[data_point_index] = pair_input.neg_event.pobj_input
+            arg_idx_input[data_point_index] = pair_input.arg_idx
+            pos_entity_salience_input[data_point_index] = \
+                pair_input.pos_salience.get_feature_list()
+            neg_entity_salience_input[data_point_index] = \
+                pair_input.neg_salience.get_feature_list()
             data_point_index += 1
 
             # If we've filled up the batch, yield it
@@ -151,7 +162,9 @@ class PairTuningCorpusIterator(object):
                       neg_subj_input, \
                       neg_obj_input, \
                       neg_pobj_input, \
-                      arg_type_input
+                      arg_idx_input, \
+                      pos_entity_salience_input, \
+                      neg_entity_salience_input
                 data_point_index = 0
 
         # FIXME: Should return this last partial batch,
@@ -171,4 +184,6 @@ class PairTuningCorpusIterator(object):
                   neg_subj_input[:data_point_index], \
                   neg_obj_input[:data_point_index], \
                   neg_pobj_input[:data_point_index], \
-                  arg_type_input[:data_point_index]
+                  arg_idx_input[:data_point_index], \
+                  pos_entity_salience_input[:data_point_index], \
+                  neg_entity_salience_input[:data_point_index]

@@ -134,3 +134,6 @@ PREP_VOCAB_LIST_FILE = './vocab_list/preposition'
 
 PRED_VOCAB_COUNT_FILE = './vocab_list/predicate_min_100_count'
 PRED_COUNT_THRES = 100000
+
+# entity salience related constants
+NUM_SALIENCE_FEATURES = 6

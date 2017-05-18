@@ -3,6 +3,7 @@ import theano
 import theano.tensor as T
 
 from autoencoder import DenoisingAutoencoder
+from util import consts
 
 
 class PairCompositionNetwork(object):
@@ -10,18 +11,22 @@ class PairCompositionNetwork(object):
         self.event_vector_network = event_vector_network
         self.input_a, self.input_b = \
             self.event_vector_network.get_projection_pair()
-        self.input_arg_type = T.vector("arg_type", dtype="int32")
+        self.arg_idx_input = T.vector('arg_type')
         # TODO: add input for entity salience feature
+        self.salience_input = T.matrix('salience')
         self.input_vector = T.concatenate(
             (self.input_a, self.input_b,
-             self.input_arg_type.dimshuffle(0, 'x')), axis=1)
+             self.arg_idx_input.dimshuffle(0, 'x'),
+             self.salience_input), axis=1)
         self.layer_sizes = layer_sizes
 
         # Initialize each layer as an autoencoder,
         # allowing us to initialize it by pretraining
         self.layers = []
         self.layer_outputs = []
-        input_size = self.event_vector_network.layer_sizes[-1] * 2 + 1
+        input_size = \
+            self.event_vector_network.layer_sizes[-1] * 2 + \
+            1 + consts.NUM_SALIENCE_FEATURES
         layer_input = self.input_vector
         for layer_size in layer_sizes:
             self.layers.append(
@@ -74,8 +79,13 @@ class PairCompositionNetwork(object):
             self.event_vector_network.subj_input_b,
             self.event_vector_network.obj_input_b,
             self.event_vector_network.pobj_input_b,
-            self.input_arg_type
+            self.arg_idx_input,
+            self.salience_input
         ]
+
+        # variables for negative entity salience
+        self.neg_salience_input = T.matrix('neg_salience')
+
         self.triple_inputs = [
             self.event_vector_network.pred_input_a,
             self.event_vector_network.subj_input_a,
@@ -89,7 +99,9 @@ class PairCompositionNetwork(object):
             self.event_vector_network.subj_input_c,
             self.event_vector_network.obj_input_c,
             self.event_vector_network.pobj_input_c,
-            self.input_arg_type
+            self.arg_idx_input,
+            self.salience_input,
+            self.neg_salience_input
         ]
 
         self._coherence_fn = None
@@ -110,8 +122,11 @@ class PairCompositionNetwork(object):
         coherence_a = self.prediction
 
         # Replace b inputs with c inputs
+        # Replace salience_input with neg_salience_input
         input_replacements = dict(zip(self.triple_inputs[4:8],
-                                      self.triple_inputs[8:12]))
+                                      self.triple_inputs[8:12]) +
+                                  [(self.triple_inputs[-2],
+                                    self.triple_inputs[-1])])
         coherence_b = theano.clone(self.prediction, replace=input_replacements)
 
         return coherence_a, coherence_b
@@ -135,7 +150,7 @@ class PairCompositionNetwork(object):
         )
 
     def copy_coherence_function(self, input_a=None, input_b=None,
-                                input_arg_type=None):
+                                arg_idx_input=None, salience_input=None):
         """
         Build a new coherence function, copying all weights and such from
         this network, replacing components given as kwargs. Note that this
@@ -146,17 +161,21 @@ class PairCompositionNetwork(object):
         """
         input_a = input_a or self.input_a
         input_b = input_b or self.input_b
-        input_arg_type = input_arg_type or self.input_arg_type
+        arg_idx_input = arg_idx_input or self.arg_idx_input
+        salience_input = salience_input or self.salience_input
 
         # Build a new coherence function, combining these two projections
         input_vector = T.concatenate(
-            [input_a, input_b, input_arg_type], axis=input_a.ndim-1)
+            [input_a, input_b, arg_idx_input.dimshuffle(0, 'x'),
+             salience_input], axis=input_a.ndim-1)
 
         # Initialize each layer as an autoencoder.
         # We'll then set its weights and never use it as an autoencoder
         layers = []
         layer_outputs = []
-        input_size = self.event_vector_network.layer_sizes[-1] * 2
+        input_size = \
+            self.event_vector_network.layer_sizes[-1] * 2 + \
+            1 + consts.NUM_SALIENCE_FEATURES
         layer_input = input_vector
         for layer_size in self.layer_sizes:
             layers.append(
