@@ -6,6 +6,8 @@ from autoencoder import DenoisingAutoencoderIterableTrainer
 from rich_script import PretrainingCorpusIterator
 from util import get_console_logger, Word2VecModel
 
+from event_comp import EventCompositionModel, EventCompositionTrainer
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('word2vec_vector',
@@ -36,6 +38,26 @@ parser.add_argument('--lr', type=float, default=0.1,
 
 opts = parser.parse_args()
 
+layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
+word2vec = Word2VecModel.load_model(opts.word2vec_vector,
+                                    fvocab=opts.word2vec_vocab)
+
+event_composition_model = EventCompositionModel(
+    word2vec, event_vector_layer_sizes=layer_sizes)
+
+event_composition_trainer = EventCompositionTrainer(
+    event_composition_model, tmp_dir=opts.output_path)
+
+event_composition_trainer.autoencoder_pretraining(
+    indexed_corpus=opts.indexed_corpus,
+    batch_size=opts.batch_size,
+    iterations=opts.iterations,
+    learning_rate=opts.lr,
+    regularization=opts.regularization,
+    corruption_level=opts.corruption
+)
+
+'''
 model_name = 'arg-comp'
 
 log = get_console_logger('Autoencoder Pretraining')
@@ -103,3 +125,4 @@ log.info('Finished autoencoder pretraining')
 model_saving_dir = os.path.join(output_dir, 'finish')
 log.info('Saving model to {}'.format(model_saving_dir))
 model.save_to_directory(model_saving_dir, save_word2vec=True)
+'''
