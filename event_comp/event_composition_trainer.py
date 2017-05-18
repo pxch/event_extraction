@@ -90,10 +90,10 @@ class EventCompositionTrainer(object):
 
         self.log.info('Finished autoencoder pretraining')
         self.save_model(
-            os.path.join('pretraining', 'init'),
+            os.path.join('pretraining', 'finish'),
             save_word2vec=True,
             save_event_vector=True,
-            save_pair_composition=True
+            save_pair_composition=False
         )
 
     def fine_tuning(

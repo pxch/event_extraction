@@ -60,12 +60,12 @@ class EventCompositionModel(object):
                 self.event_vector_network.get_word_vectors())
             self.word2vec.save_model(directory, 'word2vec')
 
-        if save_event_vector:
+        if save_event_vector and self.event_vector_network:
             with open(join(directory, 'ev_weights'), 'w') as f:
                 pkl.dump(self.event_vector_network.get_weights(), f)
             with open(join(directory, "ev_layer_sizes"), 'w') as f:
                 pkl.dump(self.event_vector_network.layer_sizes, f)
-        if save_pair_composition:
+        if save_pair_composition and self.pair_composition_network:
             with open(join(directory, 'pc_weights'), 'w') as f:
                 pkl.dump(self.pair_composition_network.get_weights(), f)
             with open(join(directory, 'pc_layer_sizes'), 'w') as f:
