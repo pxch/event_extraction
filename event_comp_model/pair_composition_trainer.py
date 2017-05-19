@@ -19,7 +19,7 @@ class PairCompositionTrainer(object):
         self.regularization = regularization
         self.learning_rate = learning_rate
         self.learning_rate_var = T.scalar(
-            "learning_rate", dtype=theano.config.floatX)
+            'learning_rate', dtype=theano.config.floatX)
 
         # Collect parameters to be tuned from all layers
         self.params = []
@@ -56,10 +56,7 @@ class PairCompositionTrainer(object):
         self.update_input_vectors = update_input_vectors
         self.update_empty_vectors = update_empty_vectors
 
-        self.positive = T.vector("positive", dtype="int8")
-        self.positive_col = self.positive.dimshuffle(0, 'x')
-
-    def get_triple_cost_updates(self, regularization=None):
+    def get_triple_cost_updates(self, regularization=None, compute_update=True):
         if regularization is None:
             regularization = self.regularization
 
@@ -80,33 +77,46 @@ class PairCompositionTrainer(object):
                 theano.config.floatX)
             cost += reg_term
 
-        # Now differentiate to get the updates
-        gparams = [T.grad(cost, param) for param in self.params]
-        updates = [(param, param - self.learning_rate_var * gparam)
-                   for param, gparam in zip(self.params, gparams)]
+        if compute_update:
+            # Now differentiate to get the updates
+            gparams = [T.grad(cost, param) for param in self.params]
+            updates = [(param, param - self.learning_rate_var * gparam)
+                       for param, gparam in zip(self.params, gparams)]
 
-        return cost, updates
+            return cost, updates
+        else:
+            return cost
+
+    @staticmethod
+    def compute_val_cost(cost_fn, val_batch_iterator):
+        cost = 0.0
+        batch_num = 0
+        for batch_num, batch_inputs in enumerate(val_batch_iterator):
+            cost += cost_fn(*batch_inputs)
+        return cost / (batch_num + 1)
 
     def train(self, batch_iterator, iterations=10000, iteration_callback=None,
               log=None, training_cost_prop_change_threshold=0.0005,
+              val_batch_iterator=None, stopping_iterations=10,
               log_every_batch=1000):
         # TODO: add logic for validation set and stopping_iterations parameter
         if log is None:
-            log = get_console_logger("Pair tuning")
+            log = get_console_logger('pair_comp_tuning')
 
-        log.info("Tuning params: learning rate=%s (->%s), regularization=%s" %
-                 (self.learning_rate, self.min_learning_rate,
-                  self.regularization))
+        log.info(
+            'Tuning params: learning rate={} (->{}), regularization={}'.format(
+                self.learning_rate, self.min_learning_rate,
+                self.regularization))
         if self.update_event_vectors:
-            log.info("Updating argument composition model")
+            log.info('Updating event vector network')
         if self.update_input_vectors:
-            log.info("Updating basic word representations")
+            log.info('Updating word2vec word representations')
         if self.update_empty_vectors:
-            log.info("Training empty vectors")
+            log.info('Training empty argument vectors')
 
         # Compile functions
         # Prepare cost/update functions for training
-        cost, updates = self.get_triple_cost_updates()
+        cost, updates = self.get_triple_cost_updates(compute_update=True)
         # Prepare training functions
         train_fn = theano.function(
             inputs=self.model.triple_inputs + [
@@ -116,9 +126,26 @@ class PairCompositionTrainer(object):
             outputs=cost,
             updates=updates,
         )
+        # Prepare cost functions without regularization for validation
+        cost_without_reg = self.get_triple_cost_updates(
+            regularization=0., compute_update=False)
+        cost_fn = theano.function(
+            inputs=self.model.triple_inputs,
+            outputs=cost_without_reg,
+        )
 
         # Keep a record of costs, so we can plot them
         training_costs = []
+        val_costs = []
+
+        val_cost = 0.0
+        # Keep a copy of the best weights so far
+        best_weights = best_iter = best_val_cost = None
+        if val_batch_iterator is not None:
+            best_weights = self.model.get_weights()
+            best_iter = -1
+            best_val_cost = PairCompositionTrainer.compute_val_cost(
+                cost_fn, val_batch_iterator)
 
         below_threshold_its = 0
 
@@ -163,8 +190,39 @@ class PairCompositionTrainer(object):
 
             training_costs.append(err / (batch_num+1))
 
-            log.info("COMPLETED ITERATION %d: training cost=%.5g" %
-                     (i, training_costs[-1]))
+            if val_batch_iterator is not None:
+                # Compute the cost function on the validation set
+                val_cost = PairCompositionTrainer.compute_val_cost(
+                    cost_fn, val_batch_iterator)
+                val_costs.append(val_cost)
+                if val_cost <= best_val_cost:
+                    # We assume that, if the validation error remains the same,
+                    # it's better to use the new set of
+                    # weights (with, presumably, a better training error)
+                    if val_cost == best_val_cost:
+                        log.info(
+                            'Same validation cost: {:.4f}, '
+                            'using new weights'.format(val_cost))
+                    else:
+                        log.info(
+                            'New best validation cost: {:.4f}'.format(val_cost))
+                    # Update our best estimate
+                    best_weights = self.model.get_weights()
+                    best_iter = i
+                    best_val_cost = val_cost
+                if val_cost >= best_val_cost \
+                        and i - best_iter >= stopping_iterations:
+                    # We've gone on long enough without improving validation
+                    # error, time to call a halt and use the best validation
+                    # error we got
+                    log.info('Stopping after {} iterations of increasing '
+                             'validation cost'.format(stopping_iterations))
+                    break
+
+            log.info(
+                'COMPLETED ITERATION {}: training cost={:.5g}, '
+                'validation cost={:.5g}'.format(
+                    i, training_costs[-1], val_cost))
 
             if iteration_callback is not None:
                 # Not computing training error at the moment
@@ -184,19 +242,24 @@ class PairCompositionTrainer(object):
                         # We've had enough iterations with very small changes:
                         # we've converged
                         log.info(
-                            "Proportional change in training cost (%g) below "
-                            "%g for five successive iterations: converged" %
-                            (training_cost_prop_change,
-                             training_cost_prop_change_threshold))
+                            'Proportional change in training cost ({:g}) below '
+                            '{:g} for five successive iterations: '
+                            'converged'.format(
+                                training_cost_prop_change,
+                                training_cost_prop_change_threshold))
                         break
                     else:
                         log.info(
-                            "Proportional change in training cost (%g) below "
-                            "%g for %d successive iterations: "
-                            "waiting until it's been low for five iterations" %
-                            (training_cost_prop_change,
-                             training_cost_prop_change_threshold,
-                             below_threshold_its))
+                            'Proportional change in training cost ({:g}) below '
+                            '{:g} for {} successive iterations: waiting until '
+                            'it is been low for five iterations'.format(
+                                training_cost_prop_change,
+                                training_cost_prop_change_threshold,
+                                below_threshold_its))
                 else:
                     # Reset the below threshold counter
                     below_threshold_its = 0
+
+        if best_weights is not None:
+            # Use the weights that gave us the best error on the validation set
+            self.model.set_weights(best_weights)

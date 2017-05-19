@@ -97,7 +97,7 @@ class EventCompositionTrainer(object):
             self, batch_iterator, iterations=3, learning_rate=0.025,
             min_learning_rate=0.001, regularization=0.01,
             update_event_vectors=False, update_input_vectors=False,
-            update_empty_vectors=False):
+            update_empty_vectors=False, val_batch_iterator=None):
         self.log.info('Started pair composition fine tuning')
         self.log.info(
             'Fine tuning with l2 reg={}, lr={}, min_lr={}, {} iterations, '
@@ -145,7 +145,8 @@ class EventCompositionTrainer(object):
             batch_iterator,
             iterations=iterations,
             iteration_callback=_iteration_callback,
-            log=self.log
+            log=self.log,
+            val_batch_iterator=val_batch_iterator
         )
 
         self.log.info('Finished pair composition fine tuning')
