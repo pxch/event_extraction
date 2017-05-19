@@ -1,7 +1,7 @@
 import pickle as pkl
 
 from evaluate.event_comp_evaluator import EventCompositionEvaluator
-from event_composition import EventCompositionModel
+from legacy.event_composition import EventCompositionModel
 
 all_scripts = pkl.load(open('all_scripts.pkl', 'r'))
 

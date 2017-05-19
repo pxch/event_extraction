@@ -2,8 +2,7 @@ import argparse
 import os
 
 from argument_composition import ArgumentCompositionModel
-# from event_composition import EventCompositionModel, EventCompositionTrainer
-from event_comp import EventCompositionModel, EventCompositionTrainer
+from event_composition import EventCompositionModel, EventCompositionTrainer
 from rich_script import PairTuningCorpusIterator
 from util import get_console_logger
 
@@ -13,9 +12,6 @@ parser.add_argument('indexed_corpus',
                     help='Path to the indexed corpus')
 parser.add_argument('output_path',
                     help='Path to saving the trained model')
-parser.add_argument('model_path',
-                    help='Path to a partially trained model to read from')
-'''
 parser.add_argument('--arg_comp_model_path',
                     help='Path to a trained argument composition model that '
                          'gives us our basic event representations that '
@@ -23,26 +19,25 @@ parser.add_argument('--arg_comp_model_path',
 parser.add_argument('--event_comp_model_path',
                     help='Path to a partially trained event composition model '
                          'that we will continue training on')
-'''
 parser.add_argument('--layer-sizes', default='100',
                     help='Comma-separated list of layer sizes (default: 100, '
                          'single layer)')
 parser.add_argument('--batch-size', type=int, default=1000,
                     help='Number of examples to include in a minibatch ('
                          'default: 1000)')
-parser.add_argument('--lr', type=float, default=0.025,
+parser.add_argument('--tuning-lr', type=float, default=0.025,
                     help='SGD learning rate to use for fine-tuning (default: '
                          '0.025)')
-parser.add_argument('--min-lr', type=float, default=0.0001,
+parser.add_argument('--tuning-min-lr', type=float, default=0.0001,
                     help='Learning rate drops off as we go through the '
                          'dataset. Do not let it go lower than this value '
                          '(default: 0.0001)')
-parser.add_argument('--regularization', type=float, default=0.01,
+parser.add_argument('--tuning-regularization', type=float, default=0.01,
                     help='L2 regularization coefficient for fine-tuning stage '
                          '(default: 0.01)')
-parser.add_argument('--iterations', type=int, default=3,
+parser.add_argument('--tuning-iterations', type=int, default=3,
                     help='Number of iterations to fine tune for (default: 3)')
-parser.add_argument('--update-event-vectors', action='store_true',
+parser.add_argument('--update-argument-composition', action='store_true',
                     help='Allow fine tuning to adjust the weights that define '
                          'the composition of predicates and arguments into '
                          'an event representation')
@@ -54,47 +49,14 @@ parser.add_argument('--update-empty-vectors', action='store_true',
                     help='Vectors for empty arg slots are initialized to 0. '
                          'Allow these to be learned during training '
                          '(by default, left as 0)')
-'''
 parser.add_argument('--event-tuning-iterations', type=int, default=0,
                     help='After tuning the event composition function, '
                          'perform some further iterations tuning '
                          'the whole network, including event representations. '
                          'By default, this is not done  at all')
-'''
 
 opts = parser.parse_args()
 
-event_composition_model = EventCompositionModel.load_model(opts.model_path)
-
-if event_composition_model.pair_composition_network is None:
-    layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
-    event_composition_model.add_pair_projection_network(layer_sizes)
-
-event_composition_trainer = EventCompositionTrainer(
-    event_composition_model, tmp_dir=opts.output_path)
-
-log = event_composition_trainer.log
-
-if not os.path.isdir(opts.indexed_corpus):
-    log.error('Cannot find indexed corpus at {}'.format(opts.indexed_corpus))
-    exit(-1)
-
-corpus_it = PairTuningCorpusIterator(
-    opts.indexed_corpus, batch_size=opts.batch_size)
-log.info('Found {} lines in the corpus'.format(len(corpus_it)))
-
-event_composition_trainer.fine_tuning(
-    batch_iterator=corpus_it,
-    iterations=opts.iterations,
-    learning_rate=opts.lr,
-    min_learning_rate=opts.min_lr,
-    regularization=opts.regularization,
-    update_event_vectors=opts.update_event_vectors,
-    update_input_vectors=opts.update_input_vectors,
-    update_empty_vectors=opts.update_empty_vectors
-)
-
-'''
 model_name = 'event-comp'
 
 log = get_console_logger('Pair Tuning')
@@ -218,4 +180,3 @@ if opts.event_tuning_iterations > 0:
     model_saving_dir = os.path.join(output_dir, 'finish')
     log.info('Saving model to {}'.format(model_saving_dir))
     model.save_to_directory(model_saving_dir, save_word2vec=False)
-'''

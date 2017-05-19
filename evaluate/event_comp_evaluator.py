@@ -1,7 +1,7 @@
 import numpy as np
 
 from event_coherence_evaluator import EventCoherenceEvaluator
-from event_composition import EventCompositionModel
+from legacy.event_composition import EventCompositionModel
 from rich_script import IndexedEvent
 from util import get_class_name
 
