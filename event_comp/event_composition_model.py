@@ -85,7 +85,7 @@ class EventCompositionModel(object):
                 '{} and {} expected'.format(
                     directory, word2vec_vector_file, word2vec_vocab_file))
         word2vec = Word2VecModel.load_model(
-            word2vec_vocab_file, fvocab=word2vec_vocab_file)
+            word2vec_vector_file, fvocab=word2vec_vocab_file)
 
         # load event vector network layer sizes, if exists
         event_vector_layer_sizes_file = join(directory, 'ev_layer_sizes')
@@ -107,7 +107,7 @@ class EventCompositionModel(object):
         model = cls(
             word2vec=word2vec,
             event_vector_layer_sizes=event_vector_layer_sizes,
-            pair_projection_layer_sizes=pair_composition_layer_sizes)
+            pair_composition_layer_sizes=pair_composition_layer_sizes)
 
         # load event vector network weights, if exists
         event_vector_weights_file = join(directory, 'ev_weights')

@@ -73,7 +73,7 @@ if event_composition_model.pair_composition_network is None:
 event_composition_trainer = EventCompositionTrainer(
     event_composition_model, tmp_dir=opts.output_path)
 
-log = event_composition_model.log
+log = event_composition_trainer.log
 
 if not os.path.isdir(opts.indexed_corpus):
     log.error('Cannot find indexed corpus at {}'.format(opts.indexed_corpus))

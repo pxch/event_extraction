@@ -103,7 +103,7 @@ class EventCompositionTrainer(object):
             update_empty_vectors=False):
         self.log.info('Started pair composition fine tuning')
         self.log.info(
-            'Fine tuning with l2 reg={}, lr={}, min_lr={}, {} iterations'
+            'Fine tuning with l2 reg={}, lr={}, min_lr={}, {} iterations, '
             '{}-instance minibatches, {}updating event vectors, '
             '{}updating input vectors, {}updating empty vectors'.format(
                 regularization, learning_rate, min_learning_rate,
