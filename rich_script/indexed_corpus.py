@@ -118,13 +118,13 @@ class PairTuningCorpusIterator(object):
         neg_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         neg_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         neg_pobj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
-        arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
+        arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.float32)
         pos_entity_salience_input = numpy.zeros(
             [self.batch_size, consts.NUM_SALIENCE_FEATURES],
-            dtype=numpy.int32)
+            dtype=numpy.float32)
         neg_entity_salience_input = numpy.zeros(
             [self.batch_size, consts.NUM_SALIENCE_FEATURES],
-            dtype=numpy.int32)
+            dtype=numpy.float32)
 
         data_point_index = 0
 
@@ -141,11 +141,11 @@ class PairTuningCorpusIterator(object):
             neg_subj_input[data_point_index] = pair_input.neg_event.subj_input
             neg_obj_input[data_point_index] = pair_input.neg_event.obj_input
             neg_pobj_input[data_point_index] = pair_input.neg_event.pobj_input
-            arg_idx_input[data_point_index] = pair_input.arg_idx
+            arg_idx_input[data_point_index] = float(pair_input.arg_idx)
             pos_entity_salience_input[data_point_index] = \
-                pair_input.pos_salience.get_feature_list()
+                numpy.asarray(pair_input.pos_salience.get_feature_list()).astype(numpy.float32)
             neg_entity_salience_input[data_point_index] = \
-                pair_input.neg_salience.get_feature_list()
+                numpy.asarray(pair_input.neg_salience.get_feature_list()).astype(numpy.float32)
             data_point_index += 1
 
             # If we've filled up the batch, yield it
