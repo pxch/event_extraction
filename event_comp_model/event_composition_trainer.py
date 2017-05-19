@@ -8,15 +8,15 @@ from util import get_class_name, get_console_logger
 
 
 class EventCompositionTrainer(object):
-    def __init__(self, model, tmp_dir, log=None):
+    def __init__(self, model, saving_path, log=None):
         assert isinstance(model, EventCompositionModel), \
             'model must be a {} instance'.format(
                 get_class_name(EventCompositionModel))
         self.model = model
-        # temporary directory to save intermediate models
-        if not os.path.exists(tmp_dir):
-            os.makedirs(tmp_dir)
-        self.tmp_dir = tmp_dir
+        # directory to save intermediate and final results
+        if not os.path.exists(saving_path):
+            os.makedirs(saving_path)
+        self.saving_path = saving_path
         if log is None:
             self.log = get_console_logger('event_comp_trainer')
         else:
@@ -24,7 +24,7 @@ class EventCompositionTrainer(object):
 
     def save_model(self, saving_dir, save_word2vec=True,
                    save_event_vector=True, save_pair_composition=False):
-        saving_dir = os.path.join(self.tmp_dir, saving_dir)
+        saving_dir = os.path.join(self.saving_path, saving_dir)
         self.log.info('Saving model to {}'.format(saving_dir))
         self.model.save_model(
             saving_dir,
@@ -47,13 +47,6 @@ class EventCompositionTrainer(object):
             self.log.error(
                 'Cannot find indexed corpus at {}'.format(indexed_corpus))
             exit(-1)
-
-        self.save_model(
-            os.path.join('pretraining', 'init'),
-            save_word2vec=False,
-            save_event_vector=True,
-            save_pair_composition=False
-        )
 
         for layer in range(len(self.model.event_vector_network.layer_sizes)):
             self.log.info('Pre-training layer {}'.format(layer))
@@ -81,16 +74,20 @@ class EventCompositionTrainer(object):
             )
 
             self.log.info('Finished training layer {}'.format(layer))
-            self.save_model(
-                os.path.join('pretraining', 'layer_{}'.format(layer)),
-                save_word2vec=False,
-                save_event_vector=True,
-                save_pair_composition=False
-            )
+            # save intermediate results after training each layer,
+            # except the last layer
+            if layer < len(self.model.event_vector_network.layer_sizes) - 1:
+                self.save_model(
+                    os.path.join('pretraining', 'layer_{}'.format(layer)),
+                    save_word2vec=False,
+                    save_event_vector=True,
+                    save_pair_composition=False
+                )
 
-        self.log.info('Finished autoencoder pretraining')
+        self.log.info('Finished autoencoder pre-training')
+        # save final results with all parameters and word2vec vectors
         self.save_model(
-            os.path.join('pretraining', 'finish'),
+            'pretraining',
             save_word2vec=True,
             save_event_vector=True,
             save_pair_composition=False
@@ -125,19 +122,15 @@ class EventCompositionTrainer(object):
             save_event_vector = True
 
         def _iteration_callback(iter_num):
-            self.save_model(
-                os.path.join(saving_dir, 'iter_{}'.format(iter_num)),
-                save_word2vec=save_word2vec,
-                save_event_vector=save_event_vector,
-                save_pair_composition=True
-            )
-
-        self.save_model(
-            os.path.join(saving_dir, 'init'),
-            save_word2vec=save_word2vec,
-            save_event_vector=save_event_vector,
-            save_pair_composition=True
-        )
+            # save intermediate results after training each iteration,
+            # except the last iteration
+            if iter_num < iterations - 1:
+                self.save_model(
+                    os.path.join(saving_dir, 'iter_{}'.format(iter_num)),
+                    save_word2vec=save_word2vec,
+                    save_event_vector=save_event_vector,
+                    save_pair_composition=True
+                )
 
         trainer = PairCompositionTrainer(
             self.model.pair_composition_network,
@@ -151,13 +144,14 @@ class EventCompositionTrainer(object):
         trainer.train(
             batch_iterator,
             iterations=iterations,
-            # TODO: add iteration_callback
             iteration_callback=_iteration_callback,
             log=self.log
         )
 
+        self.log.info('Finished pair composition fine tuning')
+        # save final results with all parameters and word2vec vectors
         self.save_model(
-            os.path.join(saving_dir, 'finish'),
+            saving_dir,
             save_word2vec=True,
             save_event_vector=True,
             save_pair_composition=True

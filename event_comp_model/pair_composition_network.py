@@ -12,7 +12,7 @@ class PairCompositionNetwork(object):
         self.input_a, self.input_b = \
             self.event_vector_network.get_projection_pair()
         self.arg_idx_input = T.vector('arg_type')
-        # TODO: add input for entity salience feature
+        # TODO: add logic to allow not adding salience features as input
         self.salience_input = T.matrix('salience')
         self.input_vector = T.concatenate(
             (self.input_a, self.input_b,

@@ -43,8 +43,6 @@ if args.subsampling:
     with open(join(cur_dir_path, consts.PRED_VOCAB_COUNT_FILE)) as fin:
         pred_count_dict = read_counter(fin)
 
-# FIXME: fix bugs where pred_idx is -1 and get into the indexed corpus
-
 for input_f in input_files:
     with BZ2File(input_f, 'r') as fin:
         script_corpus = ScriptCorpus.from_text(fin.read())

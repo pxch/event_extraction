@@ -106,6 +106,7 @@ class PairTuningCorpusIterator(object):
         return len(self.reader)
 
     def __iter__(self):
+        # TODO: add logic to yield only a portion of the training dataset
         left_pred_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         left_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         left_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
@@ -143,9 +144,11 @@ class PairTuningCorpusIterator(object):
             neg_pobj_input[data_point_index] = pair_input.neg_event.pobj_input
             arg_idx_input[data_point_index] = float(pair_input.arg_idx)
             pos_entity_salience_input[data_point_index] = \
-                numpy.asarray(pair_input.pos_salience.get_feature_list()).astype(numpy.float32)
+                numpy.asarray(pair_input.pos_salience.get_feature_list()).\
+                astype(numpy.float32)
             neg_entity_salience_input[data_point_index] = \
-                numpy.asarray(pair_input.neg_salience.get_feature_list()).astype(numpy.float32)
+                numpy.asarray(pair_input.neg_salience.get_feature_list()).\
+                astype(numpy.float32)
             data_point_index += 1
 
             # If we've filled up the batch, yield it
