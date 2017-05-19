@@ -22,7 +22,7 @@ class DenoisingAutoencoderIterableTrainer(object):
     def train(self, batch_iterator, iterations=10000, log=None,
               training_cost_prop_change_threshold=0.0005, learning_rate=0.1,
               regularization=0., corruption_level=0., loss="xent",
-              log_every_batch=100):
+              log_every_batch=1000):
         """
         Train on data stored in Theano tensors. Uses minibatch training.
 

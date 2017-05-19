@@ -89,7 +89,7 @@ class PairCompositionTrainer(object):
 
     def train(self, batch_iterator, iterations=10000, iteration_callback=None,
               log=None, training_cost_prop_change_threshold=0.0005,
-              log_every_batch=100):
+              log_every_batch=1000):
         # TODO: add logic for validation set and stopping_iterations parameter
         if log is None:
             log = get_console_logger("Pair tuning")
