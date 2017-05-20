@@ -74,9 +74,8 @@ class EventCompositionTrainer(object):
             )
 
             self.log.info('Finished training layer {}'.format(layer))
-            # save intermediate results after training each layer,
-            # except the last layer
-            if layer < len(self.model.event_vector_network.layer_sizes) - 1:
+            # save intermediate results after training each layer
+            if layer < len(self.model.event_vector_network.layer_sizes):
                 self.save_model(
                     os.path.join('pretraining', 'layer_{}'.format(layer)),
                     save_word2vec=False,
@@ -123,8 +122,9 @@ class EventCompositionTrainer(object):
 
         def _iteration_callback(iter_num):
             # save intermediate results after training each iteration,
-            # except the last iteration
-            if iter_num < iterations - 1:
+            # including the last iteration (final results might not be the ones
+            # from the last iteration)
+            if iter_num < iterations:
                 self.save_model(
                     os.path.join(saving_dir, 'iter_{}'.format(iter_num)),
                     save_word2vec=save_word2vec,
