@@ -138,7 +138,6 @@ class PairCompositionTrainer(object):
         training_costs = []
         val_costs = []
 
-        val_cost = 0.0
         # Keep a copy of the best weights so far
         best_weights = best_iter = best_val_cost = None
         if val_batch_iterator is not None:
@@ -200,18 +199,6 @@ class PairCompositionTrainer(object):
                     best_weights = self.model.get_weights()
                     best_iter = i
                     best_val_cost = val_cost
-                if val_cost >= best_val_cost and i - best_iter >= 2 \
-                        and i - last_update_lr_iter >= 2 \
-                        and learning_rate > self.min_learning_rate:
-                    # We've gone on 2 iterations without improving validation
-                    # error, time to reduce the learning rate
-                    learning_rate /= 2
-                    if learning_rate < self.min_learning_rate:
-                        learning_rate = self.min_learning_rate
-                    last_update_lr_iter = i
-                    log.info(
-                        'Halving learning rate to {} after 2 iterations of '
-                        'increasing validation cost'.format(learning_rate))
                 if val_cost >= best_val_cost \
                         and i - best_iter >= stopping_iterations:
                     # We've gone on long enough without improving validation
@@ -224,7 +211,20 @@ class PairCompositionTrainer(object):
             log.info(
                 'COMPLETED ITERATION {}: training cost={:.5g}, '
                 'validation cost={:.5g}'.format(
-                    i, training_costs[-1], val_cost))
+                    i, training_costs[-1], val_costs[-1]))
+
+            if val_costs[-1] >= best_val_cost and i - best_iter >= 2 \
+                    and i - last_update_lr_iter >= 2 \
+                    and learning_rate > self.min_learning_rate:
+                # We've gone on 2 iterations without improving validation
+                # error, time to reduce the learning rate
+                learning_rate /= 2
+                if learning_rate < self.min_learning_rate:
+                    learning_rate = self.min_learning_rate
+                last_update_lr_iter = i
+                log.info(
+                    'Halving learning rate to {} after 2 iterations of '
+                    'increasing validation cost'.format(learning_rate))
 
             if iteration_callback is not None:
                 # Not computing training error at the moment
