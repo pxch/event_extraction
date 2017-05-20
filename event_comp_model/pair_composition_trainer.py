@@ -149,13 +149,11 @@ class PairCompositionTrainer(object):
 
         below_threshold_its = 0
 
+        learning_rate = self.learning_rate
+
         for i in range(iterations):
             err = 0.0
             batch_num = 0
-            if i == 0:
-                learning_rate = self.learning_rate
-            else:
-                learning_rate = self.min_learning_rate
 
             for batch_num, batch_inputs in enumerate(batch_iterator):
                 # Shuffle the training data between iterations, as one should
@@ -167,15 +165,6 @@ class PairCompositionTrainer(object):
 
                 # Update the model with this batch's data
                 err += train_fn(*batch_inputs, learning_rate=learning_rate)
-
-                # Update the learning rate, so it falls away as we go through
-                # Do this only on the first iteration
-                # After that, LR should just stay at the min
-                if i == 0:
-                    learning_rate = max(
-                        self.min_learning_rate,
-                        self.learning_rate * (1. - float(batch_num + 1) /
-                                              batch_iterator.num_batch))
 
                 if (batch_num + 1) % log_every_batch == 0:
                     log.info(
@@ -210,6 +199,15 @@ class PairCompositionTrainer(object):
                     best_weights = self.model.get_weights()
                     best_iter = i
                     best_val_cost = val_cost
+                if val_cost >= best_val_cost and i - best_iter >= 2:
+                    # We've gone on 3 iterations without improving validation
+                    # error, time to reduce the learning rate
+                    learning_rate /= 2
+                    if learning_rate < self.min_learning_rate:
+                        learning_rate = self.min_learning_rate
+                    log.info(
+                        'Halving learning rate to {} after 2 iterations of '
+                        'increasing validation cost'.format(learning_rate))
                 if val_cost >= best_val_cost \
                         and i - best_iter >= stopping_iterations:
                     # We've gone on long enough without improving validation

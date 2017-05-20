@@ -148,7 +148,7 @@ elif opts.stage == 2 or opts.stage == 3:
             batch_iterator=corpus_it,
             iterations=opts.iterations,
             learning_rate=opts.lr,
-            min_learning_rate=opts.lr,  # set min_lr = lr in full fine tuning
+            min_learning_rate=opts.min_lr,
             regularization=opts.regularization,
             update_event_vectors=True,
             update_input_vectors=True,
