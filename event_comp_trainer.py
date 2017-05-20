@@ -129,7 +129,7 @@ elif opts.stage == 2 or opts.stage == 3:
                 opts.val_indexed_corpus, opts.batch_size))
         val_corpus_it = PairTuningCorpusIterator(
             opts.val_indexed_corpus, batch_size=opts.batch_size)
-        log.info('Found {} lines in the corpus'.format(len(corpus_it)))
+        log.info('Found {} lines in the corpus'.format(len(val_corpus_it)))
 
     if opts.stage == 2:
         event_composition_trainer.fine_tuning(
