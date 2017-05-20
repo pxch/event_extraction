@@ -150,6 +150,7 @@ class PairCompositionTrainer(object):
         below_threshold_its = 0
 
         learning_rate = self.learning_rate
+        last_update_lr_iter = 0
 
         for i in range(iterations):
             err = 0.0
@@ -199,12 +200,15 @@ class PairCompositionTrainer(object):
                     best_weights = self.model.get_weights()
                     best_iter = i
                     best_val_cost = val_cost
-                if val_cost >= best_val_cost and i - best_iter >= 2:
-                    # We've gone on 3 iterations without improving validation
+                if val_cost >= best_val_cost and i - best_iter >= 2 \
+                        and i - last_update_lr_iter >= 2 \
+                        and learning_rate > self.min_learning_rate:
+                    # We've gone on 2 iterations without improving validation
                     # error, time to reduce the learning rate
                     learning_rate /= 2
                     if learning_rate < self.min_learning_rate:
                         learning_rate = self.min_learning_rate
+                    last_update_lr_iter = i
                     log.info(
                         'Halving learning rate to {} after 2 iterations of '
                         'increasing validation cost'.format(learning_rate))
