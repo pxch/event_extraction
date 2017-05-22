@@ -8,11 +8,12 @@ from util import Word2VecModel, consts, get_class_name
 
 
 class RichScript(object):
-    def __init__(self, doc_name, rich_events, num_entities):
+    def __init__(self, doc_name, rich_events, rich_entities):
         self.doc_name = doc_name
         self.rich_events = rich_events
+        self.rich_entities = rich_entities
         self.num_events = len(self.rich_events)
-        self.num_entities = num_entities
+        self.num_entities = len(self.rich_entities)
 
     def get_index(self, model, include_type=True, use_unk=True,
                   pred_count_dict=None):
@@ -129,4 +130,4 @@ class RichScript(object):
                     (rich_event.rich_pred.get_text(include_type=False)
                      not in consts.STOP_PREDS):
                 rich_events.append(rich_event)
-        return cls(script.doc_name, rich_events, len(rich_entity_list))
+        return cls(script.doc_name, rich_events, rich_entity_list)
