@@ -1,44 +1,43 @@
 from base_evaluator import BaseEvaluator
-import rich_script
-from util import get_class_name
+
+
+def is_most_freq_entity(entity_idx, entity_freqs):
+    entity_freqs[entity_idx] -= 1
+    most_freq_entity_idx = entity_freqs.index(max(entity_freqs))
+    entity_freqs[entity_idx] += 1
+    return entity_idx == most_freq_entity_idx
 
 
 class MostFreqEntityEvaluator(BaseEvaluator):
-    def __init__(self, logger=None, ignore_first_mention=False):
+    def __init__(self, logger=None, use_lemma=True, include_type=True,
+                 include_all_pobj=True, ignore_first_mention=False,
+                 filter_stop_events=True):
         super(MostFreqEntityEvaluator, self).__init__(
             logger=logger,
-            ignore_first_mention=ignore_first_mention
+            use_lemma=use_lemma,
+            include_type=include_type,
+            include_all_pobj=include_all_pobj,
+            ignore_first_mention=ignore_first_mention,
+            filter_stop_events=filter_stop_events
         )
+        self.model_name = 'most_freq_entity'
 
-    @staticmethod
-    def is_most_freq_entity(entity_idx, entity_freqs):
-        entity_freqs[entity_idx] -= 1
-        most_freq_entity_idx = entity_freqs.index(max(entity_freqs))
-        entity_freqs[entity_idx] += 1
-        return entity_idx == most_freq_entity_idx
+    def set_model(self, model):
+        self.set_embedding_model(model)
 
-    def log_evaluator_info(self):
-        self.logger.info('Evaluation based on most frequent entity')
-        self.logger.info('Evaluator configs: ignore_first_mention = {}'.format(
-                self.ignore_first_mention))
-
-    def evaluate_script(self, script):
-        # TODO: add logic to exclude stop events in evaluate_script
-        assert isinstance(script, rich_script.Script), \
-            'evaluate_script must be called with a {} instance'.format(
-                get_class_name(rich_script.Script))
-        num_choices = len(script.entities)
-        entity_freqs = [len(entity.mentions) for entity in script.entities]
-        for event in script.events:
-            for label, arg in event.get_all_args_with_entity(
-                    include_arg_type=True):
-                # do not evaluate the first mention of a coref chain,
-                # as per the evaluation framework of implicit argument,
-                # we must have other mentions in previous sentences
-                if (not self.ignore_first_mention) \
-                        or arg.mention_idx != 0:
-                    self.eval_stats.add_eval_result(
-                        label,
-                        self.is_most_freq_entity(arg.entity_idx, entity_freqs),
-                        num_choices)
-        return self.eval_stats
+    def evaluate_event_list(self, rich_event_list):
+        for event_idx, rich_event in enumerate(rich_event_list):
+            self.logger.debug('Processing event #{}'.format(event_idx))
+            for arg_idx in rich_event.get_arg_idx_list(
+                    include_all_pobj=self.include_all_pobj):
+                if rich_event.has_neg(arg_idx):
+                    rich_arg = rich_event.get_argument(arg_idx)
+                    if not self.ignore_argument(rich_arg):
+                        entity_freqs = [rich_entity.salience.num_mentions_total
+                                        for rich_entity in
+                                        rich_arg.rich_entity_list]
+                        correct = is_most_freq_entity(
+                            rich_arg.entity_idx, entity_freqs)
+                        num_choices = len(entity_freqs)
+                        self.eval_stats.add_eval_result(
+                            rich_arg.arg_type, correct, num_choices)

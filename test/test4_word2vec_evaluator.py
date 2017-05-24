@@ -1,25 +1,28 @@
 import pickle as pkl
+from os.path import join
 
-from evaluate.word2vec_evaluator import Word2VecEvaluator
+from evaluate import Word2VecEvaluator
 from util import Word2VecModel
 
 all_scripts = pkl.load(open('all_scripts.pkl', 'r'))
 
-vector_file = \
-    '/Users/pengxiang/corpora/spaces/event_scripts/' \
-    'entity_1_ner_1_prep_1_dim300vecs.bin'
-vocab_file = \
-    '/Users/pengxiang/corpora/spaces/event_scripts/' \
-    'entity_1_ner_1_prep_1_dim300vecs.vocab'
+word2vec_dir = '/Users/pengxiang/corpora/spaces/20170521/sample_1e-4_min_500/'
+
+vector_file = join(word2vec_dir, 'min_500_dim300vecs.bin')
+vocab_file = join(word2vec_dir, 'min_500_dim300vecs.vocab')
 
 word2vec = Word2VecModel.load_model(vector_file, fvocab=vocab_file)
 
 evaluator = Word2VecEvaluator(
-    ignore_first_mention=False, include_all_pobj=False)
+    use_lemma=True,
+    include_type=True,
+    include_all_pobj=False,
+    ignore_first_mention=False,
+    filter_stop_events=True,
+    use_max_score=True)
 
 evaluator.set_model(word2vec)
 
-evaluator.evaluate(all_scripts)
+evaluator.evaluate(all_scripts, use_max_score=False)
 
-evaluator.set_ignore_first_mention(True)
-evaluator.evaluate(all_scripts)
+evaluator.evaluate(all_scripts, use_max_score=True)

@@ -1,8 +1,8 @@
 import numpy as np
 
-from event_coherence_evaluator import EventCoherenceEvaluator
+from base_evaluator import BaseEvaluator
 from rich_script import IndexedEvent, IndexedEventMultiPobj
-from util import Word2VecModel, get_class_name, cos_sim
+from util import get_class_name, cos_sim
 
 
 def get_coherence_scores(target_vector, context_vector_list):
@@ -26,25 +26,29 @@ def get_most_coherent(eval_vector_list, context_vector_list,
     return most_coherent_idx
 
 
-class Word2VecEvaluator(EventCoherenceEvaluator):
-    def __init__(self, logger=None, ignore_first_mention=False, use_lemma=True,
-                 include_type=True, use_max_score=True, include_all_pobj=True,
-                 filter_stop_events=True):
+class Word2VecEvaluator(BaseEvaluator):
+    def __init__(self, logger=None, use_lemma=True, include_type=True,
+                 include_all_pobj=True, ignore_first_mention=False,
+                 filter_stop_events=True, use_max_score=True):
         super(Word2VecEvaluator, self).__init__(
             logger=logger,
-            ignore_first_mention=ignore_first_mention,
             use_lemma=use_lemma,
             include_type=include_type,
-            use_max_score=use_max_score,
             include_all_pobj=include_all_pobj,
+            ignore_first_mention=ignore_first_mention,
             filter_stop_events=filter_stop_events
         )
+        self.use_max_score = use_max_score
+        self.model_name = 'word2vec'
 
     def set_model(self, model):
-        assert isinstance(model, Word2VecModel), \
-            'model must be a {} instance'.format(get_class_name(Word2VecModel))
-        self.embedding_model = model
-        self.model_name = self.embedding_model.name
+        self.set_embedding_model(model)
+
+    def log_evaluator_info(self):
+        super(Word2VecEvaluator, self).log_evaluator_info()
+        self.logger.info(
+            'evaluator specific configs: use_max_score = {}'.format(
+                self.use_max_score))
 
     def get_event_vector(self, event_input, include_all_pobj=True):
         if include_all_pobj:
@@ -73,30 +77,38 @@ class Word2VecEvaluator(EventCoherenceEvaluator):
                 vector += arg_vector
         return vector
 
-    def evaluate_event(self, eval_input_list_all, context_input_list):
-        context_vector_list = \
+    def evaluate_event_list(self, rich_event_list):
+        pos_input_list = \
+            [rich_event.get_pos_input(include_all_pobj=self.include_all_pobj)
+                for rich_event in rich_event_list]
+        pos_vector_list = \
             [self.get_event_vector(
-                context_input, include_all_pobj=self.include_all_pobj)
-                for context_input in context_input_list]
-        for rich_arg, eval_input_list in eval_input_list_all:
-            if (not self.ignore_first_mention) or \
-                    (not rich_arg.is_first_mention()):
-                eval_vector_list = \
-                    [self.get_event_vector(
-                        eval_input, include_all_pobj=self.include_all_pobj)
-                        for eval_input in eval_input_list]
-                most_coherent_idx = get_most_coherent(
-                    eval_vector_list,
-                    context_vector_list,
-                    self.use_max_score
-                )
-                correct = (most_coherent_idx == rich_arg.get_target_idx())
-                num_choices = len(eval_input_list)
-                self.eval_stats.add_eval_result(
-                    rich_arg.arg_type,
-                    correct,
-                    num_choices
-                )
-                self.logger.debug(
-                    'Processing {}, correct = {}, num_choices = {}'.format(
-                        rich_arg.arg_type, correct, num_choices))
+                pos_input, include_all_pobj=self.include_all_pobj)
+                for pos_input in pos_input_list]
+
+        for event_idx, rich_event in enumerate(rich_event_list):
+            self.logger.debug('Processing event #{}'.format(event_idx))
+            context_vector_list = \
+                pos_vector_list[:event_idx] + pos_vector_list[event_idx+1:]
+
+            eval_input_list_all = rich_event.get_eval_input_list_all(
+                include_all_pobj=self.include_all_pobj, include_salience=False)
+
+            for rich_arg, eval_input_list in eval_input_list_all:
+                if not self.ignore_argument(rich_arg):
+                    eval_vector_list = \
+                        [self.get_event_vector(
+                            eval_input, include_all_pobj=self.include_all_pobj)
+                            for eval_input in eval_input_list]
+                    most_coherent_idx = get_most_coherent(
+                        eval_vector_list,
+                        context_vector_list,
+                        self.use_max_score
+                    )
+                    correct = (most_coherent_idx == rich_arg.get_target_idx())
+                    num_choices = len(eval_input_list)
+                    self.eval_stats.add_eval_result(
+                        rich_arg.arg_type, correct, num_choices)
+                    self.logger.debug(
+                        'Processing {}, correct = {}, num_choices = {}'.format(
+                            rich_arg.arg_type, correct, num_choices))
