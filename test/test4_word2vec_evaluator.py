@@ -23,6 +23,6 @@ evaluator = Word2VecEvaluator(
 
 evaluator.set_model(word2vec)
 
-evaluator.evaluate(all_scripts, use_max_score=False)
+evaluator.evaluate(all_scripts, ignore_first_mention=False)
 
-evaluator.evaluate(all_scripts, use_max_score=True)
+evaluator.evaluate(all_scripts, ignore_first_mention=True)
