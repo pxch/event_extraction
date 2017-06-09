@@ -93,11 +93,12 @@ class PretrainingCorpusIterator(object):
 
 
 class PairTuningCorpusIterator(object):
-    def __init__(self, corpus_dir, batch_size=1):
+    def __init__(self, corpus_dir, batch_size=1, use_salience=True):
         self.corpus_dir = corpus_dir
         self.reader = IndexedCorpusReader('pair_tuning', self.corpus_dir)
         self.batch_size = batch_size
         self.num_batch = int(ceil(float(len(self.reader)) / batch_size))
+        self.use_salience = use_salience
 
     def restart(self):
         self.reader = IndexedCorpusReader('pair_tuning', self.corpus_dir)
@@ -106,7 +107,6 @@ class PairTuningCorpusIterator(object):
         return len(self.reader)
 
     def __iter__(self):
-        # TODO: add logic to yield only a portion of the training dataset
         left_pred_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         left_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         left_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
@@ -120,12 +120,13 @@ class PairTuningCorpusIterator(object):
         neg_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         neg_pobj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.float32)
-        pos_entity_salience_input = numpy.zeros(
-            [self.batch_size, consts.NUM_SALIENCE_FEATURES],
-            dtype=numpy.float32)
-        neg_entity_salience_input = numpy.zeros(
-            [self.batch_size, consts.NUM_SALIENCE_FEATURES],
-            dtype=numpy.float32)
+        if self.use_salience:
+            pos_entity_salience_input = numpy.zeros(
+                [self.batch_size, consts.NUM_SALIENCE_FEATURES],
+                dtype=numpy.float32)
+            neg_entity_salience_input = numpy.zeros(
+                [self.batch_size, consts.NUM_SALIENCE_FEATURES],
+                dtype=numpy.float32)
 
         data_point_index = 0
 
@@ -143,31 +144,47 @@ class PairTuningCorpusIterator(object):
             neg_obj_input[data_point_index] = pair_input.neg_event.obj_input
             neg_pobj_input[data_point_index] = pair_input.neg_event.pobj_input
             arg_idx_input[data_point_index] = float(pair_input.arg_idx)
-            pos_entity_salience_input[data_point_index] = \
-                numpy.asarray(pair_input.pos_salience.get_feature_list()).\
-                astype(numpy.float32)
-            neg_entity_salience_input[data_point_index] = \
-                numpy.asarray(pair_input.neg_salience.get_feature_list()).\
-                astype(numpy.float32)
+            if self.use_salience:
+                pos_entity_salience_input[data_point_index] = \
+                    numpy.asarray(pair_input.pos_salience.get_feature_list()).\
+                    astype(numpy.float32)
+                neg_entity_salience_input[data_point_index] = \
+                    numpy.asarray(pair_input.neg_salience.get_feature_list()).\
+                    astype(numpy.float32)
             data_point_index += 1
 
             # If we've filled up the batch, yield it
             if data_point_index == self.batch_size:
-                yield left_pred_input, \
-                      left_subj_input, \
-                      left_obj_input, \
-                      left_pobj_input, \
-                      pos_pred_input, \
-                      pos_subj_input, \
-                      pos_obj_input, \
-                      pos_pobj_input, \
-                      neg_pred_input, \
-                      neg_subj_input, \
-                      neg_obj_input, \
-                      neg_pobj_input, \
-                      arg_idx_input, \
-                      pos_entity_salience_input, \
-                      neg_entity_salience_input
+                if self.use_salience:
+                    yield left_pred_input, \
+                          left_subj_input, \
+                          left_obj_input, \
+                          left_pobj_input, \
+                          pos_pred_input, \
+                          pos_subj_input, \
+                          pos_obj_input, \
+                          pos_pobj_input, \
+                          neg_pred_input, \
+                          neg_subj_input, \
+                          neg_obj_input, \
+                          neg_pobj_input, \
+                          arg_idx_input, \
+                          pos_entity_salience_input, \
+                          neg_entity_salience_input
+                else:
+                    yield left_pred_input, \
+                          left_subj_input, \
+                          left_obj_input, \
+                          left_pobj_input, \
+                          pos_pred_input, \
+                          pos_subj_input, \
+                          pos_obj_input, \
+                          pos_pobj_input, \
+                          neg_pred_input, \
+                          neg_subj_input, \
+                          neg_obj_input, \
+                          neg_pobj_input, \
+                          arg_idx_input
                 data_point_index = 0
 
         # FIXME: Should return this last partial batch,
@@ -175,18 +192,33 @@ class PairTuningCorpusIterator(object):
         # If you update this, allow for the triple option as well
         if False and data_point_index > 0:
             # We've partially filled a batch: yield this as the last item
-            yield left_pred_input[:data_point_index], \
-                  left_subj_input[:data_point_index], \
-                  left_obj_input[:data_point_index], \
-                  left_pobj_input[:data_point_index], \
-                  pos_pred_input[:data_point_index], \
-                  pos_subj_input[:data_point_index], \
-                  pos_obj_input[:data_point_index], \
-                  pos_pobj_input[:data_point_index], \
-                  neg_pred_input[:data_point_index], \
-                  neg_subj_input[:data_point_index], \
-                  neg_obj_input[:data_point_index], \
-                  neg_pobj_input[:data_point_index], \
-                  arg_idx_input[:data_point_index], \
-                  pos_entity_salience_input[:data_point_index], \
-                  neg_entity_salience_input[:data_point_index]
+            if self.use_salience:
+                yield left_pred_input[:data_point_index], \
+                      left_subj_input[:data_point_index], \
+                      left_obj_input[:data_point_index], \
+                      left_pobj_input[:data_point_index], \
+                      pos_pred_input[:data_point_index], \
+                      pos_subj_input[:data_point_index], \
+                      pos_obj_input[:data_point_index], \
+                      pos_pobj_input[:data_point_index], \
+                      neg_pred_input[:data_point_index], \
+                      neg_subj_input[:data_point_index], \
+                      neg_obj_input[:data_point_index], \
+                      neg_pobj_input[:data_point_index], \
+                      arg_idx_input[:data_point_index], \
+                      pos_entity_salience_input[:data_point_index], \
+                      neg_entity_salience_input[:data_point_index]
+            else:
+                yield left_pred_input[:data_point_index], \
+                      left_subj_input[:data_point_index], \
+                      left_obj_input[:data_point_index], \
+                      left_pobj_input[:data_point_index], \
+                      pos_pred_input[:data_point_index], \
+                      pos_subj_input[:data_point_index], \
+                      pos_obj_input[:data_point_index], \
+                      pos_pobj_input[:data_point_index], \
+                      neg_pred_input[:data_point_index], \
+                      neg_subj_input[:data_point_index], \
+                      neg_obj_input[:data_point_index], \
+                      neg_pobj_input[:data_point_index], \
+                      arg_idx_input[:data_point_index]

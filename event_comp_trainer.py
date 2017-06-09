@@ -22,7 +22,7 @@ parser.add_argument('--word2vec_vector',
                          'only used in stage 1')
 parser.add_argument('--word2vec_vocab',
                     help='Path of a trained word2vec vocabulary file, '
-                         'only used in stage 2')
+                         'only used in stage 1')
 parser.add_argument('--layer_sizes', default='100',
                     help='Comma-separated list of layer sizes '
                          '(default: 100, single layer), only used in '
@@ -32,6 +32,9 @@ parser.add_argument('--corruption', type=float, default=0.2,
                     help='Level of drop-out noise to apply during '
                          'autoencoder pre-training, 0.0-1.0 (default: 0.2), '
                          'only used in stage 1')
+parser.add_argument('--use_salience', action='store_true',
+                    help='Whether or not we use entity salience features,'
+                         'only used in stage 2/3')
 parser.add_argument('--input_path',
                     help='Path to load a partially trained model, '
                          'only used in stage 2/3')
@@ -97,11 +100,13 @@ elif opts.stage == 2 or opts.stage == 3:
             layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
             log.info(
                 'Initializing pair composition network with layer sizes '
-                '[{0}|{0}|1(arg_idx)|{1}(salience)]->{2}->1'.format(
+                '[{0}|{0}|1(arg_idx){1}]->{2}->1'.format(
                     event_composition_model.event_vector_network.vector_size,
-                    consts.NUM_SALIENCE_FEATURES,
+                    '|{}(salience)'.format(consts.NUM_SALIENCE_FEATURES)
+                    if opts.use_salience else '',
                     '->'.join(str(s) for s in layer_sizes)))
-            event_composition_model.add_pair_projection_network(layer_sizes)
+            event_composition_model.add_pair_projection_network(
+                layer_sizes, use_salience=opts.use_salience)
     else:
         assert event_composition_model.pair_composition_network, \
             'pair_composition_network in the model cannot be None'
@@ -115,20 +120,23 @@ elif opts.stage == 2 or opts.stage == 3:
         exit(-1)
 
     log.info(
-        'Loading indexed corpus from: {}, with batch_size={}'.format(
-            opts.indexed_corpus, opts.batch_size))
+        'Loading indexed corpus from: {}, with batch_size={}, '
+        'use_salience={}'.format(
+            opts.indexed_corpus, opts.batch_size, opts.use_salience))
     corpus_it = PairTuningCorpusIterator(
-        opts.indexed_corpus, batch_size=opts.batch_size)
+        opts.indexed_corpus, batch_size=opts.batch_size,
+        use_salience=opts.use_salience)
     log.info('Found {} lines in the corpus'.format(len(corpus_it)))
 
     val_corpus_it = None
     if opts.val_indexed_corpus and os.path.isdir(opts.val_indexed_corpus):
         log.info(
             'Loading validation indexed corpus from: {}, '
-            'with batch_size={}'.format(
-                opts.val_indexed_corpus, opts.batch_size))
+            'with batch_size={}, use_salience={}'.format(
+                opts.val_indexed_corpus, opts.batch_size, opts.use_salience))
         val_corpus_it = PairTuningCorpusIterator(
-            opts.val_indexed_corpus, batch_size=opts.batch_size)
+            opts.val_indexed_corpus, batch_size=opts.batch_size,
+            use_salience=opts.use_salience)
         log.info('Found {} lines in the corpus'.format(len(val_corpus_it)))
 
     if opts.stage == 2:

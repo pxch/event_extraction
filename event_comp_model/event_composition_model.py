@@ -9,7 +9,7 @@ from util import Word2VecModel, get_class_name
 
 class EventCompositionModel(object):
     def __init__(self, word2vec, event_vector_layer_sizes=None,
-                 pair_composition_layer_sizes=None):
+                 pair_composition_layer_sizes=None, use_salience=True):
         assert isinstance(word2vec, Word2VecModel), \
             'word2vec must be a {} instance'.format(
                 get_class_name(Word2VecModel))
@@ -25,7 +25,8 @@ class EventCompositionModel(object):
         if pair_composition_layer_sizes:
             self.pair_composition_network = PairCompositionNetwork(
                 event_vector_network=self.event_vector_network,
-                layer_sizes=pair_composition_layer_sizes
+                layer_sizes=pair_composition_layer_sizes,
+                use_salience=use_salience
             )
         else:
             self.pair_composition_network = None
@@ -39,7 +40,7 @@ class EventCompositionModel(object):
             layer_sizes=layer_sizes
         )
 
-    def add_pair_projection_network(self, layer_sizes):
+    def add_pair_projection_network(self, layer_sizes, use_salience=True):
         assert self.pair_composition_network is None, \
             'cannot add PairCompositionNetwork when one already exists'
         assert self.event_vector_network is not None, \
@@ -47,7 +48,8 @@ class EventCompositionModel(object):
             'does not exists'
         self.pair_composition_network = PairCompositionNetwork(
             event_vector_network=self.event_vector_network,
-            layer_sizes=layer_sizes
+            layer_sizes=layer_sizes,
+            use_salience=use_salience
         )
 
     def save_model(self, directory, save_word2vec=True,
@@ -70,6 +72,8 @@ class EventCompositionModel(object):
                 pkl.dump(self.pair_composition_network.get_weights(), f)
             with open(join(directory, 'pc_layer_sizes'), 'w') as f:
                 pkl.dump(self.pair_composition_network.layer_sizes, f)
+            if self.pair_composition_network.use_salience:
+                open(join(directory, 'use_salience'), 'w').close()
 
     @classmethod
     def load_model(cls, directory):
@@ -103,11 +107,18 @@ class EventCompositionModel(object):
         else:
             pair_composition_layer_sizes = None
 
+        # set use_salience to True if there exists a file called use_salience
+        if exists(join(directory, 'use_salience')):
+            use_salience = True
+        else:
+            use_salience = False
+
         # initialize the event composition model
         model = cls(
             word2vec=word2vec,
             event_vector_layer_sizes=event_vector_layer_sizes,
-            pair_composition_layer_sizes=pair_composition_layer_sizes)
+            pair_composition_layer_sizes=pair_composition_layer_sizes,
+            use_salience=use_salience)
 
         # load event vector network weights, if exists
         event_vector_weights_file = join(directory, 'ev_weights')

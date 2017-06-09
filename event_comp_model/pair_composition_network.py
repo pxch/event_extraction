@@ -7,18 +7,23 @@ from util import consts
 
 
 class PairCompositionNetwork(object):
-    def __init__(self, event_vector_network, layer_sizes):
+    def __init__(self, event_vector_network, layer_sizes, use_salience=True):
         self.event_vector_network = event_vector_network
+        self.layer_sizes = layer_sizes
+
         self.input_a, self.input_b = \
             self.event_vector_network.get_projection_pair()
         self.arg_idx_input = T.vector('arg_type')
-        # TODO: add logic to allow not adding salience features as input
-        self.salience_input = T.matrix('salience')
+
         self.input_vector = T.concatenate(
             (self.input_a, self.input_b,
-             self.arg_idx_input.dimshuffle(0, 'x'),
-             self.salience_input), axis=1)
-        self.layer_sizes = layer_sizes
+             self.arg_idx_input.dimshuffle(0, 'x')), axis=1)
+
+        self.use_salience = use_salience
+        if self.use_salience:
+            self.salience_input = T.matrix('salience')
+            self.input_vector = T.concatenate(
+                (self.input_vector, self.salience_input), axis=1)
 
         # Initialize each layer as an autoencoder,
         # allowing us to initialize it by pretraining
@@ -79,12 +84,10 @@ class PairCompositionNetwork(object):
             self.event_vector_network.subj_input_b,
             self.event_vector_network.obj_input_b,
             self.event_vector_network.pobj_input_b,
-            self.arg_idx_input,
-            self.salience_input
+            self.arg_idx_input
         ]
-
-        # variables for negative entity salience
-        self.neg_salience_input = T.matrix('neg_salience')
+        if self.use_salience:
+            self.pair_inputs.append(self.salience_input)
 
         self.triple_inputs = [
             self.event_vector_network.pred_input_a,
@@ -99,10 +102,14 @@ class PairCompositionNetwork(object):
             self.event_vector_network.subj_input_c,
             self.event_vector_network.obj_input_c,
             self.event_vector_network.pobj_input_c,
-            self.arg_idx_input,
-            self.salience_input,
-            self.neg_salience_input
+            self.arg_idx_input
         ]
+        if self.use_salience:
+            # variables for negative entity salience
+            self.neg_salience_input = T.matrix('neg_salience')
+
+            self.triple_inputs.append(self.salience_input)
+            self.triple_inputs.append(self.neg_salience_input)
 
         self._coherence_fn = None
 
@@ -124,9 +131,10 @@ class PairCompositionNetwork(object):
         # Replace b inputs with c inputs
         # Replace salience_input with neg_salience_input
         input_replacements = dict(zip(self.triple_inputs[4:8],
-                                      self.triple_inputs[8:12]) +
-                                  [(self.triple_inputs[-2],
-                                    self.triple_inputs[-1])])
+                                      self.triple_inputs[8:12]))
+        if self.use_salience:
+            input_replacements[self.triple_inputs[-2]] = self.triple_inputs[-1]
+
         coherence_b = theano.clone(self.prediction, replace=input_replacements)
 
         return coherence_a, coherence_b
