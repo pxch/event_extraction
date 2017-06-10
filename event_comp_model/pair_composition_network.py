@@ -30,8 +30,9 @@ class PairCompositionNetwork(object):
         self.layers = []
         self.layer_outputs = []
         input_size = \
-            self.event_vector_network.layer_sizes[-1] * 2 + \
-            1 + consts.NUM_SALIENCE_FEATURES
+            self.event_vector_network.layer_sizes[-1] * 2 + 1
+        if self.use_salience:
+            input_size += consts.NUM_SALIENCE_FEATURES
         layer_input = self.input_vector
         for layer_size in layer_sizes:
             self.layers.append(
