@@ -6,7 +6,7 @@ from util import Word2VecModel
 
 all_scripts = pkl.load(open('all_scripts.pkl', 'r'))
 
-word2vec_dir = '/Users/pengxiang/corpora/spaces/20170521/sample_1e-4_min_500/'
+word2vec_dir = '/Users/pengxiang/corpora/spaces/20170519/sample_1e-4_min_500/'
 
 vector_file = join(word2vec_dir, 'min_500_dim300vecs.bin')
 vocab_file = join(word2vec_dir, 'min_500_dim300vecs.vocab')

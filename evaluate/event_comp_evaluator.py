@@ -37,6 +37,7 @@ class EventCompositionEvaluator(BaseEvaluator):
     def get_most_coherent(self, arg_type, eval_input_list, context_input_list,
                           use_max_score=True):
         coherence_fn = self.model.pair_composition_network.coherence_fn
+        use_salience = self.model.pair_composition_network.use_salience
 
         coherence_score_list = []
         num_context = len(context_input_list)
@@ -77,13 +78,19 @@ class EventCompositionEvaluator(BaseEvaluator):
                 [eval_input.obj_input] * num_context).astype(np.int32)
             pobj_input_b = np.asarray(
                 [eval_input.pobj_input] * num_context).astype(np.int32)
-            saliance_input = np.tile(
-                arg_salience.get_feature_list(), [num_context, 1]).astype(
-                np.float32)
-            coherence_output = coherence_fn(
-                pred_input_a, subj_input_a, obj_input_a, pobj_input_a,
-                pred_input_b, subj_input_b, obj_input_b, pobj_input_b,
-                arg_idx_input, saliance_input)
+            if use_salience:
+                saliance_input = np.tile(
+                    arg_salience.get_feature_list(), [num_context, 1]).astype(
+                    np.float32)
+                coherence_output = coherence_fn(
+                    pred_input_a, subj_input_a, obj_input_a, pobj_input_a,
+                    pred_input_b, subj_input_b, obj_input_b, pobj_input_b,
+                    arg_idx_input, saliance_input)
+            else:
+                coherence_output = coherence_fn(
+                    pred_input_a, subj_input_a, obj_input_a, pobj_input_a,
+                    pred_input_b, subj_input_b, obj_input_b, pobj_input_b,
+                    arg_idx_input)
             if use_max_score:
                 coherence_score_list.append(coherence_output.max())
             else:
