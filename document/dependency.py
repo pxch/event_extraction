@@ -10,6 +10,8 @@ class Dependency(object):
         self.dep_idx = dep_idx
         self.dep_token = None
         self.extra = extra
+        if self.label == 'nsubjpass:xsubj':
+            self.extra = True
 
     def __str__(self):
         return '{}-{}-{}'.format(self.label, self.gov_idx, self.dep_idx)
@@ -93,8 +95,16 @@ class DependencyGraph(object):
             return 'root', -1
         assert len(parent) == 1 and len(parent.items()[0][1]) == 1, \
             'In Sentence #{}, Token #{} has more than 1 non-extra ' \
-            'head token'.format(self.sent_idx, token_idx)
+            'head token: {}'.format(self.sent_idx, token_idx, parent)
         return parent.items()[0][0], parent.items()[0][1][0]
+
+    def get_root_path_length(self, token_idx):
+        path_length = 0
+        current_idx = token_idx
+        while current_idx != -1:
+            _, current_idx = self.get_parent(current_idx)
+            path_length += 1
+        return path_length
 
     # get the head token index from a range of tokens
     def get_head_token_idx(self, start_token_idx, end_token_idx):

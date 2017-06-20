@@ -35,6 +35,7 @@ class CoreNLPTarget(object):
         self.parse_sent = False
         self.parse_dep = False
         self.parse_coref = False
+        self.copied_dep = False
 
     def start(self, tag, attrib):
         self.tag = tag
@@ -47,6 +48,7 @@ class CoreNLPTarget(object):
             if attrib['type'] == consts.CORENLP_DEPENDENCY_TYPE \
                     and self.parse_sent:
                 self.parse_dep = True
+                self.copied_dep = False
         elif tag == 'dep':
             if self.parse_dep:
                 self.dep_label = attrib['type']
@@ -55,9 +57,13 @@ class CoreNLPTarget(object):
         elif tag == 'governor':
             if self.parse_dep:
                 self.gov_idx = int(attrib['idx']) - 1
+                if 'copy' in attrib:
+                    self.copied_dep = True
         elif tag == 'dependent':
             if self.parse_dep:
                 self.dep_idx = int(attrib['idx']) - 1
+                if 'copy' in attrib:
+                    self.copied_dep = True
         elif tag == 'coreference':
             if not self.parse_coref:
                 self.parse_coref = True
@@ -117,10 +123,13 @@ class CoreNLPTarget(object):
                 self.parse_dep = False
         elif tag == 'dep':
             if self.parse_dep:
-                if self.dep_label != 'root':
-                    dep = Dependency(self.dep_label, self.gov_idx,
-                                     self.dep_idx, self.extra)
-                    self.sent.add_dep(deepcopy(dep))
+                if not self.copied_dep:
+                    if self.dep_label != 'root':
+                        dep = Dependency(self.dep_label, self.gov_idx,
+                                         self.dep_idx, self.extra)
+                        self.sent.add_dep(deepcopy(dep))
+                else:
+                    self.copied_dep = False
                 self.dep_label = ''
                 self.gov_idx = -1
                 self.dep_idx = -1
