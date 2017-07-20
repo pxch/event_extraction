@@ -16,7 +16,8 @@ class Node(object):
 
         # Stanford CoreNLP related info
         self.corenlp_idx_list = []
-        self.corenlp_surface = ''
+        self.corenlp_word_surface = ''
+        self.corenlp_lemma_surface = ''
 
         self.head_idx = -1
         self.head_word = ''
@@ -81,7 +82,8 @@ class SplitNode(object):
 
         # Stanford CoreNLP related info
         self.corenlp_idx_list = []
-        self.corenlp_surface = ''
+        self.corenlp_word_surface = ''
+        self.corenlp_lemma_surface = ''
 
         self.head_idx = -1
         self.head_word = ''

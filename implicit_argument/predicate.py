@@ -87,7 +87,7 @@ class Predicate(object):
                 if node in candidates:
                     return True
                 for cand in candidates:
-                    if node.corenlp_surface == cand.corenlp_surface:
+                    if node.corenlp_lemma_surface == cand.corenlp_lemma_surface:
                         return True
                     if isinstance(node, Node) and isinstance(cand, Node) \
                             and node.sent_id == cand.sent_id \
@@ -164,12 +164,9 @@ class Predicate(object):
         self.imp_args = imp_args
         self.exp_args = exp_args
 
-    def check_sent_dist(self, sent_id):
-        return 0 <= self.node.sent_id - sent_id <= 2
-
     def add_candidates(self, instances):
         for instance in instances:
-            if self.check_sent_dist(instance.sent_id):
+            if 0 <= self.node.sent_id - instance.sent_id <= 2:
                 pred_node = None
                 for label, node in instance.arguments:
                     if label.startswith('rel'):
@@ -184,7 +181,7 @@ class Predicate(object):
                     print 'Error! Cannot find rel argument from ' \
                           'PropBank/NomBank: {}'.format(instance)
 
-    def filterExpArgsFromCandidates(self):
+    def filter_exp_args_from_candidates(self):
         filtered_candidates = []
         for label, nodes in self.exp_args.items():
             if label in core_arg_list:
@@ -202,17 +199,17 @@ class Predicate(object):
                 while split_nodes:
                     find_match = False
                     for candidate in map(itemgetter(0), self.candidates):
-                        if candidate.__class__ == SplitNode:
-                            if split_nodes[0] in candidate.pieces:
+                        if isinstance(candidate, SplitNode):
+                            if split_nodes[0] in candidate.node_list:
                                 matched_candidates.append(candidate)
                                 split_nodes = list(
-                                    set(split_nodes) - set(candidate.pieces))
+                                    set(split_nodes) - set(candidate.node_list))
                                 find_match = True
                                 break
                     if not find_match:
                         raise AssertionError(
-                            '{0} not in candidates {1}'.format(
-                                split_nodes[0],
+                            'explicit node {}: {} not in candidates {}'.format(
+                                label, split_nodes[0],
                                 map(str, map(itemgetter(0), self.candidates))))
                 self.exp_args[label] = matched_candidates
                 filtered_candidates.extend(matched_candidates)
@@ -220,14 +217,14 @@ class Predicate(object):
         self.candidates = [candidate for candidate in self.candidates if
                            candidate[0] not in filtered_candidates]
 
-    def checkExpArgs(self):
+    def check_exp_args(self):
         for label, nodes in self.exp_args.items():
             if label in core_arg_list:
                 for node in nodes:
                     assert node not in map(itemgetter(0), self.candidates), \
-                        'Explicit argument {0} still exists in candidates {1}' \
-                        ' after filtering' \
-                            .format(node, map(itemgetter(0), self.candidates))
+                        'explicit argument {} still exists in candidates {} ' \
+                        'after filtering'.format(
+                            node, map(itemgetter(0), self.candidates))
 
     def eval(self, thres):
         assert (self.mis_arg0 and self.iarg0_sim) or \

@@ -40,6 +40,11 @@ class PropBankInstance(object):
             hyphen_idx = item.find('-')
             pointer = item[:hyphen_idx]
             label = item[hyphen_idx + 1:].strip().lower()
+            # if len(pointer.split('*')) > 1:
+            #     continue
+            # else:
+            #     instance.arguments.append(
+            #         (label, parse_pointer(pointer, node_prefix)))
             for ptr in pointer.split('*'):
                 instance.arguments.append(
                     (label, parse_pointer(ptr, node_prefix)))
@@ -58,6 +63,11 @@ class PropBankInstance(object):
             hyphen_idx = item.find('-')
             pointer = item[:hyphen_idx]
             label = item[hyphen_idx + 1:].strip().lower()
+            # if len(pointer.split('*')) > 1:
+            #     continue
+            # else:
+            #     instance.arguments.append(
+            #         (label, parse_pointer(pointer, node_prefix)))
             for ptr in pointer.split('*'):
                 instance.arguments.append(
                     (label, parse_pointer(ptr, node_prefix)))
