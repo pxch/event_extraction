@@ -5,15 +5,13 @@ from os.path import exists
 from tqdm import tqdm
 
 from candidate import CandidateDict
+from consts import predicate_dict_path, corenlp_dict_path
 from corpus_reader import CoreNLPReader
 from corpus_reader import NombankReader, PropbankReader
 from corpus_reader import TreebankReader
 from implicit_argument_instance import ImplicitArgumentInstance
 from predicate import Predicate
 from stats import print_stats
-
-corenlp_dict_path = './corenlp_dict.pkl'
-predicate_dict_path = './predicate_dict.pkl'
 
 max_candidate_dist = 2
 

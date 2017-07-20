@@ -4,51 +4,17 @@ from collections import defaultdict
 from os.path import join
 
 import nltk_corpus
+from consts import convert_fileid
+from consts import corenlp_root, prep_vocab_list_file
 from corenlp import read_doc_from_corenlp
 from rich_script import RichScript, Script
 from util import read_vocab_list
 
-nombank_function_tag_mapping = {
-    'TMP': 'temporal',
-    'LOC': 'location',
-    'MNR': 'manner',
-    'PNC': 'purpose',
-    'NEG': 'negation',
-    'EXT': 'extent',
-    'ADV': 'adverbial',
-    # tags below do not appear in implicit argument dataset
-    'DIR': 'directional',
-    'PRD': 'predicative',
-    'CAU': 'cause',
-    'DIS': 'discourse',
-    'REF': 'reference'
-}
-
-
-def convert_nombank_label(label):
-    if label[:3] == 'ARG':
-        if label[3].isdigit():
-            return label[:4].lower()
-        elif label[3] == 'M':
-            function_tag = label.split('-')[1]
-            return nombank_function_tag_mapping.get(function_tag, '')
-    return ''
-
-
-core_arg_list = ['arg0', 'arg1', 'arg2', 'arg3', 'arg4']
-
-
-def is_core_arg(label):
-    return label in core_arg_list
-
-
-corenlp_root = '/Users/pengxiang/corpora/wsj_corenlp/20170613'
-prep_vocab_list_file = '../vocab_list/preposition'
-
 
 class TreebankReader(object):
     def __init__(self):
-        print '\nBuilding TreebankReader from {}'.format(nltk_corpus.treebank_root)
+        print '\nBuilding TreebankReader from {}'.format(
+            nltk_corpus.treebank_root)
         self.treebank = nltk_corpus.treebank
         print '\tFound {} files'.format(len(self.treebank.fileids()))
 
@@ -72,17 +38,10 @@ class BaseCorpusReader(object):
         self.instances = instances
         self.instances_by_fileid = defaultdict(list)
 
-    @staticmethod
-    def convert_fileid(fileid):
-        # result = re.sub(r'^\d\d/', '', fileid)
-        # result = re.sub(r'\.mrg$', '', result)
-        # return result
-        return fileid[3:11]
-
     def build_index(self):
         print '\tBuilding index by fileid'
         for instance in self.instances:
-            fileid = BaseCorpusReader.convert_fileid(instance.fileid)
+            fileid = convert_fileid(instance.fileid)
             self.instances_by_fileid[fileid].append(instance)
 
     def search_by_fileid(self, fileid):

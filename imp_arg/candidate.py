@@ -3,12 +3,8 @@ from collections import defaultdict
 from nltk.corpus.reader.nombank import NombankChainTreePointer
 from nltk.corpus.reader.propbank import PropbankChainTreePointer
 
-from corpus_reader import convert_nombank_label, is_core_arg
+from consts import convert_fileid, convert_nombank_label, is_core_arg
 from rich_tree_pointer import RichTreePointer
-
-
-def convert_fileid(fileid):
-    return fileid[3:11]
 
 
 class CandidateDict(object):

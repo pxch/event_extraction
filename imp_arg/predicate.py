@@ -5,25 +5,13 @@ from nltk.corpus.reader.nombank import NombankChainTreePointer
 from nltk.corpus.reader.nombank import NombankSplitTreePointer
 
 from candidate import Candidate
+from consts import convert_nombank_label, is_core_arg
+from consts import nominal_predicate_mapping
 from corpus_reader import CoreNLPReader
 from corpus_reader import TreebankReader
-from corpus_reader import convert_nombank_label, is_core_arg
 from implicit_argument_instance import ImplicitArgumentInstance
 from rich_tree_pointer import RichTreePointer
 from util import get_class_name
-
-nominal_predicate_mapping = {
-    'bid': 'bid',
-    'sale': 'sell',
-    'loan': 'loan',
-    'cost': 'cost',
-    'plan': 'plan',
-    'investor': 'invest',
-    'price': 'price',
-    'loss': 'lose',
-    'investment': 'invest',
-    'fund': 'fund',
-}
 
 
 class Predicate(object):
@@ -175,7 +163,7 @@ class Predicate(object):
     @classmethod
     def build(cls, instance):
         assert isinstance(instance, ImplicitArgumentInstance), \
-            'build must be called with a {} instance'.format(
+            'Predicate must be built from a {} instance'.format(
                 get_class_name(ImplicitArgumentInstance))
 
         pred_pointer = instance.pred_pointer
