@@ -5,8 +5,8 @@ from nltk.corpus.reader.nombank import NombankChainTreePointer
 from nltk.corpus.reader.nombank import NombankSplitTreePointer
 
 from candidate import Candidate
-from consts import convert_nombank_label, is_core_arg
-from consts import nominal_predicate_mapping
+from consts import convert_nombank_label
+from consts import core_arg_list, nominal_predicate_mapping
 from corpus_reader import CoreNLPReader
 from corpus_reader import TreebankReader
 from implicit_argument_instance import ImplicitArgumentInstance
@@ -74,7 +74,7 @@ class Predicate(object):
                 arg.parse_treebank()
                 arg.get_corenlp(corenlp_reader)
                 arg.parse_corenlp()
-            if is_core_arg(label) and len(fillers) > 1:
+            if label in core_arg_list and len(fillers) > 1:
                 assert len(fillers) == 2
                 new_fillers = []
                 for arg in fillers:

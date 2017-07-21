@@ -12,6 +12,64 @@ nominal_predicate_mapping = {
 }
 
 
+predicate_core_arg_mapping = {
+    'bid': {
+        'arg0': 'SUBJ',
+        'arg1': 'PREP_for',
+        'arg2': 'OBJ'
+    },
+    'sell': {
+        'arg0': 'SUBJ',
+        'arg1': 'OBJ',
+        'arg2': 'PREP_to',
+        'arg3': 'PREP_for',
+        'arg4': 'PREP'
+    },
+    'loan': {
+        'arg0': 'SUBJ',
+        'arg1': 'OBJ',
+        'arg2': 'PREP_to',
+        'arg3': 'PREP',
+        'arg4': 'PREP_at'
+    },
+    'cost': {
+        'arg1': 'SUBJ',
+        'arg2': 'OBJ',
+        'arg3': 'PREP_to',
+        'arg4': 'PREP'
+    },
+    'plan': {
+        'arg0': 'SUBJ',
+        'arg1': 'OBJ',
+        'arg2': 'PREP_for',
+        'arg3': 'PREP_for'
+    },
+    'invest': {
+        'arg0': 'SUBJ',
+        'arg1': 'OBJ',
+        'arg2': 'PREP_in'
+    },
+    'price': {
+        'arg0': 'SUBJ',
+        'arg1': 'OBJ',
+        'arg2': 'PREP_at',
+        'arg3': 'PREP'
+    },
+    'lose': {
+        'arg0': 'SUBJ',
+        'arg1': 'OBJ',
+        'arg2': 'PREP_to',
+        'arg3': 'PREP_on'
+    },
+    'fund': {
+        'arg0': 'SUBJ',
+        'arg1': 'OBJ',
+        'arg2': 'PREP',
+        'arg3': 'PREP'
+    },
+}
+
+
 nombank_function_tag_mapping = {
     'TMP': 'temporal',
     'LOC': 'location',
@@ -40,10 +98,6 @@ def convert_nombank_label(label):
 
 
 core_arg_list = ['arg0', 'arg1', 'arg2', 'arg3', 'arg4']
-
-
-def is_core_arg(label):
-    return label in core_arg_list
 
 
 def convert_fileid(fileid):

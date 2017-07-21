@@ -10,6 +10,7 @@ from nltk.stem import WordNetLemmatizer
 from corpus_reader import CoreNLPReader
 from corpus_reader import TreebankReader
 from rich_script.argument import Argument
+from rich_script.rich_entity import EntitySalience
 from util import get_class_name
 
 lemmatizer = WordNetLemmatizer()
@@ -174,6 +175,8 @@ class RichTreePointer(object):
         self.doc = None
         # Script built from CoreNLP document
         self.script = None
+        # RichScript from CoreNLP Script
+        self.rich_script = None
         # CoreNLP token index mapping
         self.idx_mapping = None
         # CoreNLP related information
@@ -244,10 +247,12 @@ class RichTreePointer(object):
             self.idx_mapping = corenlp_reader.get_idx_mapping(self.fileid)
             self.doc = corenlp_reader.get_doc(self.fileid)
             self.script = corenlp_reader.get_script(self.fileid)
+            self.rich_script = corenlp_reader.get_rich_script(self.fileid)
 
     def has_corenlp(self):
         return self.doc is not None \
                and self.script is not None \
+               and self.rich_script is not None \
                and self.idx_mapping is not None
 
     def parse_corenlp(self):
@@ -314,8 +319,8 @@ class RichTreePointer(object):
                 ' '.join([cn.lemma_surface for cn in self.corenlp_info_list])
         return self._corenlp_lemma_surface
 
-    def get_core_argument(self, use_lemma=True):
-        if self.entity_idx != -1:
+    def get_core_argument(self, use_lemma=True, use_entity=True):
+        if use_entity and self.entity_idx != -1:
             entity = self.script.entities[self.entity_idx]
             core_argument = entity.get_core_argument(use_lemma=use_lemma)
         else:
@@ -326,8 +331,15 @@ class RichTreePointer(object):
             core_argument = argument.get_core_argument(use_lemma=use_lemma)
         return core_argument
 
-    def token_list(self, use_corenlp=True):
-        if use_corenlp:
+    def get_entity_salience(self, use_entity=True):
+        if use_entity and self.entity_idx != -1:
+            rich_entity = self.rich_script.rich_entities[self.entity_idx]
+            return rich_entity.get_salience()
+        else:
+            return None
+
+    def token_list(self, use_corenlp_tokens=True):
+        if use_corenlp_tokens:
             assert self.has_corenlp_info()
             token_list = self.corenlp_lemma_surface.split()
         else:
@@ -336,9 +348,9 @@ class RichTreePointer(object):
                           in self.treebank_surface.split()]
         return token_list
 
-    def dice_score(self, other, use_corenlp=True):
-        token_set = set(self.token_list(use_corenlp))
-        other_token_set = set(other.token_list(use_corenlp))
+    def dice_score(self, other, use_corenlp_tokens=True):
+        token_set = set(self.token_list(use_corenlp_tokens))
+        other_token_set = set(other.token_list(use_corenlp_tokens))
 
         return 2.0 * len(token_set.intersection(other_token_set)) / (
             len(token_set) + len(other_token_set))

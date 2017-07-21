@@ -3,7 +3,8 @@ from collections import defaultdict
 from nltk.corpus.reader.nombank import NombankChainTreePointer
 from nltk.corpus.reader.propbank import PropbankChainTreePointer
 
-from consts import convert_fileid, convert_nombank_label, is_core_arg
+from consts import convert_fileid, convert_nombank_label
+from consts import core_arg_list
 from rich_tree_pointer import RichTreePointer
 
 
@@ -80,7 +81,7 @@ class Candidate(object):
 
         for arg_pointer, label in instance.arguments:
             cvt_label = convert_nombank_label(label)
-            if is_core_arg(cvt_label):
+            if cvt_label in core_arg_list:
                 if isinstance(arg_pointer, NombankChainTreePointer) or \
                         isinstance(arg_pointer, PropbankChainTreePointer):
                     for p in arg_pointer.pieces:
@@ -118,10 +119,16 @@ class Candidate(object):
 
         return False
 
-    def dice_score(self, imp_args, use_corenlp=True):
-        dice_score_list = []
-        for arg in imp_args:
-            dice_score_list.append(
-                self.arg_pointer.dice_score(arg, use_corenlp=use_corenlp))
+    def dice_score(self, imp_args, use_corenlp_tokens=True):
+        dice_score = 0.0
 
-        return max(dice_score_list)
+        if len(imp_args) > 0:
+            dice_score_list = []
+            for arg in imp_args:
+                dice_score_list.append(
+                    self.arg_pointer.dice_score(
+                        arg, use_corenlp_tokens=use_corenlp_tokens))
+
+            dice_score = max(dice_score_list)
+
+        return dice_score
