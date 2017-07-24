@@ -1,3 +1,5 @@
+import pickle as pkl
+import timeit
 from collections import defaultdict
 
 from nltk.corpus.reader.nombank import NombankChainTreePointer
@@ -9,13 +11,17 @@ from rich_tree_pointer import RichTreePointer
 
 
 class CandidateDict(object):
-    def __init__(self, propbank_reader, nombank_reader, corenlp_reader,
-                 max_dist=2):
+    def __init__(self, propbank_reader=None, nombank_reader=None,
+                 corenlp_reader=None, max_dist=2):
         self.propbank_reader = propbank_reader
         self.nombank_reader = nombank_reader
         self.corenlp_reader = corenlp_reader
         self.max_dist = max_dist
         self.candidate_dict = defaultdict(list)
+        if self.propbank_reader and self.nombank_reader and self.corenlp_reader:
+            self.read_only = False
+        else:
+            self.read_only = True
 
     def __iter__(self):
         for key, candidates in self.candidate_dict.items():
@@ -25,36 +31,95 @@ class CandidateDict(object):
         candidates = []
 
         fileid = pred_pointer.fileid
+
+        for sentnum in range(max(0, pred_pointer.sentnum - self.max_dist),
+                             pred_pointer.sentnum):
+            key = '{}:{}'.format(fileid, sentnum)
+            assert key in self.candidate_dict
+            candidates.extend(self.candidate_dict[key])
+
+        key = '{}:{}'.format(fileid, pred_pointer.sentnum)
+        assert key in self.candidate_dict
+        for candidate in self.candidate_dict[key]:
+            if pred_pointer not in candidate.get_pred_pointer_list():
+                candidates.append(candidate)
+
+        return candidates
+
+    def add_candidates(self, pred_pointer):
+        assert not self.read_only
+
+        fileid = pred_pointer.fileid
         instances = []
         instances.extend(self.propbank_reader.search_by_fileid(fileid))
         instances.extend(self.nombank_reader.search_by_fileid(fileid))
 
         for sentnum in range(max(0, pred_pointer.sentnum - self.max_dist),
-                             pred_pointer.sentnum):
+                             pred_pointer.sentnum + 1):
             key = '{}:{}'.format(fileid, sentnum)
             if key not in self.candidate_dict:
-                self.add_candidates(key, instances)
-            candidates.extend(self.candidate_dict[key])
+                self.add_key(key, instances)
 
-        key = '{}:{}'.format(fileid, pred_pointer.sentnum)
-        if key not in self.candidate_dict:
-            self.add_candidates(key, instances)
-        for candidate in self.candidate_dict[key]:
-            if candidate.pred_pointer != pred_pointer:
-                candidates.append(candidate)
+    def add_key(self, key, instances):
+        assert not self.read_only
 
-        return candidates
-
-    def add_candidates(self, key, instances):
         assert key not in self.candidate_dict
+
+        candidate_list = []
+        arg_pointer_list = []
+
         for instance in instances:
             assert convert_fileid(instance.fileid) == key.split(':')[0]
+
             if instance.sentnum == int(key.split(':')[1]):
+
                 for candidate in Candidate.from_instance(instance):
-                    candidate.arg_pointer.get_corenlp(self.corenlp_reader)
-                    candidate.arg_pointer.parse_corenlp()
-                    if candidate.arg_pointer.corenlp_word_surface != '':
-                        self.candidate_dict[key].append(candidate)
+                    if candidate.arg_pointer not in arg_pointer_list:
+
+                        candidate.arg_pointer.parse_treebank()
+                        candidate.arg_pointer.parse_corenlp(self.corenlp_reader)
+
+                        if candidate.arg_pointer.corenlp_word_surface != '':
+                            arg_pointer_list.append(candidate.arg_pointer)
+                            candidate_list.append(candidate)
+
+                    else:
+                        index = arg_pointer_list.index(candidate.arg_pointer)
+                        candidate_list[index].merge(candidate)
+
+        self.candidate_dict[key] = candidate_list
+
+    def print_all_candidates(self, file_path):
+        fout = open(file_path, 'w')
+        for key, candidates in self.candidate_dict:
+            fout.write(key + '\n')
+            for candidate in candidates:
+                fout.write('\t{}\t{}\n'.format(
+                    candidate.arg_label,
+                    candidate.arg_pointer.pretty_print(self.corenlp_reader)))
+        fout.close()
+
+    @classmethod
+    def load(cls, candidate_dict_path, propbank_reader=None,
+             nombank_reader=None, corenlp_reader=None, max_dist=2):
+        print '\nLoading candidate dict from {}'.format(candidate_dict_path)
+
+        start_time = timeit.default_timer()
+
+        candidate_dict = pkl.load(open(candidate_dict_path, 'r'))
+        result = cls(
+            propbank_reader=propbank_reader, nombank_reader=nombank_reader,
+            corenlp_reader=corenlp_reader, max_dist=max_dist)
+        result.candidate_dict = candidate_dict
+
+        elapsed = timeit.default_timer() - start_time
+        print '\tDone in {:.3f} seconds'.format(elapsed)
+
+        return result
+
+    def save(self, candidate_dict_path):
+        print '\nSaving candidate dict to {}'.format(candidate_dict_path)
+        pkl.dump(self.candidate_dict, open(candidate_dict_path, 'w'))
 
 
 class Candidate(object):
@@ -62,13 +127,19 @@ class Candidate(object):
         self.fileid = fileid
         self.sentnum = sentnum
 
-        self.pred_pointer = RichTreePointer(fileid, sentnum, pred, tree=tree)
-        # self.pred_pointer.parse_treebank()
-
         self.arg_pointer = RichTreePointer(fileid, sentnum, arg, tree=tree)
-        self.arg_pointer.parse_treebank()
 
-        self.arg_label = arg_label
+        pred_pointer = RichTreePointer(fileid, sentnum, pred, tree=tree)
+
+        self.pred_list = [(pred_pointer, arg_label)]
+
+    def merge(self, candidate):
+        assert isinstance(candidate, Candidate)
+        assert self.arg_pointer == candidate.arg_pointer
+        self.pred_list.extend(candidate.pred_list)
+
+    def get_pred_pointer_list(self):
+        return [pred_pointer for pred_pointer, _ in self.pred_list]
 
     @staticmethod
     def from_instance(instance):

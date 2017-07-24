@@ -1,4 +1,5 @@
 import pickle as pkl
+import timeit
 from bz2 import BZ2File
 from collections import defaultdict
 from os.path import join
@@ -40,9 +41,12 @@ class BaseCorpusReader(object):
 
     def build_index(self):
         print '\tBuilding index by fileid'
+        start_time = timeit.default_timer()
         for instance in self.instances:
             fileid = convert_fileid(instance.fileid)
             self.instances_by_fileid[fileid].append(instance)
+        elapsed = timeit.default_timer() - start_time
+        print '\tDone in {:.3f} seconds'.format(elapsed)
 
     def search_by_fileid(self, fileid):
         return self.instances_by_fileid.get(fileid, [])
@@ -95,14 +99,14 @@ class CoreNLPReader(object):
         return self.corenlp_dict[fileid][3]
 
     @classmethod
-    def build(cls, predicates):
+    def build(cls, instances):
         prep_vocab_list = read_vocab_list(prep_vocab_list_file)
 
         print '\nBuilding CoreNLP Reader from {}'.format(corenlp_root)
         corenlp_dict = {}
 
-        for predicate in predicates:
-            pred_pointer = predicate.pred_pointer
+        for instance in instances:
+            pred_pointer = instance.pred_pointer
             if pred_pointer.fileid not in corenlp_dict:
 
                 path = join(corenlp_root, 'idx', pred_pointer.get_path())
@@ -132,7 +136,11 @@ class CoreNLPReader(object):
     @classmethod
     def load(cls, corenlp_dict_path):
         print '\nLoading CoreNLP Reader from {}'.format(corenlp_dict_path)
+        start_time = timeit.default_timer()
         corenlp_dict = pkl.load(open(corenlp_dict_path, 'r'))
+        elapsed = timeit.default_timer() - start_time
+        print '\tDone in {:.3f} seconds'.format(elapsed)
+
         return cls(corenlp_dict)
 
     def save(self, corenlp_dict_path):

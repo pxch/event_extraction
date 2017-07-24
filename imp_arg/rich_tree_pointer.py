@@ -10,7 +10,6 @@ from nltk.stem import WordNetLemmatizer
 from corpus_reader import CoreNLPReader
 from corpus_reader import TreebankReader
 from rich_script.argument import Argument
-from rich_script.rich_entity import EntitySalience
 from util import get_class_name
 
 lemmatizer = WordNetLemmatizer()
@@ -171,14 +170,14 @@ class RichTreePointer(object):
         # surface form from treebank, space separated string of all words
         self._treebank_surface = ''
 
-        # CoreNLP document
-        self.doc = None
-        # Script built from CoreNLP document
-        self.script = None
-        # RichScript from CoreNLP Script
-        self.rich_script = None
-        # CoreNLP token index mapping
-        self.idx_mapping = None
+        # # CoreNLP document
+        # self.doc = None
+        # # Script built from CoreNLP document
+        # self.script = None
+        # # RichScript from CoreNLP Script
+        # self.rich_script = None
+        # # CoreNLP token index mapping
+        # self.idx_mapping = None
         # CoreNLP related information
         self.corenlp_info_list = []
         # surface form from CoreNLP words
@@ -238,29 +237,36 @@ class RichTreePointer(object):
                 ' '.join([tb.surface for tb in self.treebank_info_list])
         return self._treebank_surface
 
-    def get_corenlp(self, corenlp_reader):
-        if not self.has_corenlp():
-            assert isinstance(corenlp_reader, CoreNLPReader), \
-                'get_corenlp must be called with a {} instance'.format(
-                    get_class_name(CoreNLPReader))
+    # def get_corenlp(self, corenlp_reader):
+    #     if not self.has_corenlp():
+    #         assert isinstance(corenlp_reader, CoreNLPReader), \
+    #             'get_corenlp must be called with a {} instance'.format(
+    #                 get_class_name(CoreNLPReader))
+    #
+    #         self.idx_mapping = corenlp_reader.get_idx_mapping(self.fileid)
+    #         self.doc = corenlp_reader.get_doc(self.fileid)
+    #         self.script = corenlp_reader.get_script(self.fileid)
+    #         self.rich_script = corenlp_reader.get_rich_script(self.fileid)
 
-            self.idx_mapping = corenlp_reader.get_idx_mapping(self.fileid)
-            self.doc = corenlp_reader.get_doc(self.fileid)
-            self.script = corenlp_reader.get_script(self.fileid)
-            self.rich_script = corenlp_reader.get_rich_script(self.fileid)
+    # def has_corenlp(self):
+    #     return self.doc is not None \
+    #            and self.script is not None \
+    #            and self.rich_script is not None \
+    #            and self.idx_mapping is not None
 
-    def has_corenlp(self):
-        return self.doc is not None \
-               and self.script is not None \
-               and self.rich_script is not None \
-               and self.idx_mapping is not None
+    def parse_corenlp(self, corenlp_reader):
+        # assert self.has_corenlp()
+        assert isinstance(corenlp_reader, CoreNLPReader), \
+            'parse_corenlp must be called with a {} instance'.format(
+                get_class_name(CoreNLPReader))
 
-    def parse_corenlp(self):
-        assert self.has_corenlp()
         assert self.has_treebank_info()
 
-        corenlp_sent = self.doc.get_sent(self.sentnum)
-        idx_mapping = self.idx_mapping[self.sentnum]
+        # corenlp_sent = self.doc.get_sent(self.sentnum)
+        # idx_mapping = self.idx_mapping[self.sentnum]
+        doc = corenlp_reader.get_doc(self.fileid)
+        corenlp_sent = doc.get_sent(self.sentnum)
+        idx_mapping = corenlp_reader.get_idx_mapping(self.fileid)[self.sentnum]
 
         if not self.corenlp_info_list:
             for treebank_info in self.treebank_info_list:
@@ -319,21 +325,25 @@ class RichTreePointer(object):
                 ' '.join([cn.lemma_surface for cn in self.corenlp_info_list])
         return self._corenlp_lemma_surface
 
-    def get_core_argument(self, use_lemma=True, use_entity=True):
+    def get_core_argument(
+            self, corenlp_reader, use_lemma=True, use_entity=True):
         if use_entity and self.entity_idx != -1:
-            entity = self.script.entities[self.entity_idx]
+            script = corenlp_reader.get_script(self.fileid)
+            entity = script.entities[self.entity_idx]
             core_argument = entity.get_core_argument(use_lemma=use_lemma)
         else:
             head_idx = self.corenlp_info_list[self.head_piece].head_idx
             assert head_idx != -1
-            token = self.doc.get_token(self.sentnum, head_idx)
+            doc = corenlp_reader.get_doc(self.fileid)
+            token = doc.get_token(self.sentnum, head_idx)
             argument = Argument.from_token(token)
             core_argument = argument.get_core_argument(use_lemma=use_lemma)
         return core_argument
 
-    def get_entity_salience(self, use_entity=True):
+    def get_entity_salience(self, corenlp_reader, use_entity=True):
         if use_entity and self.entity_idx != -1:
-            rich_entity = self.rich_script.rich_entities[self.entity_idx]
+            rich_script = corenlp_reader.get_rich_script(self.fileid)
+            rich_entity = rich_script.rich_entities[self.entity_idx]
             return rich_entity.get_salience()
         else:
             return None
@@ -377,8 +387,6 @@ class RichTreePointer(object):
                 [deepcopy(tb) for tb in self.treebank_info_list]
 
         if include_corenlp:
-            new_rich_tree_pointer.idx_mapping = deepcopy(self.idx_mapping)
-            new_rich_tree_pointer.doc = deepcopy(self.doc)
             new_rich_tree_pointer.corenlp_info_list = \
                 [deepcopy(cn) for cn in self.corenlp_info_list]
             new_rich_tree_pointer.head_piece = self.head_piece
@@ -387,16 +395,18 @@ class RichTreePointer(object):
 
         return new_rich_tree_pointer
 
-    def pretty_print(self):
+    def pretty_print(self, corenlp_reader=None):
         result = str(self)
         result += '\t\t' + self.corenlp_word_surface
         result += '\tHEAD = ' + \
                   self.corenlp_info_list[self.head_piece].head_word
         if self.entity_idx != -1:
-            entity = self.script.entities[self.entity_idx]
-            result += '\t\tentity#{:0>3d}  {}'.format(
-                self.entity_idx, entity.to_text())
-            result += '\tENTITY_HEAD = {}'.format(entity.get_core_argument())
+            result += '\t\tentity#{:0>3d}'
+            if corenlp_reader:
+                script = corenlp_reader.get_script(self.fileid)
+                entity = script.entities[self.entity_idx]
+                result += ' HEAD = {}'.format(
+                    self.entity_idx, entity.get_core_argument())
         return result
 
     @staticmethod

@@ -111,3 +111,28 @@ prep_vocab_list_file = '../vocab_list/preposition'
 corenlp_dict_path = './corenlp_dict.pkl'
 
 predicate_dict_path = './predicate_dict.pkl'
+
+candidate_dict_path = './candidate_dict.pkl'
+
+all_predicates_path = './all_predicates.pkl'
+
+all_rich_predicates_path = './all_rich_predicates.pkl'
+
+all_rich_predicates_with_coherence_path = \
+    './all_rich_predicates_with_coherence_no_salience.pkl'
+
+
+def compute_f1(total_dice, total_gt, total_model):
+    if total_model != 0.0:
+        precision = total_dice / total_model
+    else:
+        precision = 1
+    if total_gt != 0.0:
+        recall = total_dice / total_gt
+    else:
+        recall = 1
+    if precision != 0.0 and recall != 0.0:
+        f1 = 2 * precision * recall / (precision + recall)
+    else:
+        f1 = 0.0
+    return precision, recall, f1

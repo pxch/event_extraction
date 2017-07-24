@@ -2,6 +2,7 @@ from collections import defaultdict
 from operator import itemgetter
 
 from prettytable import PrettyTable
+from consts import compute_f1
 
 
 def print_table(head, content):
@@ -11,15 +12,15 @@ def print_table(head, content):
     print table
 
 
-def print_stats(annotations):
-    annotations_by_pred = defaultdict(list)
+def print_stats(all_predicates):
+    predicates_by_pred = defaultdict(list)
 
-    for predicate in annotations:
-        annotations_by_pred[predicate.n_pred].append(predicate)
+    for predicate in all_predicates:
+        predicates_by_pred[predicate.n_pred].append(predicate)
 
     num_dict = {}
 
-    for n_pred, predicates in annotations_by_pred.items():
+    for n_pred, predicates in predicates_by_pred.items():
         num_dict[n_pred] = [len(predicates)]
         num_dict[n_pred].append(
             sum([predicate.num_imp_arg() for predicate in predicates]))
@@ -95,4 +96,69 @@ def print_stats(annotations):
         'Pred.', '# Pred.', '# Imp.Arg.', '# Imp./pred.', '# Imp.Arg.in.range',
         '# Oracle', 'Oracle Recall', '# Imp.Arg.0', '# Imp.Arg.1',
         '# Imp.Arg.2', '# Imp.Arg.3', '# Imp.Arg.4']
+    print_table(table_head, table_content)
+
+
+def print_eval_stats(all_rich_predicates):
+    predicates_by_pred = defaultdict(list)
+
+    for rich_predicate in all_rich_predicates:
+        predicates_by_pred[rich_predicate.n_pred].append(rich_predicate)
+
+    num_dict = {}
+
+    total_dice = 0.0
+    total_gt = 0.0
+    total_model = 0.0
+
+    for n_pred, predicates in predicates_by_pred.items():
+        num_dict[n_pred] = [len(predicates)]
+        num_dict[n_pred].append(
+            sum([predicate.num_imp_args() for predicate in predicates]))
+
+        pred_dice = 0.0
+        pred_gt = 0.0
+        pred_model = 0.0
+        for predicate in predicates:
+            pred_dice += predicate.sum_dice
+            pred_gt += predicate.num_gt
+            pred_model += predicate.num_model
+
+        total_dice += pred_dice
+        total_gt += pred_gt
+        total_model += pred_model
+
+        precision, recall, f1 = compute_f1(pred_dice, pred_gt, pred_model)
+
+        num_dict[n_pred].append('{0:.2f}'.format(precision * 100))
+        num_dict[n_pred].append('{0:.2f}'.format(recall * 100))
+        num_dict[n_pred].append('{0:.2f}'.format(f1 * 100))
+
+    total_precision, total_recall, total_f1 = \
+        compute_f1(total_dice, total_gt, total_model)
+
+    total_pred = 0
+    total_arg = 0
+
+    table_content = []
+
+    for n_pred, num in num_dict.items():
+        table_row = [n_pred] + num
+        table_content.append(table_row)
+
+        total_pred += num[0]
+        total_arg += num[1]
+
+    table_content.sort(key=itemgetter(2), reverse=True)
+    table_content.append([''] * 6)
+    table_content.append([
+        'Overall',
+        total_pred,
+        total_arg,
+        '{0:.2f}'.format(total_precision * 100),
+        '{0:.2f}'.format(total_recall * 100),
+        '{0:.2f}'.format(total_f1 * 100)])
+
+    table_head = [
+        'Pred.', '# Pred.', '# Imp.Arg.', 'Precision', 'Recall', 'F1']
     print_table(table_head, table_content)

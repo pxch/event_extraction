@@ -65,15 +65,13 @@ class Predicate(object):
             for arg in self.imp_args[label]:
                 arg.get_treebank(treebank_reader)
                 arg.parse_treebank()
-                arg.get_corenlp(corenlp_reader)
-                arg.parse_corenlp()
+                arg.parse_corenlp(corenlp_reader)
 
         for label, fillers in self.exp_args.items():
             for arg in fillers:
                 arg.get_treebank(treebank_reader)
                 arg.parse_treebank()
-                arg.get_corenlp(corenlp_reader)
-                arg.parse_corenlp()
+                arg.parse_corenlp(corenlp_reader)
             if label in core_arg_list and len(fillers) > 1:
                 assert len(fillers) == 2
                 new_fillers = []
@@ -229,3 +227,46 @@ class Predicate(object):
                 imp_args[label].append(RichTreePointer.merge(split_pointers))
 
         return cls(pred_pointer, imp_args, exp_args)
+
+    def pretty_print(self, verbose=False, include_candidates=False,
+                     include_dice_score=False, corenlp_reader=None):
+        result = '{}\t{}\n'.format(self.pred_pointer, self.n_pred)
+
+        for label, fillers in self.imp_args.items():
+            result += '\tImplicit {}:\n'.format(label)
+            for filler in fillers:
+                if verbose:
+                    result += '\t\t{}\n'.format(
+                        filler.pretty_print(corenlp_reader))
+                else:
+                    result += '\t\t{}\n'.format(filler)
+
+        for label, fillers in self.exp_args.items():
+            result += '\tExplicit {}:\n'.format(label)
+            for filler in fillers:
+                if verbose:
+                    result += '\t\t{}\n'.format(
+                        filler.pretty_print(corenlp_reader))
+                else:
+                    result += '\t\t{}\n'.format(filler)
+
+        if include_candidates:
+            result += '\tCandidates:\n'
+            for candidate in self.candidates:
+                if verbose:
+                    result += '\t\t{}'.format(
+                        candidate.arg_pointer.pretty_print(corenlp_reader))
+                else:
+                    result += '\t\t{}'.format(candidate.arg_pointer)
+
+                if include_dice_score:
+                    dice_list = {}
+                    for label, fillers in self.imp_args.items():
+                        dice_list[label] = candidate.dice_score(fillers)
+                        result += '\t{}\n'.format(
+                            ', '.join(['{}: {:.2f}'.format(label, dice)
+                                       for label, dice in dice_list.items()]))
+                else:
+                    result += '\n'
+
+        return result

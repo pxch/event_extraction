@@ -6,15 +6,17 @@ from event_comp_model import EventCompositionModel
 all_scripts = pkl.load(open('all_scripts.pkl', 'r'))
 
 event_comp_dir_dict = {
-    '800k_training_w_salience':
+    '8M_training_w_salience':
         '/Users/pengxiang/corpora/spaces/20170519/fine_tuning_full/iter_13',
-    '4M_training_w_salience':
+    '40M_training_w_salience':
         '/Users/pengxiang/corpora/spaces/20170530/fine_tuning_full/iter_19',
-    '800k_training_wo_salience':
+    '8M_training_wo_salience':
         '/Users/pengxiang/corpora/spaces/20170609/fine_tuning_full/iter_19',
+    '40M_training_wo_salience':
+        '/Users/pengxiang/corpora/spaces/20170611/fine_tuning_full/iter_19'
 }
 
-event_comp_dir = event_comp_dir_dict['800k_training_wo_salience']
+event_comp_dir = event_comp_dir_dict['40M_training_w_salience']
 
 event_comp_model = EventCompositionModel.load_model(event_comp_dir)
 
