@@ -39,7 +39,7 @@ class Argument(Token):
             warn('Calling get_core_argument when entity_idx is not -1,'
                  'should call Entity.get_core_argument instead')
         word = super(Argument, self).get_representation(use_lemma=use_lemma)
-        return CoreArgument(word, self.ner)
+        return CoreArgument(word, self.pos, self.ner)
 
     def get_entity(self, entity_list):
         if self.entity_idx != -1:

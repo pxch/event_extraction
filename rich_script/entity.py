@@ -58,7 +58,8 @@ class Mention(object):
 
     def get_core_argument(self, use_lemma=True):
         word = self._head_token.get_representation(use_lemma=use_lemma)
-        return CoreArgument(word, self.ner)
+        pos = self._head_token.pos
+        return CoreArgument(word, pos, self.ner)
 
     def to_text(self):
         return '{}:{}:{}:{}:{}:{}:{}'.format(

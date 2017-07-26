@@ -1,8 +1,11 @@
 import abc
 import logging
 
-from eval_stats import EvalStats
+from tqdm import tqdm
+
+from eval_stats import AccuracyStatsGroup, EvalStats
 from rich_script import RichScript, Script
+from rich_script.rich_argument import RichArgumentWithEntity
 from util import Word2VecModel, consts, get_class_name, read_vocab_list
 
 logging.basicConfig(format='%(levelname) s : : %(message)s', level=logging.INFO)
@@ -15,6 +18,7 @@ class BaseEvaluator(object):
                  include_all_pobj=False, ignore_first_mention=False,
                  filter_stop_events=True):
         self.eval_stats = EvalStats()
+        self.add_default_accuracy_groups()
         if logger is not None:
             self.logger = logger
         else:
@@ -32,6 +36,30 @@ class BaseEvaluator(object):
     @abc.abstractmethod
     def set_model(self, model):
         return
+
+    def add_accuracy_group(self, name, accuracy_group):
+        self.eval_stats.add_accuracy_group(name, accuracy_group)
+
+    def add_default_accuracy_groups(self):
+        arg_type_accuracy_group = AccuracyStatsGroup(
+            'Arg Type', ['SUBJ', 'OBJ', 'POBJ'])
+        self.add_accuracy_group('arg_type', arg_type_accuracy_group)
+
+        pos_accuracy_group = AccuracyStatsGroup(
+            'POS', ['Noun', 'Pronoun', 'Other'])
+        self.add_accuracy_group('pos', pos_accuracy_group)
+
+        ner_accuracy_group = AccuracyStatsGroup(
+            'NER', consts.VALID_NER_TAGS + ['NONE'])
+        self.add_accuracy_group('ner', ner_accuracy_group)
+
+        entity_len_accuracy_group = AccuracyStatsGroup(
+            'Entity Length', map(str, range(1, 10)) + ['10+'])
+        self.add_accuracy_group('entity_len', entity_len_accuracy_group)
+
+        mention_idx_accuracy_group = AccuracyStatsGroup(
+            'Mention Index', map(str, range(1, 10)) + ['10+'])
+        self.add_accuracy_group('mention_idx', mention_idx_accuracy_group)
 
     def set_embedding_model(self, embedding_model):
         assert isinstance(embedding_model, Word2VecModel), \
@@ -74,8 +102,8 @@ class BaseEvaluator(object):
     def evaluate(self, all_scripts, **kwargs):
         self.set_config(**kwargs)
         self.log_evaluator_info()
-        self.eval_stats = EvalStats()
-        for script in all_scripts:
+        self.eval_stats.reset()
+        for script in tqdm(all_scripts, desc='Processed', ncols=100):
             assert isinstance(script, Script), \
                 'every script in all_scripts must be a {} instance'.format(
                     get_class_name(Script))
@@ -120,4 +148,40 @@ class BaseEvaluator(object):
         self.print_stats()
 
     def print_stats(self):
-        print self.eval_stats.pretty_print()
+        self.eval_stats.print_table()
+
+    @staticmethod
+    def get_arg_group_info(rich_arg):
+        assert isinstance(rich_arg, RichArgumentWithEntity)
+        kwargs = {}
+
+        if rich_arg.arg_type.startswith('PREP'):
+            kwargs['arg_type'] = 'POBJ'
+        else:
+            kwargs['arg_type'] = rich_arg.arg_type
+
+        if rich_arg.core.pos.startswith('NN'):
+            kwargs['pos'] = 'Noun'
+        elif rich_arg.core.pos.startswith('PRP'):
+            kwargs['pos'] = 'Pronoun'
+        else:
+            kwargs['pos'] = 'Other'
+
+        kwargs['ner'] = rich_arg.core.ner
+        if kwargs['ner'] == '':
+            kwargs['ner'] = 'NONE'
+
+        rich_entity = rich_arg.rich_entity_list[rich_arg.entity_idx]
+        entity_len = rich_entity.salience.num_mentions_total
+        if entity_len < 10:
+            kwargs['entity_len'] = str(entity_len)
+        else:
+            kwargs['entity_len'] = '10+'
+
+        mention_idx = rich_arg.mention_idx + 1
+        if mention_idx < 10:
+            kwargs['mention_idx'] = str(mention_idx)
+        else:
+            kwargs['mention_idx'] = '10+'
+
+        return kwargs

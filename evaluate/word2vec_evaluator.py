@@ -107,8 +107,14 @@ class Word2VecEvaluator(BaseEvaluator):
                     )
                     correct = (most_coherent_idx == rich_arg.get_target_idx())
                     num_choices = len(eval_input_list)
+
+                    kwargs = BaseEvaluator.get_arg_group_info(rich_arg)
+
                     self.eval_stats.add_eval_result(
-                        rich_arg.arg_type, correct, num_choices)
+                        correct,
+                        num_choices,
+                        **kwargs
+                    )
                     self.logger.debug(
                         'Processing {}, correct = {}, num_choices = {}'.format(
                             rich_arg.arg_type, correct, num_choices))

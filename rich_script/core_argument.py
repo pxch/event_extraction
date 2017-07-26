@@ -2,23 +2,28 @@ from util import Word2VecModel, consts, get_class_name
 
 
 class CoreArgument(object):
-    def __init__(self, word, ner):
+    def __init__(self, word, pos, ner):
         self.word = word
+        self.pos = pos
         assert ner == '' or ner in consts.VALID_NER_TAGS, \
             '{} is not a valid ner tag'.format(ner)
         self.ner = ner
 
     def __eq__(self, other):
-        return self.word == other.word and self.ner == other.ner
+        return self.word == other.word and self.pos == other.pos \
+               and self.ner == other.ner
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __str__(self):
-        return self.word + ' // ' + self.ner
+        return '{} // {} // {}'.format(self.word, self.pos, self.ner)
 
     def get_word(self):
         return self.word
+
+    def get_pos(self):
+        return self.pos
 
     def get_ner(self):
         return self.ner

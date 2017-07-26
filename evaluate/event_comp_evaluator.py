@@ -112,17 +112,19 @@ class EventCompositionEvaluator(BaseEvaluator):
             eval_input_list_all = rich_event.get_eval_input_list_all(
                 include_all_pobj=self.include_all_pobj, include_salience=True)
             for rich_arg, eval_input_list in eval_input_list_all:
-                if (not self.ignore_first_mention) or \
-                        (not rich_arg.is_first_mention()):
+                if not self.ignore_argument(rich_arg):
                     most_coherent_idx = self.get_most_coherent(
                         rich_arg.arg_type, eval_input_list, context_input_list,
                         self.use_max_score)
                     correct = (most_coherent_idx == rich_arg.get_target_idx())
                     num_choices = len(eval_input_list)
+
+                    kwargs = BaseEvaluator.get_arg_group_info(rich_arg)
+
                     self.eval_stats.add_eval_result(
-                        rich_arg.arg_type,
                         correct,
-                        num_choices
+                        num_choices,
+                        **kwargs
                     )
                     self.logger.debug(
                         'Processing {}, correct = {}, num_choices = {}'.format(

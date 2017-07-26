@@ -39,5 +39,11 @@ class MostFreqEntityEvaluator(BaseEvaluator):
                         correct = is_most_freq_entity(
                             rich_arg.entity_idx, entity_freqs)
                         num_choices = len(entity_freqs)
+
+                        kwargs = BaseEvaluator.get_arg_group_info(rich_arg)
+
                         self.eval_stats.add_eval_result(
-                            rich_arg.arg_type, correct, num_choices)
+                            correct,
+                            num_choices,
+                            **kwargs
+                        )
