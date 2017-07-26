@@ -26,13 +26,10 @@ class BaseRichArgument(object):
         assert arg is not None and isinstance(arg, Argument), \
             'arg must be a {} instance, {} found'.format(
                 get_class_name(Argument), type(arg))
+        core = arg.get_core_argument(use_lemma=use_lemma)
         if arg.entity_idx == -1:
-            core = arg.get_core_argument(use_lemma=use_lemma)
             return RichArgument(arg_type, core)
         else:
-            assert 0 <= arg.entity_idx < len(rich_entity_list), \
-                'entity_idx {} out of range'.format(arg.entity_idx)
-            core = rich_entity_list[arg.entity_idx].core
             return RichArgumentWithEntity(
                 arg_type, core, rich_entity_list, arg.entity_idx,
                 arg.mention_idx)
@@ -131,6 +128,7 @@ class RichArgumentWithEntity(BaseRichArgument):
     def __init__(self, arg_type, core, rich_entity_list, entity_idx,
                  mention_idx):
         super(RichArgumentWithEntity, self).__init__(arg_type, core)
+
         assert rich_entity_list, 'rich_entity_list cannot be empty'
         assert all(isinstance(rich_entity, RichEntity) for rich_entity
                    in rich_entity_list), \
@@ -138,18 +136,16 @@ class RichArgumentWithEntity(BaseRichArgument):
                 get_class_name(RichEntity))
         # list of all rich entities in the script
         self.rich_entity_list = rich_entity_list
+
         assert 0 <= entity_idx <= len(rich_entity_list), \
             'entity_idx out of range [0, {})'.format(len(rich_entity_list))
-        assert core == rich_entity_list[entity_idx].core, \
-            'core = {} not consistent with ' \
-            'rich_entity_list[{}].core = {}'.format(
-                core, entity_idx, rich_entity_list[entity_idx].core)
         # index of the rich entity that the argument points to
         self.entity_idx = entity_idx
         assert mention_idx >= 0, 'mention_idx must be >= 0'
         # index of the mention that the argument points to
         self.mention_idx = mention_idx
         # word2vec index of all rich entities
+
         self.entity_wv_list = []
         # list of indices of entities with valid word2vec index (not -1)
         self.valid_entity_idx_list = []
@@ -166,6 +162,9 @@ class RichArgumentWithEntity(BaseRichArgument):
         self.valid_entity_idx_list = \
             [entity_idx for entity_idx, entity_wv
              in enumerate(self.entity_wv_list) if entity_wv != -1]
+
+    def get_entity(self):
+        return self.rich_entity_list[self.entity_idx]
 
     def get_pos_text(self, arg_vocab_list=None, ner_vocab_list=None,
                      include_type=True):

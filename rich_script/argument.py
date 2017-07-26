@@ -35,9 +35,9 @@ class Argument(Token):
         return not self.__eq__(other)
 
     def get_core_argument(self, use_lemma=True):
-        if self.entity_idx != -1:
-            warn('Calling get_core_argument when entity_idx is not -1,'
-                 'should call Entity.get_core_argument instead')
+        # if self.entity_idx != -1:
+        #     warn('Calling get_core_argument when entity_idx is not -1,'
+        #          'should call Entity.get_core_argument instead')
         word = super(Argument, self).get_representation(use_lemma=use_lemma)
         return CoreArgument(word, self.pos, self.ner)
 

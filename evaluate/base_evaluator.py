@@ -167,11 +167,11 @@ class BaseEvaluator(object):
         else:
             kwargs['pos'] = 'Other'
 
-        kwargs['ner'] = rich_arg.core.ner
+        rich_entity = rich_arg.get_entity()
+        kwargs['ner'] = rich_entity.core.ner
         if kwargs['ner'] == '':
             kwargs['ner'] = 'NONE'
 
-        rich_entity = rich_arg.rich_entity_list[rich_arg.entity_idx]
         entity_len = rich_entity.salience.num_mentions_total
         if entity_len < 10:
             kwargs['entity_len'] = str(entity_len)
