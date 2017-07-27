@@ -10,7 +10,7 @@ from corpus_reader import CoreNLPReader
 from event_comp_model import EventCompositionModel
 from rich_predicate import RichPredicate
 from rich_script.indexed_event import IndexedEvent
-from util import consts, get_class_name
+from util import get_class_name
 from stats import print_eval_stats
 
 
@@ -91,7 +91,7 @@ def compute_coherence_score():
             '/Users/pengxiang/corpora/spaces/20170611/fine_tuning_full/iter_19'
     }
 
-    event_comp_dir = event_comp_dir_dict['40M_training_wo_salience']
+    event_comp_dir = event_comp_dir_dict['40M_training_w_salience']
 
     print '\nLoading event composition model from {}'.format(event_comp_dir)
     start_time = timeit.default_timer()
@@ -101,6 +101,8 @@ def compute_coherence_score():
 
     coherence_fn = event_comp_model.pair_composition_network.coherence_fn
     use_salience = event_comp_model.pair_composition_network.use_salience
+    salience_features = \
+        event_comp_model.pair_composition_network.salience_features
 
     elapsed = timeit.default_timer() - start_time
     print '\tDone in {:.3f} seconds'.format(elapsed)
@@ -179,9 +181,11 @@ def compute_coherence_score():
 
                 if use_salience:
                     if arg_salience is not None:
-                        salience_feature = arg_salience.get_feature_list()
+                        salience_feature = \
+                            arg_salience.get_feature_list(salience_features)
                     else:
-                        salience_feature = [0.0] * consts.NUM_SALIENCE_FEATURES
+                        # TODO: change to fake salience features
+                        salience_feature = [0.0] * len(salience_features)
 
                     saliance_input = np.tile(
                         salience_feature, [num_context, 1]).astype(np.float32)
@@ -224,11 +228,6 @@ def compute_coherence_score():
             rich_predicate.imp_args[row_idx].set_coherence_score_list(
                 coherence_score_matrix[row_idx, :])
 
-    print '\nSaving all rich predicates with coherence scores to {}'.format(
-        all_rich_predicates_with_coherence_path)
-    pkl.dump(all_rich_predicates,
-             open(all_rich_predicates_with_coherence_path, 'w'))
-
     for pred_idx in exclude_pred_idx_list:
         rich_predicate = all_rich_predicates[pred_idx]
         print 'Predicate #{}: {}, missing_imp_args = {}, imp_args = {}'.format(
@@ -238,28 +237,31 @@ def compute_coherence_score():
             len([imp_arg for imp_arg in rich_predicate.imp_args
                  if imp_arg.exist]))
 
+    return all_rich_predicates
 
-def evaluate():
-    print '\nLoading all rich predicates with coherence scores from {}'.format(
+
+def main():
+    all_rich_predicates = compute_coherence_score()
+    print '\nSaving all rich predicates with coherence scores to {}'.format(
         all_rich_predicates_with_coherence_path)
-    start_time = timeit.default_timer()
+    pkl.dump(all_rich_predicates,
+             open(all_rich_predicates_with_coherence_path, 'w'))
 
-    all_rich_predicates = \
-        pkl.load(open(all_rich_predicates_with_coherence_path, 'r'))
-    assert all(isinstance(rich_predicate, RichPredicate)
-               for rich_predicate in all_rich_predicates)
-
-    elapsed = timeit.default_timer() - start_time
-    print '\tDone in {:.3f} seconds'.format(elapsed)
+    # print '\nLoading all rich predicates with coherence scores from {}'.format(
+    #     all_rich_predicates_with_coherence_path)
+    # start_time = timeit.default_timer()
+    #
+    # all_rich_predicates = \
+    #     pkl.load(open(all_rich_predicates_with_coherence_path, 'r'))
+    # assert all(isinstance(rich_predicate, RichPredicate)
+    #            for rich_predicate in all_rich_predicates)
+    #
+    # elapsed = timeit.default_timer() - start_time
+    # print '\tDone in {:.3f} seconds'.format(elapsed)
 
     cross_val(all_rich_predicates, n_splits=10)
 
     print_eval_stats(all_rich_predicates)
-
-
-def main():
-    compute_coherence_score()
-    evaluate()
 
 
 main()

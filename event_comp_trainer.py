@@ -35,6 +35,9 @@ parser.add_argument('--corruption', type=float, default=0.2,
 parser.add_argument('--use_salience', action='store_true',
                     help='Whether or not we use entity salience features,'
                          'only used in stage 2/3')
+parser.add_argument('--salience_features',
+                    help='Comma-separated list of salience features,'
+                         'only used in stage 2/3')
 parser.add_argument('--input_path',
                     help='Path to load a partially trained model, '
                          'only used in stage 2/3')
@@ -95,6 +98,16 @@ elif opts.stage == 2 or opts.stage == 3:
     assert event_composition_model.event_vector_network, \
         'event_vector_network in the model cannot be None'
 
+    salience_features = None
+    if opts.use_salience:
+        if opts.salience_features:
+            salience_features = opts.salience_features.split(',')
+            for feature in salience_features:
+                assert feature in consts.SALIENCE_FEATURES, \
+                    'Unrecognized salience feature: {}'.format(feature)
+        else:
+            salience_features = consts.SALIENCE_FEATURES
+
     if opts.stage == 2:
         if event_composition_model.pair_composition_network is None:
             layer_sizes = [int(size) for size in opts.layer_sizes.split(',')]
@@ -102,11 +115,12 @@ elif opts.stage == 2 or opts.stage == 3:
                 'Initializing pair composition network with layer sizes '
                 '[{0}|{0}|1(arg_idx){1}]->{2}->1'.format(
                     event_composition_model.event_vector_network.vector_size,
-                    '|{}(salience)'.format(consts.NUM_SALIENCE_FEATURES)
+                    '|{}(salience)'.format(len(salience_features))
                     if opts.use_salience else '',
                     '->'.join(str(s) for s in layer_sizes)))
             event_composition_model.add_pair_projection_network(
-                layer_sizes, use_salience=opts.use_salience)
+                layer_sizes, use_salience=opts.use_salience,
+                salience_features=salience_features)
     else:
         assert event_composition_model.pair_composition_network, \
             'pair_composition_network in the model cannot be None'
@@ -125,7 +139,7 @@ elif opts.stage == 2 or opts.stage == 3:
             opts.indexed_corpus, opts.batch_size, opts.use_salience))
     corpus_it = PairTuningCorpusIterator(
         opts.indexed_corpus, batch_size=opts.batch_size,
-        use_salience=opts.use_salience)
+        use_salience=opts.use_salience, salience_features=salience_features)
     log.info('Found {} lines in the corpus'.format(len(corpus_it)))
 
     val_corpus_it = None

@@ -136,4 +136,7 @@ PRED_VOCAB_COUNT_FILE = './vocab_list/predicate_min_100_count'
 PRED_COUNT_THRES = 100000
 
 # entity salience related constants
+SALIENCE_FEATURES = \
+    ['first_loc', 'head_count', 'num_mentions_named','num_mentions_nominal',
+     'num_mentions_pronominal', 'num_mentions_total']
 NUM_SALIENCE_FEATURES = 6

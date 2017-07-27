@@ -3,11 +3,11 @@ import theano
 import theano.tensor as T
 
 from autoencoder import DenoisingAutoencoder
-from util import consts
 
 
 class PairCompositionNetwork(object):
-    def __init__(self, event_vector_network, layer_sizes, use_salience=True):
+    def __init__(self, event_vector_network, layer_sizes, use_salience=True,
+                 salience_features=None):
         self.event_vector_network = event_vector_network
         self.layer_sizes = layer_sizes
 
@@ -31,8 +31,15 @@ class PairCompositionNetwork(object):
         self.layer_outputs = []
         input_size = \
             self.event_vector_network.layer_sizes[-1] * 2 + 1
+
+        self.num_salience_features = 0
+        self.salience_features = []
         if self.use_salience:
-            input_size += consts.NUM_SALIENCE_FEATURES
+            assert salience_features is not None
+            self.salience_features = salience_features
+            self.num_salience_features = len(self.salience_features)
+            input_size += self.num_salience_features
+
         layer_input = self.input_vector
         for layer_size in layer_sizes:
             self.layers.append(
@@ -184,7 +191,7 @@ class PairCompositionNetwork(object):
         layer_outputs = []
         input_size = \
             self.event_vector_network.layer_sizes[-1] * 2 + \
-            1 + consts.NUM_SALIENCE_FEATURES
+            1 + self.num_salience_features
         layer_input = input_vector
         for layer_size in self.layer_sizes:
             layers.append(

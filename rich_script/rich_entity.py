@@ -1,49 +1,38 @@
 from core_argument import CoreArgument
 from entity import Entity
-from util import get_class_name
+from util import consts, get_class_name
 
 
 class EntitySalience(object):
     def __init__(self, **kwargs):
-        self.first_loc = kwargs['first_loc']
-        self.head_count = kwargs['head_count']
-        self.num_mentions_named = kwargs['num_mentions_named']
-        self.num_mentions_nominal = kwargs['num_mentions_nominal']
-        self.num_mentions_pronominal = kwargs['num_mentions_pronominal']
-        self.num_mentions_total = kwargs['num_mentions_total']
+        for feature in consts.SALIENCE_FEATURES:
+            self.__dict__[feature] = kwargs[feature]
 
-    def get_feature_list(self):
-        return [
-            self.first_loc,
-            self.head_count,
-            self.num_mentions_named,
-            self.num_mentions_nominal,
-            self.num_mentions_pronominal,
-            self.num_mentions_total
-        ]
+    def get_feature(self, feature):
+        assert feature in consts.SALIENCE_FEATURES
+        return self.__dict__[feature]
+
+    def get_feature_list(self, feature_list=None):
+        if feature_list is None:
+            feature_list = consts.SALIENCE_FEATURES
+        result = []
+        for feature in feature_list:
+            result.append(self.get_feature(feature))
+        return result
 
     def to_text(self):
-        return '{},{},{},{},{},{}'.format(
-            self.first_loc,
-            self.head_count,
-            self.num_mentions_named,
-            self.num_mentions_nominal,
-            self.num_mentions_pronominal,
-            self.num_mentions_total)
+        return ','.join(map(str, self.get_feature_list()))
 
     @classmethod
     def from_text(cls, text):
         parts = text.strip().split(',')
-        assert len(parts) == 6, \
-            'expecting 4 parts separated by ",", found {}'.format(len(parts))
-        return cls(
-            first_loc=int(parts[0]),
-            head_count=int(parts[1]),
-            num_mentions_named=int(parts[2]),
-            num_mentions_nominal=int(parts[3]),
-            num_mentions_pronominal=int(parts[4]),
-            num_mentions_total=int(parts[5])
-        )
+        assert len(parts) == consts.NUM_SALIENCE_FEATURES, \
+            'expecting {} parts separated by ",", found {}'.format(
+                consts.NUM_SALIENCE_FEATURES, len(parts))
+        kwargs = {}
+        for feature, value in zip(consts.SALIENCE_FEATURES, parts):
+            kwargs[feature] = int(value)
+        return cls(**kwargs)
 
 
 class RichEntity(object):

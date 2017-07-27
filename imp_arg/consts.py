@@ -118,8 +118,7 @@ all_predicates_path = './all_predicates.pkl'
 
 all_rich_predicates_path = './all_rich_predicates.pkl'
 
-all_rich_predicates_with_coherence_path = \
-    './all_rich_predicates_with_coherence_no_salience.pkl'
+all_rich_predicates_with_coherence_path = './all_eval_sum_w_salience.pkl'
 
 
 def compute_f1(total_dice, total_gt, total_model):

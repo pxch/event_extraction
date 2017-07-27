@@ -38,7 +38,8 @@ class EventCompositionEvaluator(BaseEvaluator):
                           use_max_score=True):
         coherence_fn = self.model.pair_composition_network.coherence_fn
         use_salience = self.model.pair_composition_network.use_salience
-
+        salience_features = \
+            self.model.pair_composition_network.salience_features
         coherence_score_list = []
         num_context = len(context_input_list)
 
@@ -80,8 +81,8 @@ class EventCompositionEvaluator(BaseEvaluator):
                 [eval_input.pobj_input] * num_context).astype(np.int32)
             if use_salience:
                 saliance_input = np.tile(
-                    arg_salience.get_feature_list(), [num_context, 1]).astype(
-                    np.float32)
+                    arg_salience.get_feature_list(salience_features),
+                    [num_context, 1]).astype(np.float32)
                 coherence_output = coherence_fn(
                     pred_input_a, subj_input_a, obj_input_a, pobj_input_a,
                     pred_input_b, subj_input_b, obj_input_b, pobj_input_b,

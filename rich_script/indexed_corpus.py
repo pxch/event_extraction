@@ -6,7 +6,6 @@ from os.path import isdir, isfile, join
 import numpy
 
 from indexed_event import IndexedEvent, IndexedEventTriple
-from util import consts
 
 
 class IndexedCorpusReader(object):
@@ -93,12 +92,20 @@ class PretrainingCorpusIterator(object):
 
 
 class PairTuningCorpusIterator(object):
-    def __init__(self, corpus_dir, batch_size=1, use_salience=True):
+    def __init__(self, corpus_dir, batch_size=1, use_salience=True,
+                 salience_features=None):
         self.corpus_dir = corpus_dir
         self.reader = IndexedCorpusReader('pair_tuning', self.corpus_dir)
         self.batch_size = batch_size
         self.num_batch = int(ceil(float(len(self.reader)) / batch_size))
         self.use_salience = use_salience
+
+        self.num_salience_features = 0
+        self.salience_features = []
+        if self.use_salience:
+            assert salience_features is not None
+            self.salience_features = salience_features
+            self.num_salience_features = len(self.salience_features)
 
     def restart(self):
         self.reader = IndexedCorpusReader('pair_tuning', self.corpus_dir)
@@ -122,10 +129,10 @@ class PairTuningCorpusIterator(object):
         arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.float32)
         if self.use_salience:
             pos_entity_salience_input = numpy.zeros(
-                [self.batch_size, consts.NUM_SALIENCE_FEATURES],
+                [self.batch_size, self.num_salience_features],
                 dtype=numpy.float32)
             neg_entity_salience_input = numpy.zeros(
-                [self.batch_size, consts.NUM_SALIENCE_FEATURES],
+                [self.batch_size, self.num_salience_features],
                 dtype=numpy.float32)
 
         data_point_index = 0
@@ -146,11 +153,11 @@ class PairTuningCorpusIterator(object):
             arg_idx_input[data_point_index] = float(pair_input.arg_idx)
             if self.use_salience:
                 pos_entity_salience_input[data_point_index] = \
-                    numpy.asarray(pair_input.pos_salience.get_feature_list()).\
-                    astype(numpy.float32)
+                    numpy.asarray(pair_input.pos_salience.get_feature_list(
+                        self.salience_features)).astype(numpy.float32)
                 neg_entity_salience_input[data_point_index] = \
-                    numpy.asarray(pair_input.neg_salience.get_feature_list()).\
-                    astype(numpy.float32)
+                    numpy.asarray(pair_input.neg_salience.get_feature_list(
+                        self.salience_features)).astype(numpy.float32)
             data_point_index += 1
 
             # If we've filled up the batch, yield it
