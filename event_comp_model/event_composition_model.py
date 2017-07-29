@@ -4,7 +4,7 @@ from os.path import exists, join
 
 from event_vector_network import EventVectorNetwork
 from pair_composition_network import PairCompositionNetwork
-from util import Word2VecModel, get_class_name
+from util import Word2VecModel, consts, get_class_name
 
 
 class EventCompositionModel(object):
@@ -117,9 +117,11 @@ class EventCompositionModel(object):
         if exists(join(directory, 'use_salience')):
             use_salience = True
             salience_features_file = join(directory, 'salience_features')
-            assert exists(salience_features_file)
-            with open(salience_features_file, 'r') as f:
-                salience_features = pkl.load(f)
+            if exists(salience_features_file):
+                with open(salience_features_file, 'r') as f:
+                    salience_features = pkl.load(f)
+            else:
+                salience_features = consts.SALIENCE_FEATURES
         else:
             use_salience = False
             salience_features = None
