@@ -78,6 +78,8 @@ class EventCompositionModel(object):
                 pkl.dump(self.pair_composition_network.layer_sizes, f)
             if self.pair_composition_network.use_salience:
                 open(join(directory, 'use_salience'), 'w').close()
+                with open(join(directory, 'salience_features'), 'w') as f:
+                    pkl.dump(self.pair_composition_network.salience_features, f)
 
     @classmethod
     def load_model(cls, directory):
@@ -114,15 +116,20 @@ class EventCompositionModel(object):
         # set use_salience to True if there exists a file called use_salience
         if exists(join(directory, 'use_salience')):
             use_salience = True
+            salience_features_file = join(directory, 'salience_features')
+            assert exists(salience_features_file)
+            with open(salience_features_file, 'r') as f:
+                salience_features = pkl.load(f)
         else:
             use_salience = False
+            salience_features = None
 
         # initialize the event composition model
         model = cls(
             word2vec=word2vec,
             event_vector_layer_sizes=event_vector_layer_sizes,
             pair_composition_layer_sizes=pair_composition_layer_sizes,
-            use_salience=use_salience)
+            use_salience=use_salience, salience_features=salience_features)
 
         # load event vector network weights, if exists
         event_vector_weights_file = join(directory, 'ev_weights')

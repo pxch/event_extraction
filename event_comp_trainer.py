@@ -124,6 +124,10 @@ elif opts.stage == 2 or opts.stage == 3:
     else:
         assert event_composition_model.pair_composition_network, \
             'pair_composition_network in the model cannot be None'
+        assert event_composition_model.pair_composition_network.use_salience \
+            == opts.use_salience
+        assert event_composition_model.pair_composition_network.salience_features \
+            == salience_features
 
     event_composition_trainer = EventCompositionTrainer(
         event_composition_model, saving_path=opts.output_path, log=log)
@@ -150,7 +154,7 @@ elif opts.stage == 2 or opts.stage == 3:
                 opts.val_indexed_corpus, opts.batch_size, opts.use_salience))
         val_corpus_it = PairTuningCorpusIterator(
             opts.val_indexed_corpus, batch_size=opts.batch_size,
-            use_salience=opts.use_salience)
+            use_salience=opts.use_salience, salience_features=salience_features)
         log.info('Found {} lines in the corpus'.format(len(val_corpus_it)))
 
     if opts.stage == 2:
