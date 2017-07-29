@@ -2,18 +2,22 @@ import pickle as pkl
 
 from evaluate import ArgumentCompositionEvaluator, EventCompositionEvaluator
 from event_comp_model import EventCompositionModel
+from os.path import join
 
 all_scripts = pkl.load(open('all_scripts.pkl', 'r'))
 
+root_dir = '/Users/pengxiang/corpora/spaces'
+# root_dir = '/scratch/cluster/pxcheng/corpora/enwiki-20160901/event_comp_training/results'
+
 event_comp_dir_dict = {
     '8M_training_w_salience':
-        '/Users/pengxiang/corpora/spaces/20170519/fine_tuning_full/iter_13',
+        join(root_dir, '20170519/fine_tuning_full/iter_13'),
     '40M_training_w_salience':
-        '/Users/pengxiang/corpora/spaces/20170530/fine_tuning_full/iter_19',
+        join(root_dir, '20170530/fine_tuning_full/iter_19'),
     '8M_training_wo_salience':
-        '/Users/pengxiang/corpora/spaces/20170609/fine_tuning_full/iter_19',
+        join(root_dir, '20170609/fine_tuning_full/iter_19'),
     '40M_training_wo_salience':
-        '/Users/pengxiang/corpora/spaces/20170611/fine_tuning_full/iter_19'
+        join(root_dir, '20170611/fine_tuning_full/iter_19'),
 }
 
 event_comp_dir = event_comp_dir_dict['40M_training_w_salience']
