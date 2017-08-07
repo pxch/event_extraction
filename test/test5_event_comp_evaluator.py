@@ -6,8 +6,9 @@ from os.path import join
 
 all_scripts = pkl.load(open('all_scripts.pkl', 'r'))
 
-root_dir = '/Users/pengxiang/corpora/spaces'
-# root_dir = '/scratch/cluster/pxcheng/corpora/enwiki-20160901/event_comp_training/results'
+# root_dir = '/Users/pengxiang/corpora/spaces'
+root_dir = '/scratch/cluster/pxcheng/corpora/enwiki-20160901' \
+           '/event_comp_training/results'
 
 event_comp_dir_dict = {
     '8M_training_w_salience':
@@ -18,9 +19,19 @@ event_comp_dir_dict = {
         join(root_dir, '20170609/fine_tuning_full/iter_19'),
     '40M_training_wo_salience':
         join(root_dir, '20170611/fine_tuning_full/iter_19'),
+    '8M_training_w_salience_wo_first_loc':
+        join(root_dir, '20170727/fine_tuning_full/iter_19'),
+    '8M_training_w_salience_wo_head_count':
+        join(root_dir, '20170729/fine_tuning_full/iter_19'),
+    '8M_training_w_salience_wo_num_mentions':
+        join(root_dir, '20170730/fine_tuning_full/iter_19'),
+    '8M_training_w_salience_only_num_mentions':
+        join(root_dir, '20170731/fine_tuning_full/iter_19'),
+    '8M_training_w_salience_only_num_mentions_wo_total':
+        join(root_dir, '20170801/fine_tuning_full/iter_19'),
 }
 
-event_comp_dir = event_comp_dir_dict['40M_training_w_salience']
+event_comp_dir = event_comp_dir_dict['8M_training_w_salience_only_num_mentions']
 
 event_comp_model = EventCompositionModel.load_model(event_comp_dir)
 
