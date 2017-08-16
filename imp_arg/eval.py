@@ -1,5 +1,6 @@
 import pickle as pkl
 import timeit
+from os.path import exists
 
 import numpy as np
 from sklearn.model_selection import KFold
@@ -10,16 +11,15 @@ from corpus_reader import CoreNLPReader
 from event_comp_model import EventCompositionModel
 from rich_predicate import RichPredicate
 from rich_script.indexed_event import IndexedEvent
+from stats import print_eval_stats, print_eval_results
 from util import get_class_name
-from stats import print_eval_stats
-
 
 use_max_score = True
 
 
 def cross_val(all_rich_predicates, n_splits):
     predicate_indices = range(len(all_rich_predicates))
-    kf = KFold(n_splits=n_splits, shuffle=True)
+    kf = KFold(n_splits=n_splits, shuffle=False)
 
     optimized_thres = []
 
@@ -65,47 +65,15 @@ def cross_val(all_rich_predicates, n_splits):
         rich_predicate.eval(rich_predicate.thres)
 
 
-def compute_coherence_score():
+def compute_coherence_score(all_rich_predicates, corenlp_reader,
+                            event_comp_model):
 
-    print '\nLoading all rich predicates from {}'.format(
-        all_rich_predicates_path)
-    start_time = timeit.default_timer()
-
-    all_rich_predicates = pkl.load(open(all_rich_predicates_path, 'r'))
-    assert all(isinstance(rich_predicate, RichPredicate)
-               for rich_predicate in all_rich_predicates)
-
-    elapsed = timeit.default_timer() - start_time
-    print '\tDone in {:.3f} seconds'.format(elapsed)
-
-    corenlp_reader = CoreNLPReader.load(corenlp_dict_path)
-
-    event_comp_dir_dict = {
-        '8M_training_w_salience':
-            '/Users/pengxiang/corpora/spaces/20170519/fine_tuning_full/iter_13',
-        '40M_training_w_salience':
-            '/Users/pengxiang/corpora/spaces/20170530/fine_tuning_full/iter_19',
-        '8M_training_wo_salience':
-            '/Users/pengxiang/corpora/spaces/20170609/fine_tuning_full/iter_19',
-        '40M_training_wo_salience':
-            '/Users/pengxiang/corpora/spaces/20170611/fine_tuning_full/iter_19'
-    }
-
-    event_comp_dir = event_comp_dir_dict['40M_training_w_salience']
-
-    print '\nLoading event composition model from {}'.format(event_comp_dir)
-    start_time = timeit.default_timer()
-
-    event_comp_model = EventCompositionModel.load_model(event_comp_dir)
     word2vec_model = event_comp_model.word2vec
 
     coherence_fn = event_comp_model.pair_composition_network.coherence_fn
     use_salience = event_comp_model.pair_composition_network.use_salience
     salience_features = \
         event_comp_model.pair_composition_network.salience_features
-
-    elapsed = timeit.default_timer() - start_time
-    print '\tDone in {:.3f} seconds'.format(elapsed)
 
     context_input_list_mapping = {}
 
@@ -131,7 +99,11 @@ def compute_coherence_score():
     exclude_pred_idx_list = []
 
     pred_idx = 0
-    for rich_predicate in tqdm(all_rich_predicates, desc='Processed', ncols=100):
+    for rich_predicate in tqdm(
+            all_rich_predicates, desc='Processed', ncols=100):
+        if len(rich_predicate.imp_args) == 0:
+            continue
+
         context_input_list = context_input_list_mapping[rich_predicate.fileid]
         num_context = len(context_input_list)
 
@@ -237,31 +209,75 @@ def compute_coherence_score():
             len([imp_arg for imp_arg in rich_predicate.imp_args
                  if imp_arg.exist]))
 
-    return all_rich_predicates
+    # return all_rich_predicates
 
 
 def main():
-    all_rich_predicates = compute_coherence_score()
-    print '\nSaving all rich predicates with coherence scores to {}'.format(
-        all_rich_predicates_with_coherence_path)
-    pkl.dump(all_rich_predicates,
-             open(all_rich_predicates_with_coherence_path, 'w'))
+    if not exists(all_rich_predicates_with_coherence_path):
+        print '\nLoading all rich predicates from {}'.format(
+            all_rich_predicates_path)
+        start_time = timeit.default_timer()
 
-    # print '\nLoading all rich predicates with coherence scores from {}'.format(
-    #     all_rich_predicates_with_coherence_path)
-    # start_time = timeit.default_timer()
-    #
-    # all_rich_predicates = \
-    #     pkl.load(open(all_rich_predicates_with_coherence_path, 'r'))
-    # assert all(isinstance(rich_predicate, RichPredicate)
-    #            for rich_predicate in all_rich_predicates)
-    #
-    # elapsed = timeit.default_timer() - start_time
-    # print '\tDone in {:.3f} seconds'.format(elapsed)
+        all_rich_predicates = pkl.load(open(all_rich_predicates_path, 'r'))
+        assert all(isinstance(rich_predicate, RichPredicate)
+                   for rich_predicate in all_rich_predicates)
+
+        elapsed = timeit.default_timer() - start_time
+        print '\tDone in {:.3f} seconds'.format(elapsed)
+
+        corenlp_reader = CoreNLPReader.load(corenlp_dict_path)
+
+        event_comp_dir_dict = {
+            '8M_training_w_salience':
+                '/Users/pengxiang/corpora/spaces/20170519/fine_tuning_full'
+                '/iter_13',
+            '40M_training_w_salience':
+                '/Users/pengxiang/corpora/spaces/20170530/fine_tuning_full'
+                '/iter_19',
+            '8M_training_wo_salience':
+                '/Users/pengxiang/corpora/spaces/20170609/fine_tuning_full'
+                '/iter_19',
+            '40M_training_wo_salience':
+                '/Users/pengxiang/corpora/spaces/20170611/fine_tuning_full'
+                '/iter_19'
+        }
+
+        event_comp_dir = event_comp_dir_dict['40M_training_w_salience']
+
+        print '\nLoading event composition model from {}'.format(event_comp_dir)
+        start_time = timeit.default_timer()
+
+        event_comp_model = EventCompositionModel.load_model(event_comp_dir)
+
+        elapsed = timeit.default_timer() - start_time
+        print '\tDone in {:.3f} seconds'.format(elapsed)
+
+        compute_coherence_score(all_rich_predicates, corenlp_reader,
+                                event_comp_model)
+
+        print '\nSaving all rich predicates with coherence scores to {}'.format(
+            all_rich_predicates_with_coherence_path)
+        pkl.dump(all_rich_predicates,
+                 open(all_rich_predicates_with_coherence_path, 'w'))
+
+    else:
+        print '\nLoading all rich predicates with coherence scores ' \
+              'from {}'.format(all_rich_predicates_with_coherence_path)
+        start_time = timeit.default_timer()
+
+        all_rich_predicates = \
+            pkl.load(open(all_rich_predicates_with_coherence_path, 'r'))
+        assert all(isinstance(rich_predicate, RichPredicate)
+                   for rich_predicate in all_rich_predicates)
+
+        elapsed = timeit.default_timer() - start_time
+        print '\tDone in {:.3f} seconds'.format(elapsed)
 
     cross_val(all_rich_predicates, n_splits=10)
 
     print_eval_stats(all_rich_predicates)
+
+    print_eval_results(all_rich_predicates)
 
 
 main()
