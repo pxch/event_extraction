@@ -177,3 +177,70 @@ def print_eval_stats(all_rich_predicates):
         table.add_row(row)
 
     print table.draw()
+
+
+def print_eval_results(all_rich_predicates):
+    for predicate in all_rich_predicates:
+        print
+        print '{} {} {}\tthreshold = {}'.format(
+            predicate.fileid, predicate.n_pred, predicate.v_pred,
+            predicate.thres)
+        for exp_arg in predicate.exp_args:
+            print '{} : {}'.format(exp_arg.arg_type, exp_arg.core)
+        if predicate.imp_args:
+            header = ['Candidate', 'Surface', 'Core']
+            for imp_arg in predicate.imp_args:
+                arg_label = imp_arg.label
+                if not imp_arg.exist:
+                    arg_label = '(' + arg_label + ')'
+                header.append(arg_label + ' dice')
+                header.append(arg_label + ' coh')
+
+            table = Texttable()
+            table.set_deco(Texttable.BORDER | Texttable.HEADER |
+                           Texttable.HLINES)
+            table.set_cols_align(['c'] * len(header))
+            table.set_cols_valign(['m'] * len(header))
+            table.set_cols_width([25, 25, 25] + [12] * (len(header) - 3))
+            table.set_cols_dtype(['t'] * len(header))
+            table.set_precision(2)
+
+            table.header(header)
+
+            content = [[] for _ in range(predicate.num_candidates)]
+
+            if not predicate.imp_args[0].has_coherence_score:
+                continue
+
+            for arg_idx, imp_arg in enumerate(predicate.imp_args):
+                for candidate_idx, candidate in enumerate(
+                        imp_arg.rich_candidate_list):
+                    if arg_idx == 0:
+                        content[candidate_idx].append(
+                            '{} #{}'.format(candidate.arg_pointer,
+                                            candidate.arg_pointer.entity_idx))
+                        content[candidate_idx].append(
+                            candidate.arg_pointer.corenlp_lemma_surface)
+                        content[candidate_idx].append(str(candidate.core))
+                    content[candidate_idx].append(
+                        '{0:.2f}'.format(candidate.dice_score))
+                    try:
+                        coherence_score = \
+                            imp_arg.coherence_score_list[candidate_idx]
+                    except IndexError:
+                        print 'arg_idx = {}, has_coherence_score = {}'.format(
+                            arg_idx, imp_arg.has_coherence_score)
+                        exit(-1)
+                    coherence_str = '{0:.2f}'.format(coherence_score)
+                    if candidate_idx == imp_arg.max_coherence_score_idx:
+                        if coherence_score >= predicate.thres:
+                            coherence_str += ' ***'
+                        else:
+                            coherence_str += ' *'
+                    content[candidate_idx].append(coherence_str)
+
+            for row in content:
+                table.add_row(row)
+
+            print table.draw()
+            print
