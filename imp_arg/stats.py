@@ -1,15 +1,9 @@
 from collections import defaultdict
 from operator import itemgetter
 
-from prettytable import PrettyTable
+from texttable import Texttable
+
 from consts import compute_f1
-
-
-def print_table(head, content):
-    table = PrettyTable(head)
-    for row in content:
-        table.add_row(row)
-    print table
 
 
 def print_stats(all_predicates):
@@ -58,10 +52,10 @@ def print_stats(all_predicates):
 
     for n_pred, num in num_dict.items():
         table_row = [n_pred] + num[:2]
-        table_row.append('{0:.1f}'.format(float(num[1]) / num[0]))
+        table_row.append(float(num[1]) / num[0])
         table_row.append(num[2])
         table_row.append(num[3])
-        table_row.append('{0:.1f}'.format(100. * float(num[3]) / num[1]))
+        table_row.append(100. * float(num[3]) / num[1])
         table_row += num[4:]
         table_content.append(table_row)
 
@@ -81,10 +75,10 @@ def print_stats(all_predicates):
         'Overall',
         total_pred,
         total_arg,
-        '{0:.1f}'.format(float(total_arg) / total_pred),
+        float(total_arg) / total_pred,
         total_arg_in_range,
         total_oracle_arg,
-        '{0:.1f}'.format(100. * float(total_oracle_arg) / total_arg),
+        100. * float(total_oracle_arg) / total_arg,
         total_imp_arg0,
         total_imp_arg1,
         total_imp_arg2,
@@ -92,11 +86,23 @@ def print_stats(all_predicates):
         total_imp_arg4
     ])
 
-    table_head = [
+    table_header = [
         'Pred.', '# Pred.', '# Imp.Arg.', '# Imp./pred.', '# Imp.Arg.in.range',
         '# Oracle', 'Oracle Recall', '# Imp.Arg.0', '# Imp.Arg.1',
         '# Imp.Arg.2', '# Imp.Arg.3', '# Imp.Arg.4']
-    print_table(table_head, table_content)
+
+    table = Texttable()
+    table.set_deco(Texttable.BORDER | Texttable.HEADER)
+    table.set_cols_align(['c'] * len(table_header))
+    table.set_cols_valign(['m'] * len(table_header))
+    table.set_cols_width([15] * len(table_header))
+    table.set_precision(2)
+
+    table.header(table_header)
+    for row in table_content:
+        table.add_row(row)
+
+    print table.draw()
 
 
 def print_eval_stats(all_rich_predicates):
@@ -130,9 +136,9 @@ def print_eval_stats(all_rich_predicates):
 
         precision, recall, f1 = compute_f1(pred_dice, pred_gt, pred_model)
 
-        num_dict[n_pred].append('{0:.2f}'.format(precision * 100))
-        num_dict[n_pred].append('{0:.2f}'.format(recall * 100))
-        num_dict[n_pred].append('{0:.2f}'.format(f1 * 100))
+        num_dict[n_pred].append(precision * 100)
+        num_dict[n_pred].append(recall * 100)
+        num_dict[n_pred].append(f1 * 100)
 
     total_precision, total_recall, total_f1 = \
         compute_f1(total_dice, total_gt, total_model)
@@ -155,10 +161,19 @@ def print_eval_stats(all_rich_predicates):
         'Overall',
         total_pred,
         total_arg,
-        '{0:.2f}'.format(total_precision * 100),
-        '{0:.2f}'.format(total_recall * 100),
-        '{0:.2f}'.format(total_f1 * 100)])
+        total_precision * 100,
+        total_recall * 100,
+        total_f1 * 100])
 
-    table_head = [
+    table_header = [
         'Pred.', '# Pred.', '# Imp.Arg.', 'Precision', 'Recall', 'F1']
-    print_table(table_head, table_content)
+
+    table = Texttable()
+    table.set_deco(Texttable.BORDER | Texttable.HEADER)
+    table.set_precision(2)
+
+    table.header(table_header)
+    for row in table_content:
+        table.add_row(row)
+
+    print table.draw()
