@@ -10,6 +10,7 @@ from nltk.stem import WordNetLemmatizer
 from corpus_reader import CoreNLPReader
 from corpus_reader import TreebankReader
 from rich_script.argument import Argument
+from rich_script.rich_entity import EntitySalience
 from util import get_class_name
 
 lemmatizer = WordNetLemmatizer()
@@ -346,7 +347,30 @@ class RichTreePointer(object):
             rich_entity = rich_script.rich_entities[self.entity_idx]
             return rich_entity.get_salience()
         else:
-            return None
+            first_loc = self.sentnum
+            head_count = 1
+            num_mentions_named = 0
+            num_mentions_nominal = 0
+            num_mentions_pronominal = 0
+            num_mentions_total = 1
+
+            core = self.get_core_argument(
+                corenlp_reader, use_lemma=True, use_entity=use_entity)
+            if core.ner != '':
+                num_mentions_named = 1
+            elif core.pos.startswith('NN'):
+                num_mentions_nominal = 1
+            elif core.pos.startswith('PRP'):
+                num_mentions_pronominal = 1
+
+            salience = EntitySalience(
+                first_loc=first_loc,
+                head_count=head_count,
+                num_mentions_named=num_mentions_named,
+                num_mentions_nominal=num_mentions_nominal,
+                num_mentions_pronominal=num_mentions_pronominal,
+                num_mentions_total=num_mentions_total)
+            return salience
 
     def token_list(self, use_corenlp_tokens=True):
         if use_corenlp_tokens:
