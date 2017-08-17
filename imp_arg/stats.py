@@ -179,7 +179,7 @@ def print_eval_stats(all_rich_predicates):
     print table.draw()
 
 
-def print_eval_results(all_rich_predicates):
+def print_eval_results(all_rich_predicates, use_corenlp_token=True):
     for predicate in all_rich_predicates:
         print
         print '{} {} {}\tthreshold = {}'.format(
@@ -220,7 +220,8 @@ def print_eval_results(all_rich_predicates):
                             '{} #{}'.format(candidate.arg_pointer,
                                             candidate.arg_pointer.entity_idx))
                         content[candidate_idx].append(
-                            candidate.arg_pointer.corenlp_lemma_surface)
+                            ' '.join(candidate.arg_pointer.token_list(
+                                use_corenlp_token=use_corenlp_token)))
                         content[candidate_idx].append(str(candidate.core))
                     content[candidate_idx].append(
                         '{0:.2f}'.format(candidate.dice_score))

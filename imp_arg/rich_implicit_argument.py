@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+import numpy as np
+
 from rich_script.core_argument import CoreArgument
 from rich_script.rich_entity import EntitySalience
 from rich_tree_pointer import RichTreePointer
@@ -33,7 +35,8 @@ class RichCandidate(object):
               use_entity=True, use_corenlp_tokens=True):
 
         arg_pointer = candidate.arg_pointer.copy(
-            include_treebank=False, include_corenlp=False)
+            include_treebank=(not use_corenlp_tokens),
+            include_corenlp=use_corenlp_tokens)
 
         dice_score = candidate.dice_score(
             imp_args, use_corenlp_tokens=use_corenlp_tokens)
@@ -93,7 +96,15 @@ class RichImplicitArgument(object):
         self.has_coherence_score = True
         self.coherence_score_list = coherence_score_list
         self.max_coherence_score = self.coherence_score_list.max()
-        self.max_coherence_score_idx = self.coherence_score_list.argmax()
+
+        max_indices = \
+            [idx for idx, score in enumerate(self.coherence_score_list)
+             if score == self.max_coherence_score]
+
+        max_dice_list = np.asarray(
+            [self.rich_candidate_list[idx].dice_score
+             for idx in max_indices])
+        self.max_coherence_score_idx = max_indices[max_dice_list.argmax()]
 
     def get_max_dice_score(self):
         assert self.max_coherence_score_idx != -1
