@@ -1,19 +1,29 @@
+import platform
 import re
-from collections import defaultdict
+from os.path import join
 
 from nltk.corpus import BracketParseCorpusReader
 from nltk.corpus import NombankCorpusReader
 from nltk.corpus import PropbankCorpusReader
 from nltk.data import FileSystemPathPointer
 
-treebank_root = '/Users/pengxiang/corpora/penn-treebank-rel3/parsed/mrg/wsj'
+system_name = platform.system()
+
+if system_name == 'Darwin':
+    corpus_root = '/Users/pengxiang/corpora/'
+elif system_name == 'Linux':
+    corpus_root = '/scratch/cluster/pxcheng/corpora/'
+else:
+    raise RuntimeError('Unrecognized system: {}'.format(system_name))
+
+treebank_root = join(corpus_root, 'penn-treebank-rel3/parsed/mrg/wsj')
 treebank_file_pattern = '\d\d/wsj_.*\.mrg'
 
-propbank_root = '/Users/pengxiang/corpora/propbank-LDC2004T14/data'
+propbank_root = join(corpus_root, 'propbank-LDC2004T14/data')
 propbank_file = 'prop.txt'
 propbank_verbs_file = 'verbs.txt'
 
-nombank_root = '/Users/pengxiang/corpora/nombank.1.0'
+nombank_root = join(corpus_root, 'nombank.1.0')
 nombank_file = 'nombank.1.0_sorted'
 nombank_nouns_file = 'nombank.1.0.words'
 
