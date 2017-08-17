@@ -87,6 +87,10 @@ nombank_function_tag_mapping = {
 }
 
 
+pred_list = [
+    'bid', 'sell', 'loan', 'cost', 'plan', 'invest', 'price', 'lose', 'fund']
+
+
 def convert_nombank_label(label):
     if label[:3] == 'ARG':
         if label[3].isdigit():
@@ -118,7 +122,7 @@ all_predicates_path = './all_predicates.pkl'
 
 all_rich_predicates_path = './all_rich_predicates.pkl'
 
-all_rich_predicates_with_coherence_path = './all_eval_sum_w_salience.pkl'
+all_rich_predicates_with_coherence_path = './all_eval_max_w_salience.pkl'
 
 
 def compute_f1(total_dice, total_gt, total_model):
