@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from consts import *
 from corpus_reader import CoreNLPReader
-from event_comp_model import EventCompositionModel
+from event_comp_model import load_event_comp_model
 from rich_predicate import RichPredicate
 from rich_script.indexed_event import IndexedEvent
 from stats import print_eval_stats, print_eval_results
@@ -227,30 +227,7 @@ def main():
 
         corenlp_reader = CoreNLPReader.load(corenlp_dict_path)
 
-        event_comp_dir_dict = {
-            '8M_training_w_salience':
-                '/Users/pengxiang/corpora/spaces/20170519/fine_tuning_full'
-                '/iter_13',
-            '40M_training_w_salience':
-                '/Users/pengxiang/corpora/spaces/20170530/fine_tuning_full'
-                '/iter_19',
-            '8M_training_wo_salience':
-                '/Users/pengxiang/corpora/spaces/20170609/fine_tuning_full'
-                '/iter_19',
-            '40M_training_wo_salience':
-                '/Users/pengxiang/corpora/spaces/20170611/fine_tuning_full'
-                '/iter_19'
-        }
-
-        event_comp_dir = event_comp_dir_dict['40M_training_w_salience']
-
-        print '\nLoading event composition model from {}'.format(event_comp_dir)
-        start_time = timeit.default_timer()
-
-        event_comp_model = EventCompositionModel.load_model(event_comp_dir)
-
-        elapsed = timeit.default_timer() - start_time
-        print '\tDone in {:.3f} seconds'.format(elapsed)
+        event_comp_model = load_event_comp_model('40M_training_w_salience')
 
         compute_coherence_score(all_rich_predicates, corenlp_reader,
                                 event_comp_model)
