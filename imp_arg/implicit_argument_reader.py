@@ -33,10 +33,14 @@ def build_pred_wv_mapping(pred_list, model):
 
 
 class ImplicitArgumentReader(object):
-    def __init__(self, max_candidate_dist=2):
+    def __init__(self, n_splits=10, max_candidate_dist=2):
+        self.n_splits = n_splits
         self.max_candidate_dist = max_candidate_dist
 
         self.all_instances = []
+        self.instance_order_list = []
+        self.train_test_folds = []
+
         self.all_predicates = []
         self.all_rich_predicates = []
 
@@ -137,6 +141,19 @@ class ImplicitArgumentReader(object):
 
         self.all_instances = sorted(
             all_instances, key=lambda ins: str(ins.pred_pointer))
+
+        # self.instance_order_list = []
+        # for instance in all_instances:
+        #     for idx, ins in enumerate(self.all_instances):
+        #         if str(instance.pred_pointer) == str(ins.pred_pointer):
+        #             self.instance_order_list.append(idx)
+        #             break
+
+        self.instance_order_list = [self.all_instances.index(instance)
+                                    for instance in all_instances]
+
+        kf = KFold(n_splits=self.n_splits, shuffle=False)
+        self.train_test_folds = list(kf.split(self.instance_order_list))
 
     def print_dataset(self, file_path):
         fout = open(file_path, 'w')
@@ -395,17 +412,12 @@ class ImplicitArgumentReader(object):
                 len([imp_arg for imp_arg in rich_predicate.imp_args
                      if imp_arg.exist]))
 
-    def cross_val(self, n_splits):
+    def cross_val(self):
         assert len(self.all_rich_predicates) > 0
-
-        predicate_indices = range(len(self.all_rich_predicates))
-        kf = KFold(n_splits=n_splits, shuffle=False)
 
         optimized_thres = []
 
-        for train, test in kf.split(predicate_indices):
-            train_idx_list = [predicate_indices[idx] for idx in train]
-
+        for train, test in self.train_test_folds:
             thres_list = [float(x) / 100 for x in range(0, 100)]
 
             precision_list = []
@@ -417,7 +429,7 @@ class ImplicitArgumentReader(object):
                 total_gt = 0.0
                 total_model = 0.0
 
-                for idx in train_idx_list:
+                for idx in train:
                     rich_predicate = self.all_rich_predicates[idx]
                     rich_predicate.eval(thres)
 
@@ -436,8 +448,7 @@ class ImplicitArgumentReader(object):
             max_thres = thres_list[f1_list.index(max_f1)]
             optimized_thres.append(max_thres)
 
-            test_idx_list = [predicate_indices[idx] for idx in test]
-            for idx in test_idx_list:
+            for idx in test:
                 rich_predicate = self.all_rich_predicates[idx]
                 rich_predicate.thres = max_thres
 

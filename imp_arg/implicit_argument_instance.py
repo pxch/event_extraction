@@ -14,6 +14,12 @@ class ImplicitArgumentInstance(object):
         self.pred_pointer = pred_pointer
         self.arguments = arguments
 
+    def __eq__(self, other):
+        return str(self.pred_pointer) == str(other.pred_pointer)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @classmethod
     def parse(cls, text):
         root = etree.fromstring(text)
