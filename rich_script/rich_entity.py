@@ -6,7 +6,10 @@ from util import consts, get_class_name
 class EntitySalience(object):
     def __init__(self, **kwargs):
         for feature in consts.SALIENCE_FEATURES:
-            self.__dict__[feature] = kwargs[feature]
+            if feature in kwargs:
+                self.__dict__[feature] = kwargs[feature]
+            else:
+                self.__dict__[feature] = 0
 
     def get_feature(self, feature):
         assert feature in consts.SALIENCE_FEATURES

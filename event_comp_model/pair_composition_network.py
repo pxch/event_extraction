@@ -13,7 +13,9 @@ class PairCompositionNetwork(object):
 
         self.input_a, self.input_b = \
             self.event_vector_network.get_projection_pair()
+
         self.arg_idx_input = T.vector('arg_type')
+        self.neg_arg_idx_input = T.vector('neg_arg_type')
 
         self.input_vector = T.concatenate(
             (self.input_a, self.input_b,
@@ -22,6 +24,9 @@ class PairCompositionNetwork(object):
         self.use_salience = use_salience
         if self.use_salience:
             self.salience_input = T.matrix('salience')
+            # variables for negative entity salience
+            self.neg_salience_input = T.matrix('neg_salience')
+
             self.input_vector = T.concatenate(
                 (self.input_vector, self.salience_input), axis=1)
 
@@ -110,12 +115,10 @@ class PairCompositionNetwork(object):
             self.event_vector_network.subj_input_c,
             self.event_vector_network.obj_input_c,
             self.event_vector_network.pobj_input_c,
-            self.arg_idx_input
+            self.arg_idx_input,
+            self.neg_arg_idx_input
         ]
         if self.use_salience:
-            # variables for negative entity salience
-            self.neg_salience_input = T.matrix('neg_salience')
-
             self.triple_inputs.append(self.salience_input)
             self.triple_inputs.append(self.neg_salience_input)
 
@@ -137,9 +140,11 @@ class PairCompositionNetwork(object):
         coherence_a = self.prediction
 
         # Replace b inputs with c inputs
-        # Replace salience_input with neg_salience_input
         input_replacements = dict(zip(self.triple_inputs[4:8],
                                       self.triple_inputs[8:12]))
+        # Replace arg_idx_input with neg_arg_idx_input
+        input_replacements[self.triple_inputs[-4]] = self.triple_inputs[-3]
+        # Replace salience_input with neg_salience_input
         if self.use_salience:
             input_replacements[self.triple_inputs[-2]] = self.triple_inputs[-1]
 

@@ -1,7 +1,9 @@
 import random
+from copy import deepcopy
+from itertools import permutations
 
 from indexed_event import IndexedEventTriple
-from rich_entity import RichEntity
+from rich_entity import EntitySalience, RichEntity
 from rich_event import RichEvent
 from script import Script
 from util import Word2VecModel, consts, get_class_name
@@ -58,7 +60,8 @@ class RichScript(object):
             return []
         # return empty list when number of events with indexed predicate is
         # less than of equal to 1, since there exists no left inputs
-        if len(self.get_indexed_events()) <= 1:
+        indexed_event_list = self.get_indexed_events()
+        if len(indexed_event_list) <= 1:
             return []
         assert neg_sample_type in ['one', 'neg', 'all'], \
             'neg_sample_type can only be ' \
@@ -67,14 +70,13 @@ class RichScript(object):
             'all (every left event for every negative event)'
         results = []
         pos_input_list = [rich_event.get_pos_input(include_all_pobj=False)
-                          for rich_event in self.get_indexed_events()]
-        for pos_idx, pos_event in enumerate(self.get_indexed_events()):
+                          for rich_event in indexed_event_list]
+        for pos_idx, pos_event in enumerate(indexed_event_list):
             pos_input = pos_input_list[pos_idx]
             if pos_input is None:
                 continue
             left_input_idx_list = \
-                range(0, pos_idx) + \
-                range(pos_idx, len(self.get_indexed_events()))
+                range(0, pos_idx) + range(pos_idx, len(indexed_event_list))
             for arg_idx in [1, 2, 3]:
                 if pos_event.has_neg(arg_idx):
                     pos_salience = \
@@ -86,8 +88,8 @@ class RichScript(object):
                         left_input = pos_input_list[
                             random.choice(left_input_idx_list)]
                         results.append(IndexedEventTriple(
-                            left_input, pos_input, neg_input,
-                            arg_idx, pos_salience, neg_salience))
+                            left_input, pos_input, neg_input, arg_idx, arg_idx,
+                            pos_salience, neg_salience))
                     else:
                         neg_input_list = pos_event.get_neg_input_list(
                             arg_idx, include_salience=True)
@@ -96,14 +98,123 @@ class RichScript(object):
                                 left_input = pos_input_list[
                                     random.choice(left_input_idx_list)]
                                 results.append(IndexedEventTriple(
-                                    left_input, pos_input, neg_input,
+                                    left_input, pos_input, neg_input, arg_idx,
                                     arg_idx, pos_salience, neg_salience))
                             else:
                                 for left_input_idx in left_input_idx_list:
                                     left_input = pos_input_list[left_input_idx]
                                     results.append(IndexedEventTriple(
                                         left_input, pos_input, neg_input,
-                                        arg_idx, pos_salience, neg_salience))
+                                        arg_idx, arg_idx, pos_salience,
+                                        neg_salience))
+        return results
+
+    def get_pair_tuning_input_list_wo_arg(self, sample_type, model,
+                                          include_type=True, use_unk=True):
+        # return empty list when number of events with indexed predicate is
+        # less than of equal to 1, since there exists no left inputs
+        indexed_event_list = self.get_indexed_events()
+        if len(indexed_event_list) <= 1:
+            return []
+        assert sample_type in ['one', 'all'], \
+            'sample_type can only be ' \
+            'one (one random left event for every negative sample), or' \
+            'all (every left event for every negative sample)'
+        results = []
+        pos_input_list = [rich_event.get_pos_input(include_all_pobj=False)
+                          for rich_event in indexed_event_list]
+
+        arg_type_map = {1: 'SUBJ', 2: 'OBJ', 3: 'PREP'}
+
+        for pos_idx, pos_event in enumerate(indexed_event_list):
+            pos_input = pos_input_list[pos_idx]
+            if pos_input is None:
+                continue
+            left_input_idx_list = \
+                range(0, pos_idx) + range(pos_idx, len(indexed_event_list))
+            for arg_idx in [1, 2, 3]:
+                if pos_event.has_neg(arg_idx):
+                    pos_salience = \
+                        pos_event.get_argument(arg_idx).get_pos_salience()
+                    neg_input = deepcopy(pos_input)
+                    neg_input.set_argument(arg_idx, -1)
+                    neg_salience = EntitySalience(**{})
+                elif pos_event.get_argument(arg_idx) is None:
+                    pos_salience = EntitySalience(**{})
+                    neg_input = deepcopy(pos_input)
+                    random_entity = random.choice(self.rich_entities)
+                    arg_type = arg_type_map[arg_idx] if include_type else ''
+                    neg_input.set_argument(
+                        arg_idx,
+                        random_entity.get_index(
+                            model, arg_type=arg_type, use_unk=use_unk))
+                    neg_input.set_argument(arg_idx)
+                    neg_salience = random_entity.get_salience()
+                else:
+                    continue
+                if sample_type == 'one':
+                    left_input = pos_input_list[
+                        random.choice(left_input_idx_list)]
+                    results.append(IndexedEventTriple(
+                        left_input, pos_input, neg_input, arg_idx, arg_idx,
+                        pos_salience, neg_salience))
+                else:
+                    for left_input_idx in left_input_idx_list:
+                        left_input = pos_input_list[left_input_idx]
+                        results.append(IndexedEventTriple(
+                            left_input, pos_input, neg_input, arg_idx, arg_idx,
+                            pos_salience, neg_salience))
+        return results
+
+    def get_pair_tuning_input_list_two_args(self, sample_type):
+        # return empty list when number of events with indexed predicate is
+        # less than of equal to 1, since there exists no left inputs
+        indexed_event_list = self.get_indexed_events()
+        if len(indexed_event_list) <= 1:
+            return []
+        assert sample_type in ['one', 'all'], \
+            'sample_type can only be ' \
+            'one (one random left event for every negative sample), or' \
+            'all (every left event for every negative sample)'
+        results = []
+        pos_input_list = [rich_event.get_pos_input(include_all_pobj=False)
+                          for rich_event in indexed_event_list]
+
+        for pos_idx, pos_event in enumerate(indexed_event_list):
+            if pos_input_list[pos_idx] is None:
+                continue
+            left_input_idx_list = \
+                range(0, pos_idx) + range(pos_idx, len(indexed_event_list))
+
+            arg_idx_with_entity = [idx for idx in [1, 2, 3]
+                                   if pos_event.has_neg(idx)]
+            if len(arg_idx_with_entity) < 2:
+                continue
+
+            for pos_arg_idx, neg_arg_idx in permutations(
+                    arg_idx_with_entity, 2):
+                pos_input = deepcopy(pos_input_list[pos_idx])
+                pos_input.set_argument(neg_arg_idx, -1)
+                neg_input = deepcopy(pos_input_list[pos_idx])
+                neg_input.set_argument(
+                    neg_arg_idx, neg_input.get_argument(pos_arg_idx))
+                pos_salience = \
+                    pos_event.get_argument(pos_arg_idx).get_pos_salience()
+                neg_salience = pos_salience
+                neg_input.set_argument(pos_arg_idx, -1)
+                if sample_type == 'one':
+                    left_input = pos_input_list[
+                        random.choice(left_input_idx_list)]
+                    results.append(IndexedEventTriple(
+                        left_input, pos_input, neg_input, pos_arg_idx,
+                        neg_arg_idx, pos_salience, neg_salience))
+                else:
+                    for left_input_idx in left_input_idx_list:
+                        left_input = pos_input_list[left_input_idx]
+                        results.append(IndexedEventTriple(
+                            left_input, pos_input, neg_input, pos_arg_idx,
+                            neg_arg_idx, pos_salience, neg_salience))
+
         return results
 
     @classmethod

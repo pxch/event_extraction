@@ -152,8 +152,8 @@ class IndexedEventMultiPobj(BaseIndexedEvent):
 
 
 class IndexedEventTriple(object):
-    def __init__(self, left_event, pos_event, neg_event, arg_idx, pos_salience,
-                 neg_salience):
+    def __init__(self, left_event, pos_event, neg_event, pos_arg_idx,
+                 neg_arg_idx, pos_salience, neg_salience):
         assert isinstance(left_event, IndexedEvent), \
             'left_event must be a {} instance'.format(
                 get_class_name(IndexedEvent))
@@ -166,9 +166,12 @@ class IndexedEventTriple(object):
             'neg_event must be a {} instance'.format(
                 get_class_name(IndexedEvent))
         self.neg_event = deepcopy(neg_event)
-        assert arg_idx in [1, 2, 3], \
-            'arg_type must be 1 (for subj), 2 (for obj), or 3 (for pobj)'
-        self.arg_idx = arg_idx
+        assert pos_arg_idx in [1, 2, 3], \
+            'pos_arg_type must be 1 (for subj), 2 (for obj), or 3 (for pobj)'
+        self.pos_arg_idx = pos_arg_idx
+        assert neg_arg_idx in [1, 2, 3], \
+            'neg_arg_type must be 1 (for subj), 2 (for obj), or 3 (for pobj)'
+        self.neg_arg_idx = neg_arg_idx
         # extra features for entity salience
         assert isinstance(pos_salience, EntitySalience), \
             'pos_salience must be a {} instance'.format(
@@ -187,20 +190,29 @@ class IndexedEventTriple(object):
 
     def to_text(self):
         return ' / '.join([self.left_event.to_text(), self.pos_event.to_text(),
-                           self.neg_event.to_text(), str(self.arg_idx),
-                           self.pos_salience.to_text(),
+                           self.neg_event.to_text(), str(self.pos_arg_idx),
+                           str(self.neg_arg_idx), self.pos_salience.to_text(),
                            self.neg_salience.to_text()])
 
     @classmethod
     def from_text(cls, text):
         parts = text.strip().split(' / ')
-        assert len(parts) == 6, \
-            'expecting 6 parts separated by " / ", found {}'.format(len(parts))
+        assert len(parts) in [6, 7], \
+            'expecting 6 (old style) or 7 parts separated by " / ", ' \
+            'found {}'.format(len(parts))
         left_event = IndexedEvent.from_text(parts[0])
         pos_event = IndexedEvent.from_text(parts[1])
         neg_event = IndexedEvent.from_text(parts[2])
-        arg_idx = int(parts[3])
-        pos_salience = EntitySalience.from_text(parts[4])
-        neg_salience = EntitySalience.from_text(parts[5])
-        return cls(left_event, pos_event, neg_event, arg_idx, pos_salience,
-                   neg_salience)
+        # TODO: remove support of old-style indexed event triple corpus
+        if len(parts) == 6:
+            pos_arg_idx = int(parts[3])
+            neg_arg_idx = pos_arg_idx
+            pos_salience = EntitySalience.from_text(parts[4])
+            neg_salience = EntitySalience.from_text(parts[5])
+        else:
+            pos_arg_idx = int(parts[3])
+            neg_arg_idx = int(parts[4])
+            pos_salience = EntitySalience.from_text(parts[5])
+            neg_salience = EntitySalience.from_text(parts[6])
+        return cls(left_event, pos_event, neg_event, pos_arg_idx, neg_arg_idx,
+                   pos_salience, neg_salience)

@@ -126,7 +126,8 @@ class PairTuningCorpusIterator(object):
         neg_subj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         neg_obj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
         neg_pobj_input = numpy.zeros(self.batch_size, dtype=numpy.int32)
-        arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.float32)
+        pos_arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.float32)
+        neg_arg_idx_input = numpy.zeros(self.batch_size, dtype=numpy.float32)
         if self.use_salience:
             pos_entity_salience_input = numpy.zeros(
                 [self.batch_size, self.num_salience_features],
@@ -150,7 +151,9 @@ class PairTuningCorpusIterator(object):
             neg_subj_input[data_point_index] = pair_input.neg_event.subj_input
             neg_obj_input[data_point_index] = pair_input.neg_event.obj_input
             neg_pobj_input[data_point_index] = pair_input.neg_event.pobj_input
-            arg_idx_input[data_point_index] = float(pair_input.arg_idx)
+            pos_arg_idx_input[data_point_index] = float(pair_input.pos_arg_idx)
+            neg_arg_idx_input[data_point_index] = float(pair_input.neg_arg_idx)
+
             if self.use_salience:
                 pos_entity_salience_input[data_point_index] = \
                     numpy.asarray(pair_input.pos_salience.get_feature_list(
@@ -175,7 +178,8 @@ class PairTuningCorpusIterator(object):
                           neg_subj_input, \
                           neg_obj_input, \
                           neg_pobj_input, \
-                          arg_idx_input, \
+                          pos_arg_idx_input, \
+                          neg_arg_idx_input, \
                           pos_entity_salience_input, \
                           neg_entity_salience_input
                 else:
@@ -191,7 +195,8 @@ class PairTuningCorpusIterator(object):
                           neg_subj_input, \
                           neg_obj_input, \
                           neg_pobj_input, \
-                          arg_idx_input
+                          pos_arg_idx_input, \
+                          neg_arg_idx_input
                 data_point_index = 0
 
         # FIXME: Should return this last partial batch,
@@ -212,7 +217,8 @@ class PairTuningCorpusIterator(object):
                       neg_subj_input[:data_point_index], \
                       neg_obj_input[:data_point_index], \
                       neg_pobj_input[:data_point_index], \
-                      arg_idx_input[:data_point_index], \
+                      pos_arg_idx_input[:data_point_index], \
+                      neg_arg_idx_input[:data_point_index], \
                       pos_entity_salience_input[:data_point_index], \
                       neg_entity_salience_input[:data_point_index]
             else:
@@ -228,4 +234,5 @@ class PairTuningCorpusIterator(object):
                       neg_subj_input[:data_point_index], \
                       neg_obj_input[:data_point_index], \
                       neg_pobj_input[:data_point_index], \
-                      arg_idx_input[:data_point_index]
+                      pos_arg_idx_input[:data_point_index], \
+                      neg_arg_idx_input[:data_point_index]
