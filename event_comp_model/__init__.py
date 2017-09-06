@@ -34,6 +34,10 @@ event_comp_dir_dict = {
         '20170731/fine_tuning_full/iter_19',
     '8M_training_w_salience_only_num_mentions_wo_total':
         '20170801/fine_tuning_full/iter_19',
+    '8M_training_w_salience_w_wo_arg':
+        '20170901/fine_tuning_full/iter_19',
+    '8M_training_w_salience_w_two_args':
+        '20170902/fine_tuning_full/iter_14',
 }
 
 default_model_key = '40M_training_w_salience'

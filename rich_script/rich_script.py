@@ -140,6 +140,9 @@ class RichScript(object):
                     neg_input.set_argument(arg_idx, -1)
                     neg_salience = EntitySalience(**{})
                 elif pos_event.get_argument(arg_idx) is None:
+                    # do not add pair when there is no entity in the script
+                    if len(self.rich_entities) == 0:
+                        continue
                     pos_salience = EntitySalience(**{})
                     neg_input = deepcopy(pos_input)
                     random_entity = random.choice(self.rich_entities)
@@ -148,7 +151,6 @@ class RichScript(object):
                         arg_idx,
                         random_entity.get_index(
                             model, arg_type=arg_type, use_unk=use_unk))
-                    neg_input.set_argument(arg_idx)
                     neg_salience = random_entity.get_salience()
                 else:
                     continue
