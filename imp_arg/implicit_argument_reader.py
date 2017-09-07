@@ -377,19 +377,19 @@ class ImplicitArgumentReader(object):
                     else:
                         coherence_score_list.append(coherence_output.sum())
 
-                assert len(coherence_score_list) == num_candidates
+                assert len(coherence_score_list) == num_candidates + 1
                 coherence_score_list_all.append((label, coherence_score_list))
 
             num_label = len(eval_input_list_all)
             coherence_score_matrix = np.ndarray(
-                shape=(num_label, num_candidates))
+                shape=(num_label, num_candidates + 1))
             row_idx = 0
             for label, coherence_score_list in coherence_score_list_all:
                 coherence_score_matrix[row_idx, :] = np.array(
                     coherence_score_list)
                 row_idx += 1
 
-            for column_idx in range(num_candidates):
+            for column_idx in range(1, num_candidates):
                 max_coherence_score_idx = \
                     coherence_score_matrix[:, column_idx].argmax()
                 for row_idx in range(num_label):
@@ -412,7 +412,7 @@ class ImplicitArgumentReader(object):
                 len([imp_arg for imp_arg in rich_predicate.imp_args
                      if imp_arg.exist]))
 
-    def cross_val(self):
+    def cross_val(self, comp_wo_arg=True):
         assert len(self.all_rich_predicates) > 0
 
         optimized_thres = []
@@ -431,7 +431,7 @@ class ImplicitArgumentReader(object):
 
                 for idx in train:
                     rich_predicate = self.all_rich_predicates[idx]
-                    rich_predicate.eval(thres)
+                    rich_predicate.eval(thres, comp_wo_arg=comp_wo_arg)
 
                     total_dice += rich_predicate.sum_dice
                     total_gt += rich_predicate.num_gt
@@ -453,7 +453,7 @@ class ImplicitArgumentReader(object):
                 rich_predicate.thres = max_thres
 
         for rich_predicate in self.all_rich_predicates:
-            rich_predicate.eval(rich_predicate.thres)
+            rich_predicate.eval(rich_predicate.thres, comp_wo_arg=comp_wo_arg)
 
     def print_eval_stats(self):
         print_eval_stats(self.all_rich_predicates)

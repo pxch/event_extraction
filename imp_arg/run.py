@@ -27,7 +27,7 @@ event_comp_model = load_event_comp_model('40M_training_w_salience')
 implicit_argument_reader.compute_coherence_score(
     event_comp_model, use_max_score=True)
 
-implicit_argument_reader.cross_val()
+implicit_argument_reader.cross_val(comp_wo_arg=True)
 
 implicit_argument_reader.print_eval_stats()
 

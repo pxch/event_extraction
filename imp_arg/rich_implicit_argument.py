@@ -69,6 +69,7 @@ class RichImplicitArgument(object):
         self.coherence_score_list = []
         self.max_coherence_score = 0.0
         self.max_coherence_score_idx = -1
+        self.coherence_score_wo_arg = 0.0
 
     def get_arg_idx(self):
         if self.arg_type == 'SUBJ':
@@ -92,9 +93,10 @@ class RichImplicitArgument(object):
              in enumerate(self.candidate_wv_list) if candidate_wv != -1]
 
     def set_coherence_score_list(self, coherence_score_list):
-        assert len(coherence_score_list) == len(self.rich_candidate_list)
+        assert len(coherence_score_list) == len(self.rich_candidate_list) + 1
         self.has_coherence_score = True
-        self.coherence_score_list = coherence_score_list
+        self.coherence_score_wo_arg = coherence_score_list[0]
+        self.coherence_score_list = coherence_score_list[1:]
         self.max_coherence_score = self.coherence_score_list.max()
 
         max_indices = \

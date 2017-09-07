@@ -5,6 +5,7 @@ from predicate import Predicate
 from rich_implicit_argument import RichImplicitArgument
 from rich_script.indexed_event import IndexedEvent
 from rich_script.rich_argument import RichArgument
+from rich_script.rich_entity import EntitySalience
 from util import get_class_name
 
 
@@ -48,7 +49,7 @@ class RichPredicate(object):
     def num_missing_args(self):
         return len(self.imp_args)
 
-    def eval(self, thres):
+    def eval(self, thres, comp_wo_arg=True):
         self.sum_dice = 0.0
         self.num_gt = 0
         self.num_model = 0
@@ -58,8 +59,10 @@ class RichPredicate(object):
                 if imp_arg.exist:
                     self.num_gt += 1
                 if imp_arg.max_coherence_score >= thres:
-                    self.num_model += 1
-                    self.sum_dice += imp_arg.get_max_dice_score()
+                    if (not comp_wo_arg) or imp_arg.max_coherence_score >= \
+                            imp_arg.coherence_score_wo_arg:
+                        self.num_model += 1
+                        self.sum_dice += imp_arg.get_max_dice_score()
 
         return self.sum_dice, self.num_gt, self.num_model
 
@@ -85,6 +88,15 @@ class RichPredicate(object):
             eval_input_list = []
 
             arg_idx = imp_arg.get_arg_idx()
+
+            eval_input = deepcopy(pos_input)
+            eval_input.set_argument(arg_idx, -1)
+            if include_salience:
+                eval_input_list.append(
+                    (eval_input, EntitySalience(**{})))
+            else:
+                eval_input_list.append(eval_input)
+
             for candidate_wv, candidate in zip(
                     imp_arg.candidate_wv_list, imp_arg.rich_candidate_list):
                 eval_input = deepcopy(pos_input)
