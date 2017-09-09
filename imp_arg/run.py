@@ -18,16 +18,17 @@ implicit_argument_reader.add_candidates()
 
 implicit_argument_reader.print_stats()
 
-implicit_argument_reader.build_rich_predicates(use_corenlp_token=True)
+implicit_argument_reader.build_rich_predicates(
+    use_corenlp_token=True, labeled_arg_only=False) 
 
-event_comp_model = load_event_comp_model('40M_training_w_salience')
+# event_comp_model = load_event_comp_model('8M_training_w_salience')
 # event_comp_model = load_event_comp_model('8M_training_w_salience_w_wo_arg')
-# event_comp_model = load_event_comp_model('8M_training_w_salience_w_two_args')
+event_comp_model = load_event_comp_model('8M_training_w_salience_w_two_args')
 
 implicit_argument_reader.compute_coherence_score(
     event_comp_model, use_max_score=True)
 
-implicit_argument_reader.cross_val(comp_wo_arg=True)
+implicit_argument_reader.cross_val(comp_wo_arg=False)
 
 implicit_argument_reader.print_eval_stats()
 

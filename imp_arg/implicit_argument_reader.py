@@ -222,8 +222,9 @@ class ImplicitArgumentReader(object):
         print '\nPrinting statistics'
         print_stats(self.all_predicates)
 
-    def build_rich_predicates(self, use_corenlp_token=True,
-                              all_rich_predicates_path=None):
+    def build_rich_predicates(
+            self, use_corenlp_token=True, labeled_arg_only=False,
+            all_rich_predicates_path=None):
         assert len(self.all_predicates) > 0
         assert len(self.all_rich_predicates) == 0
 
@@ -233,7 +234,8 @@ class ImplicitArgumentReader(object):
                 corenlp_reader=self.corenlp_reader,
                 use_lemma=True,
                 use_entity=True,
-                use_corenlp_tokens=use_corenlp_token)
+                use_corenlp_tokens=use_corenlp_token,
+                labeled_arg_only=labeled_arg_only)
             self.all_rich_predicates.append(rich_predicate)
 
         if all_rich_predicates_path:
