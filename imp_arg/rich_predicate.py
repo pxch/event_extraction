@@ -114,7 +114,7 @@ class RichPredicate(object):
 
     @classmethod
     def build(cls, predicate, corenlp_reader, use_lemma=True, use_entity=True,
-              use_corenlp_tokens=True):
+              use_corenlp_tokens=True, labeled_arg_only=False):
         assert isinstance(predicate, Predicate), \
             'RichPredicate must be built from a {} instance'.format(
                 get_class_name(Predicate))
@@ -138,10 +138,13 @@ class RichPredicate(object):
                 exp_arg = RichArgument(arg_type, core_argument)
                 exp_args.append(exp_arg)
 
-        missing_labels = []
-        for label in predicate_core_arg_mapping[predicate.v_pred].keys():
-            if label not in predicate.exp_args:
-                missing_labels.append(label)
+        if labeled_arg_only:
+            missing_labels = predicate.imp_args.keys()
+        else:
+            missing_labels = []
+            for label in predicate_core_arg_mapping[predicate.v_pred].keys():
+                if label not in predicate.exp_args:
+                    missing_labels.append(label)
 
         imp_args = []
         for label in missing_labels:
