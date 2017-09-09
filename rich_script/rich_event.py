@@ -1,8 +1,11 @@
+import random
 from copy import deepcopy
+from itertools import permutations
 
 from event import Event
 from indexed_event import IndexedEvent, IndexedEventMultiPobj
 from rich_argument import BaseRichArgument
+from rich_entity import EntitySalience, RichEntity
 from rich_predicate import RichPredicate
 from util import Word2VecModel, get_class_name
 
@@ -165,6 +168,91 @@ class RichEvent(object):
                         eval_input_list.append(eval_input)
                 eval_input_list_all.append((argument, eval_input_list))
         return eval_input_list_all
+
+    def get_pair_input_list(self, pair_type, **kwargs):
+        base_input = self.get_pos_input()
+        if base_input is None:
+            return []
+
+        assert pair_type in ['tf_arg', 'wo_arg', 'two_args']
+
+        pair_input_list = []
+
+        if pair_type == 'tf_arg':
+            neg_sample_type = kwargs['neg_sample_type']
+            assert neg_sample_type in ['one', 'all']
+            for arg_idx in [1, 2, 3]:
+                if self.has_neg(arg_idx):
+                    pos_input = deepcopy(base_input)
+                    pos_salience = self.get_argument(arg_idx).get_pos_salience()
+                    neg_input_list = self.get_neg_input_list(
+                        arg_idx, include_salience=True)
+                    if len(neg_input_list) == 0:
+                        continue
+                    if neg_sample_type == 'one':
+                        neg_input, neg_salience = random.choice(neg_input_list)
+                        pair_input_list.append((
+                            pos_input, neg_input, arg_idx, arg_idx,
+                            pos_salience, neg_salience))
+                    else:
+                        for neg_input, neg_salience in neg_input_list:
+                            pair_input_list.append((
+                                pos_input, neg_input, arg_idx, arg_idx,
+                                pos_salience, neg_salience))
+
+        elif pair_type == 'wo_arg':
+            rich_entities = kwargs['rich_entities']
+            assert rich_entities is not None and \
+                all(isinstance(entity, RichEntity) for entity in rich_entities)
+
+            for arg_idx, arg_type in [(1, 'SUBJ'), (2, 'OBJ'), (3, 'PREP')]:
+                pos_input = deepcopy(base_input)
+                if self.has_neg(arg_idx):
+                    pos_salience = self.get_argument(arg_idx).get_pos_salience()
+                    neg_input = deepcopy(base_input)
+                    neg_input.set_argument(arg_idx, -1)
+                    neg_salience = EntitySalience(**{})
+                elif self.get_argument(arg_idx) is None:
+                    # do not add pair when there is no entity in the script
+                    if len(rich_entities) == 0:
+                        continue
+                    pos_salience = EntitySalience(**{})
+                    neg_input = deepcopy(base_input)
+                    random_entity = random.choice(rich_entities)
+                    arg_wv = random_entity.get_index(
+                        kwargs['model'],
+                        arg_type=arg_type if kwargs['include_type'] else '',
+                        use_unk=kwargs['use_unk'])
+                    neg_input.set_argument(arg_idx, arg_wv)
+                    neg_salience = random_entity.get_salience()
+                else:
+                    continue
+
+                pair_input_list.append((
+                    pos_input, neg_input, arg_idx, arg_idx,
+                    pos_salience, neg_salience))
+
+        else:
+            arg_idx_with_entity = \
+                [idx for idx in [1, 2, 3] if self.has_neg(idx)]
+
+            for pos_arg_idx, neg_arg_idx in permutations(
+                    arg_idx_with_entity, 2):
+                pos_input = deepcopy(base_input)
+                pos_input.set_argument(neg_arg_idx, -1)
+                neg_input = deepcopy(base_input)
+                neg_input.set_argument(
+                    neg_arg_idx, neg_input.get_argument(pos_arg_idx))
+                neg_input.set_argument(pos_arg_idx, -1)
+                pos_salience = self.get_argument(pos_arg_idx).get_pos_salience()
+                neg_salience = pos_salience
+
+                pair_input_list.append((
+                    pos_input, neg_input, pos_arg_idx, neg_arg_idx,
+                    pos_salience, neg_salience))
+
+        # random.shuffle(pair_input_list)
+        return pair_input_list
 
     @classmethod
     def build(cls, event, rich_entity_list, prep_vocab_list, use_lemma=True):

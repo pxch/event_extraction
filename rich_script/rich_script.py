@@ -1,4 +1,5 @@
 import random
+from collections import defaultdict
 from copy import deepcopy
 from itertools import permutations
 
@@ -53,7 +54,65 @@ class RichScript(object):
                 pretraining_input_list.append(pos_input)
         return pretraining_input_list
 
+    def get_pair_input_list(self, pair_type_list, left_sample_type, **kwargs):
+        indexed_event_list = self.get_indexed_events()
+        if len(indexed_event_list) <= 1:
+            return []
+
+        assert 'tf_arg' in pair_type_list
+        assert left_sample_type in ['one', 'all']
+
+        left_input_list = [rich_event.get_pos_input(include_all_pobj=False)
+                           for rich_event in indexed_event_list]
+
+        pair_input_dict = defaultdict(list)
+
+        for event_idx, rich_event in enumerate(indexed_event_list):
+            left_input_idx_list = \
+                range(0, event_idx) + range(event_idx, len(indexed_event_list))
+
+            for pair_type in pair_type_list:
+                pair_input_list = \
+                    rich_event.get_pair_input_list(pair_type, **kwargs)
+                for pair_input in pair_input_list:
+                    if left_sample_type == 'one':
+                        left_input = left_input_list[
+                            random.choice(left_input_idx_list)]
+                        pair_input_dict[pair_type].append(
+                            IndexedEventTriple(left_input, *pair_input))
+                    else:
+                        for left_input_idx in left_input_idx_list:
+                            left_input = left_input_list[left_input_idx]
+                            pair_input_dict[pair_type].append(
+                                IndexedEventTriple(left_input, *pair_input))
+
+        results = []
+
+        tf_arg_list = pair_input_dict['tf_arg']
+        results.extend(tf_arg_list)
+        num_tf_arg = len(tf_arg_list)
+
+        if 'wo_arg' in pair_input_dict:
+            wo_arg_list = pair_input_dict['wo_arg']
+            if len(wo_arg_list) > num_tf_arg:
+                results.extend(
+                    random.sample(wo_arg_list, int(0.8 * num_tf_arg)))
+            else:
+                results.extend(wo_arg_list)
+        if 'two_args' in pair_input_dict:
+            two_args_list = pair_input_dict['two_args']
+            if len(two_args_list) > num_tf_arg:
+                results.extend(
+                    random.sample(two_args_list, int(0.8 * num_tf_arg)))
+            else:
+                results.extend(two_args_list)
+
+        random.shuffle(results)
+
+        return results
+
     def get_pair_tuning_input_list(self, neg_sample_type):
+        # TODO: remove old function
         # return empty list when number of entities is less than or equal to 1,
         # since there exists no negative inputs
         if self.num_entities <= 1:
@@ -111,6 +170,7 @@ class RichScript(object):
 
     def get_pair_tuning_input_list_wo_arg(self, sample_type, model,
                                           include_type=True, use_unk=True):
+        # TODO: remove old function
         # return empty list when number of events with indexed predicate is
         # less than of equal to 1, since there exists no left inputs
         indexed_event_list = self.get_indexed_events()
@@ -169,6 +229,7 @@ class RichScript(object):
         return results
 
     def get_pair_tuning_input_list_two_args(self, sample_type):
+        # TODO: remove old function
         # return empty list when number of events with indexed predicate is
         # less than of equal to 1, since there exists no left inputs
         indexed_event_list = self.get_indexed_events()
