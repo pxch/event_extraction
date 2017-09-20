@@ -38,6 +38,10 @@ event_comp_dir_dict = {
         '20170901/fine_tuning_full/iter_19',
     '8M_training_w_salience_w_two_args':
         '20170902/fine_tuning_full/iter_14',
+    '16M_training_w_salience_mixed_from_stage_2':
+        '20170908/fine_tuning_full/iter_14',
+    '8M_training_w_salience_w_16M_mixed':
+        '20170909/fine_tuning_full/iter_7',
 }
 
 default_model_key = '40M_training_w_salience'

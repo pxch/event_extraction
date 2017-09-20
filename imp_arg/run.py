@@ -23,7 +23,9 @@ implicit_argument_reader.build_rich_predicates(
 
 # event_comp_model = load_event_comp_model('8M_training_w_salience')
 # event_comp_model = load_event_comp_model('8M_training_w_salience_w_wo_arg')
-event_comp_model = load_event_comp_model('8M_training_w_salience_w_two_args')
+# event_comp_model = load_event_comp_model('8M_training_w_salience_w_two_args')
+# event_comp_model = load_event_comp_model('16M_training_w_salience_mixed_from_stage_2')
+event_comp_model = load_event_comp_model('8M_training_w_salience_w_16M_mixed')
 
 implicit_argument_reader.compute_coherence_score(
     event_comp_model, use_max_score=True)
