@@ -8,11 +8,15 @@ from nltk.corpus import PropbankCorpusReader
 from nltk.data import FileSystemPathPointer
 
 system_name = platform.system()
+dist_name = platform.linux_distribution()[0]
 
 if system_name == 'Darwin':
     corpus_root = '/Users/pengxiang/corpora/'
 elif system_name == 'Linux':
-    corpus_root = '/scratch/cluster/pxcheng/corpora/'
+    if dist_name == 'Ubuntu':
+        corpus_root = '/scratch/cluster/pxcheng/corpora/'
+    elif dist_name == 'CentOS':
+        corpus_root = '/work/03155/pxcheng/maverick/corpora/'
 else:
     raise RuntimeError('Unrecognized system: {}'.format(system_name))
 

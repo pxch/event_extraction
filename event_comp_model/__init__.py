@@ -6,12 +6,17 @@ from event_composition_model import EventCompositionModel
 from event_composition_trainer import EventCompositionTrainer
 
 system_name = platform.system()
+dist_name = platform.linux_distribution()[0]
 
 if system_name == 'Darwin':
     root_dir = '/Users/pengxiang/corpora/spaces'
 elif system_name == 'Linux':
-    root_dir = '/scratch/cluster/pxcheng/corpora/enwiki-20160901' \
-               '/event_comp_training/results'
+    if dist_name == 'Ubuntu':
+        root_dir = '/scratch/cluster/pxcheng/corpora/enwiki-20160901' \
+                   '/event_comp_training/results'
+    elif dist_name == 'CentOS':
+        root_dir = '/work/03155/pxcheng/maverick/corpora/enwiki-20160901/' \
+                   'event_comp_training/results'
 else:
     raise RuntimeError('Unrecognized system: {}'.format(system_name))
 
@@ -42,6 +47,8 @@ event_comp_dir_dict = {
         '20170908/fine_tuning_full/iter_14',
     '8M_training_w_salience_w_16M_mixed':
         '20170909/fine_tuning_full/iter_7',
+    '8M_training_w_salience_w_10M_mixed_no_wo_arg':
+        '20170910/fine_tuning_full/iter_19',
 }
 
 default_model_key = '40M_training_w_salience'
