@@ -51,7 +51,8 @@ class RichCandidate(object):
 
 
 class RichImplicitArgument(object):
-    def __init__(self, label, arg_type, fillers, rich_candidate_list):
+    def __init__(self, label, arg_type, fillers, rich_candidate_list,
+                 best_candidate_idx):
         self.label = label
         self.arg_type = arg_type
         self.fillers = fillers
@@ -71,6 +72,8 @@ class RichImplicitArgument(object):
         self.max_coherence_score_idx = -1
         self.coherence_score_wo_arg = 0.0
 
+        self.best_candidate_idx = best_candidate_idx
+
     def get_arg_idx(self):
         if self.arg_type == 'SUBJ':
             return 1
@@ -79,9 +82,25 @@ class RichImplicitArgument(object):
         else:
             return 3
 
+    def get_pos_candidate(self):
+        return self.rich_candidate_list[self.best_candidate_idx]
+
+    def get_pos_wv(self):
+        return self.candidate_wv_list[self.best_candidate_idx]
+
+    def get_neg_candidate_list(self):
+        return self.rich_candidate_list[:self.best_candidate_idx] + \
+               self.rich_candidate_list[self.best_candidate_idx+1:]
+
+    def get_neg_wv_list(self):
+        return self.candidate_wv_list[:self.best_candidate_idx] + \
+               self.candidate_wv_list[self.best_candidate_idx+1:]
+
     def get_index(self, model, include_type=True, use_unk=True):
         assert isinstance(model, Word2VecModel), \
             'model must be a {} instance'.format(get_class_name(Word2VecModel))
+
+        self.candidate_wv_list = []
 
         for rich_candidate in self.rich_candidate_list:
             candidate_wv = rich_candidate.get_index(
@@ -108,18 +127,26 @@ class RichImplicitArgument(object):
              for idx in max_indices])
         self.max_coherence_score_idx = max_indices[max_dice_list.argmax()]
 
-    def get_max_dice_score(self):
+    def get_eval_dice_score(self):
         assert self.max_coherence_score_idx != -1
         return self.rich_candidate_list[self.max_coherence_score_idx].dice_score
 
     @classmethod
     def build(cls, label, arg_type, fillers, candidates, corenlp_reader,
               use_lemma=True, use_entity=True, use_corenlp_tokens=True):
-        rich_candidates = [
+        rich_candidate_list = [
             RichCandidate.build(
                 candidate, fillers, corenlp_reader,
                 use_lemma=use_lemma, use_entity=use_entity,
                 use_corenlp_tokens=use_corenlp_tokens)
             for candidate in candidates]
 
-        return cls(label, arg_type, fillers, rich_candidates)
+        best_candidate_idx = -1
+        best_dice_score = -1
+        for idx, candidate in enumerate(rich_candidate_list):
+            if candidate.dice_score > best_dice_score:
+                best_dice_score = candidate.dice_score
+                best_candidate_idx = idx
+
+        return cls(label, arg_type, fillers, rich_candidate_list,
+                   best_candidate_idx)

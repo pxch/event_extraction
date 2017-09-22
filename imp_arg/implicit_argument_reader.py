@@ -1,6 +1,8 @@
 import pickle as pkl
+import random
 import timeit
 from collections import defaultdict
+from os import makedirs
 from os.path import exists, join
 
 import numpy as np
@@ -14,7 +16,7 @@ from corpus_reader import NombankReader, PropbankReader, TreebankReader
 from implicit_argument_instance import ImplicitArgumentInstance
 from predicate import Predicate
 from rich_predicate import RichPredicate
-from rich_script import IndexedEvent
+from rich_script.indexed_event import IndexedEvent, IndexedEventTriple
 from stats import print_stats, print_eval_stats, print_eval_results
 from util import Word2VecModel, get_class_name
 
@@ -254,16 +256,16 @@ class ImplicitArgumentReader(object):
         elapsed = timeit.default_timer() - start_time
         print '\tDone in {:.3f} seconds'.format(elapsed)
 
-    def compute_coherence_score(self, event_comp_model, use_max_score=True):
-        assert len(self.all_rich_predicates) > 0
+    def get_index(self, word2vec_model):
+        pred_wv_mapping = \
+            build_pred_wv_mapping(consts.pred_list, word2vec_model)
 
-        word2vec_model = event_comp_model.word2vec
+        for rich_predicate in self.all_rich_predicates:
+            rich_predicate.set_pred_wv(pred_wv_mapping)
+            rich_predicate.get_index(
+                word2vec_model, include_type=True, use_unk=True)
 
-        coherence_fn = event_comp_model.pair_composition_network.coherence_fn
-        use_salience = event_comp_model.pair_composition_network.use_salience
-        salience_features = \
-            event_comp_model.pair_composition_network.salience_features
-
+    def get_context_input_list_mapping(self, word2vec_model):
         context_input_list_mapping = {}
 
         for rich_predicate in self.all_rich_predicates:
@@ -282,13 +284,124 @@ class ImplicitArgumentReader(object):
                 context_input_list_mapping[rich_predicate.fileid] = \
                     context_input_list
 
-        pred_wv_mapping = \
-            build_pred_wv_mapping(consts.pred_list, word2vec_model)
+        return context_input_list_mapping
 
-        for rich_predicate in self.all_rich_predicates:
-            rich_predicate.set_pred_wv(pred_wv_mapping)
-            rich_predicate.get_index(
-                word2vec_model, include_type=True, use_unk=True)
+    def generate_cross_val_training_dataset(self, word2vec_model, output_dir):
+        pair_type_list = ['tf_arg', 'wo_arg', 'two_args']
+
+        output_type_list = \
+            [pair_type + '_one_one' for pair_type in pair_type_list]
+        output_type_list.extend(
+            [pair_type + '_one_all' for pair_type in pair_type_list])
+        output_type_list.append('tf_arg_all_all')
+        output_type_list.append('mixed_one_one')
+        output_type_list.append('mixed_one_all')
+        output_type_list.append('mixed_all_all')
+        output_type_list.append('mixed_no_wo_arg_one_one')
+        output_type_list.append('mixed_no_wo_arg_one_all')
+        output_type_list.append('mixed_no_wo_arg_all_all')
+
+        self.get_index(word2vec_model)
+        context_input_list_mapping = \
+            self.get_context_input_list_mapping(word2vec_model)
+
+        for fold_idx, (_, test_list) in enumerate(self.train_test_folds):
+            fold_dir = join(output_dir, str(fold_idx))
+            if not exists(fold_dir):
+                makedirs(fold_dir)
+
+            fout_dict = {}
+            for output_type in output_type_list:
+                fout_dict[output_type] = open(join(fold_dir, output_type), 'w')
+
+            for idx in test_list:
+                rich_predicate = self.all_rich_predicates[idx]
+
+                context_input_list = context_input_list_mapping[
+                    rich_predicate.fileid]
+                num_context = len(context_input_list)
+                if num_context == 0:
+                    continue
+
+                pair_input_dict = defaultdict(list)
+                for pair_type in pair_type_list:
+                    pair_input_dict[pair_type + '_one'] = \
+                        rich_predicate.get_pair_input_list(
+                            pair_type,
+                            neg_sample_type='one',
+                            model=word2vec_model,
+                            include_type=True,
+                            use_unk=True)
+                pair_input_dict['tf_arg_all'] = \
+                    rich_predicate.get_pair_input_list(
+                        'tf_arg',
+                        neg_sample_type='all',
+                        model=word2vec_model,
+                        include_type=True,
+                        use_unk=True)
+
+                pair_input_dict['mixed_one'] = []
+                pair_input_dict['mixed_one'].extend(
+                    pair_input_dict['tf_arg_one'])
+                pair_input_dict['mixed_one'].extend(
+                    pair_input_dict['wo_arg_one'])
+                pair_input_dict['mixed_one'].extend(
+                    pair_input_dict['two_args_one'])
+
+                pair_input_dict['mixed_all'] = []
+                pair_input_dict['mixed_all'].extend(
+                    pair_input_dict['tf_arg_all'])
+                pair_input_dict['mixed_all'].extend(
+                    pair_input_dict['wo_arg_one'])
+                pair_input_dict['mixed_all'].extend(
+                    pair_input_dict['two_args_one'])
+
+                pair_input_dict['mixed_no_wo_arg_one'] = []
+                pair_input_dict['mixed_no_wo_arg_one'].extend(
+                    pair_input_dict['tf_arg_one'])
+                pair_input_dict['mixed_no_wo_arg_one'].extend(
+                    pair_input_dict['two_args_one'])
+
+                pair_input_dict['mixed_no_wo_arg_all'] = []
+                pair_input_dict['mixed_no_wo_arg_all'].extend(
+                    pair_input_dict['tf_arg_all'])
+                pair_input_dict['mixed_no_wo_arg_all'].extend(
+                    pair_input_dict['two_args_one'])
+
+                output_list_dict = defaultdict(list)
+                for output_type in output_type_list:
+                    for pair_input in pair_input_dict[output_type[:-4]]:
+                        if output_type[-3:] == 'one':
+                            left_input = random.choice(context_input_list)
+                            output_list_dict[output_type].append(
+                                IndexedEventTriple(left_input, *pair_input))
+                        else:
+                            for left_input in context_input_list:
+                                output_list_dict[output_type].append(
+                                    IndexedEventTriple(left_input, *pair_input))
+
+                for output_type in output_type_list:
+                    if len(output_list_dict[output_type]) > 0:
+                        random.shuffle(output_list_dict[output_type])
+                        fout_dict[output_type].write(
+                            '\n'.join(map(str, output_list_dict[output_type])))
+                        fout_dict[output_type].write('\n')
+
+            for output_type in output_type_list:
+                fout_dict[output_type].close()
+
+    def compute_coherence_score(self, event_comp_model, use_max_score=True):
+        assert len(self.all_rich_predicates) > 0
+
+        word2vec_model = event_comp_model.word2vec
+        self.get_index(word2vec_model)
+        context_input_list_mapping = \
+            self.get_context_input_list_mapping(word2vec_model)
+
+        coherence_fn = event_comp_model.pair_composition_network.coherence_fn
+        use_salience = event_comp_model.pair_composition_network.use_salience
+        salience_features = \
+            event_comp_model.pair_composition_network.salience_features
 
         exclude_pred_idx_list = []
 
