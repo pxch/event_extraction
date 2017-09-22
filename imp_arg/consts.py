@@ -1,3 +1,6 @@
+from os.path import join, dirname, realpath
+
+
 nominal_predicate_mapping = {
     'bid': 'bid',
     'sale': 'sell',
@@ -110,19 +113,22 @@ def convert_fileid(fileid):
 
 corenlp_root = '/Users/pengxiang/corpora/wsj_corenlp/20170613'
 
-prep_vocab_list_file = '../vocab_list/preposition'
+cur_dir_path = dirname(realpath(__file__))
 
-corenlp_dict_path = './corenlp_dict.pkl'
+prep_vocab_list_file = join(cur_dir_path, '../vocab_list/preposition')
 
-predicate_dict_path = './predicate_dict.pkl'
+corenlp_dict_path = join(cur_dir_path, 'corenlp_dict.pkl')
 
-candidate_dict_path = './candidate_dict.pkl'
+predicate_dict_path = join(cur_dir_path, 'predicate_dict.pkl')
 
-all_predicates_path = './all_predicates.pkl'
+candidate_dict_path = join(cur_dir_path, 'candidate_dict.pkl')
 
-all_rich_predicates_path = './all_rich_predicates.pkl'
+all_predicates_path = join(cur_dir_path, 'all_predicates.pkl')
 
-all_rich_predicates_with_coherence_path = './all_eval_max_w_salience.pkl'
+all_rich_predicates_path = join(cur_dir_path, 'all_rich_predicates.pkl')
+
+all_rich_predicates_with_coherence_path = \
+    join(cur_dir_path, 'all_eval_max_w_salience.pkl')
 
 
 def compute_f1(total_dice, total_gt, total_model):
