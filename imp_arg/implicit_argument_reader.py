@@ -393,129 +393,151 @@ class ImplicitArgumentReader(object):
     def compute_coherence_score(self, event_comp_model, use_max_score=True):
         assert len(self.all_rich_predicates) > 0
 
-        word2vec_model = event_comp_model.word2vec
+        assert len(event_comp_model) == 1 or \
+            len(event_comp_model) == self.n_splits
+
+        word2vec_model = event_comp_model[0].word2vec
         self.get_index(word2vec_model)
         context_input_list_mapping = \
             self.get_context_input_list_mapping(word2vec_model)
 
-        coherence_fn = event_comp_model.pair_composition_network.coherence_fn
-        use_salience = event_comp_model.pair_composition_network.use_salience
-        salience_features = \
-            event_comp_model.pair_composition_network.salience_features
-
         exclude_pred_idx_list = []
 
-        pred_idx = 0
-        for rich_predicate in tqdm(
-                self.all_rich_predicates, desc='Processed', ncols=100):
-            if len(rich_predicate.imp_args) == 0:
-                continue
+        pbar = tqdm(total=len(self.all_rich_predicates), desc='Processed',
+                    ncols=100)
 
-            context_input_list = context_input_list_mapping[
-                rich_predicate.fileid]
-            num_context = len(context_input_list)
+        for fold_idx in range(self.n_splits):
+            for pred_idx in self.train_test_folds[fold_idx][1]:
+                pbar.update(1)
+                rich_predicate = self.all_rich_predicates[pred_idx]
+                if len(rich_predicate.imp_args == 0):
+                    continue
 
-            if num_context == 0:
-                exclude_pred_idx_list.append(pred_idx)
-                continue
-            pred_idx += 1
+                context_input_list = \
+                    context_input_list_mapping[rich_predicate.fileid]
+                num_context = len(context_input_list)
 
-            pred_input_a = np.zeros(num_context, dtype=np.int32)
-            subj_input_a = np.zeros(num_context, dtype=np.int32)
-            obj_input_a = np.zeros(num_context, dtype=np.int32)
-            pobj_input_a = np.zeros(num_context, dtype=np.int32)
-            for context_idx, context_input in enumerate(context_input_list):
-                assert isinstance(context_input, IndexedEvent), \
-                    'context_input must be a {} instance'.format(
-                        get_class_name(IndexedEvent))
-                pred_input_a[context_idx] = context_input.pred_input
-                subj_input_a[context_idx] = context_input.subj_input
-                obj_input_a[context_idx] = context_input.obj_input
-                pobj_input_a[context_idx] = context_input.pobj_input
+                if num_context == 0:
+                    exclude_pred_idx_list.append(pred_idx)
+                    continue
 
-            eval_input_list_all = \
-                rich_predicate.get_eval_input_list_all(include_salience=True)
+                if len(event_comp_model) == 0:
+                    pair_composition_network = \
+                        event_comp_model[0].pair_composition_network
+                else:
+                    pair_composition_network = \
+                        event_comp_model[fold_idx].pair_composition_network
 
-            num_candidates = rich_predicate.num_candidates
+                coherence_fn = pair_composition_network.coherence_fn
+                use_salience = pair_composition_network.use_salience
+                salience_features = pair_composition_network.salience_features
 
-            coherence_score_list_all = []
-
-            for label, arg_idx, eval_input_list in eval_input_list_all:
-                coherence_score_list = []
-
-                arg_idx_input = \
-                    np.asarray([float(arg_idx)] * num_context).astype(
-                        np.float32)
-
-                for eval_input, arg_salience in eval_input_list:
-                    assert isinstance(eval_input, IndexedEvent), \
-                        'eval_input must be a {} instance'.format(
+                pred_input_a = np.zeros(num_context, dtype=np.int32)
+                subj_input_a = np.zeros(num_context, dtype=np.int32)
+                obj_input_a = np.zeros(num_context, dtype=np.int32)
+                pobj_input_a = np.zeros(num_context, dtype=np.int32)
+                for context_idx, context_input in enumerate(context_input_list):
+                    assert isinstance(context_input, IndexedEvent), \
+                        'context_input must be a {} instance'.format(
                             get_class_name(IndexedEvent))
-                    pred_input_b = np.asarray(
-                        [eval_input.pred_input] * num_context).astype(np.int32)
-                    subj_input_b = np.asarray(
-                        [eval_input.subj_input] * num_context).astype(np.int32)
-                    obj_input_b = np.asarray(
-                        [eval_input.obj_input] * num_context).astype(np.int32)
-                    pobj_input_b = np.asarray(
-                        [eval_input.pobj_input] * num_context).astype(np.int32)
+                    pred_input_a[context_idx] = context_input.pred_input
+                    subj_input_a[context_idx] = context_input.subj_input
+                    obj_input_a[context_idx] = context_input.obj_input
+                    pobj_input_a[context_idx] = context_input.pobj_input
 
-                    if use_salience:
-                        if arg_salience is not None:
-                            salience_feature = \
-                                arg_salience.get_feature_list(salience_features)
-                        else:
-                            # NOBUG: this should never happen
-                            print 'salience feature = None, filled with 0'
-                            salience_feature = [0.0] * len(salience_features)
+                eval_input_list_all = \
+                    rich_predicate.get_eval_input_list_all(
+                        include_salience=True)
 
-                        saliance_input = np.tile(
-                            salience_feature, [num_context, 1]).astype(
+                num_candidates = rich_predicate.num_candidates
+
+                coherence_score_list_all = []
+
+                for label, arg_idx, eval_input_list in eval_input_list_all:
+                    coherence_score_list = []
+
+                    arg_idx_input = \
+                        np.asarray([float(arg_idx)] * num_context).astype(
                             np.float32)
 
-                        coherence_output = coherence_fn(
-                            pred_input_a, subj_input_a, obj_input_a,
-                            pobj_input_a,
-                            pred_input_b, subj_input_b, obj_input_b,
-                            pobj_input_b,
-                            arg_idx_input, saliance_input)
-                    else:
-                        coherence_output = coherence_fn(
-                            pred_input_a, subj_input_a, obj_input_a,
-                            pobj_input_a,
-                            pred_input_b, subj_input_b, obj_input_b,
-                            pobj_input_b,
-                            arg_idx_input)
+                    for eval_input, arg_salience in eval_input_list:
+                        assert isinstance(eval_input, IndexedEvent), \
+                            'eval_input must be a {} instance'.format(
+                                get_class_name(IndexedEvent))
+                        pred_input_b = np.asarray(
+                            [eval_input.pred_input] * num_context).astype(
+                            np.int32)
+                        subj_input_b = np.asarray(
+                            [eval_input.subj_input] * num_context).astype(
+                            np.int32)
+                        obj_input_b = np.asarray(
+                            [eval_input.obj_input] * num_context).astype(
+                            np.int32)
+                        pobj_input_b = np.asarray(
+                            [eval_input.pobj_input] * num_context).astype(
+                            np.int32)
 
-                    if use_max_score:
-                        coherence_score_list.append(coherence_output.max())
-                    else:
-                        coherence_score_list.append(coherence_output.sum())
+                        if use_salience:
+                            if arg_salience is not None:
+                                salience_feature = \
+                                    arg_salience.get_feature_list(
+                                        salience_features)
+                            else:
+                                # NOBUG: this should never happen
+                                print 'salience feature = None, filled with 0'
+                                salience_feature = [0.0] * len(
+                                    salience_features)
 
-                assert len(coherence_score_list) == num_candidates + 1
-                coherence_score_list_all.append((label, coherence_score_list))
+                            saliance_input = np.tile(
+                                salience_feature, [num_context, 1]).astype(
+                                np.float32)
 
-            num_label = len(eval_input_list_all)
-            coherence_score_matrix = np.ndarray(
-                shape=(num_label, num_candidates + 1))
-            row_idx = 0
-            for label, coherence_score_list in coherence_score_list_all:
-                coherence_score_matrix[row_idx, :] = np.array(
-                    coherence_score_list)
-                row_idx += 1
+                            coherence_output = coherence_fn(
+                                pred_input_a, subj_input_a, obj_input_a,
+                                pobj_input_a,
+                                pred_input_b, subj_input_b, obj_input_b,
+                                pobj_input_b,
+                                arg_idx_input, saliance_input)
+                        else:
+                            coherence_output = coherence_fn(
+                                pred_input_a, subj_input_a, obj_input_a,
+                                pobj_input_a,
+                                pred_input_b, subj_input_b, obj_input_b,
+                                pobj_input_b,
+                                arg_idx_input)
 
-            for column_idx in range(1, num_candidates):
-                max_coherence_score_idx = \
-                    coherence_score_matrix[:, column_idx].argmax()
+                        if use_max_score:
+                            coherence_score_list.append(coherence_output.max())
+                        else:
+                            coherence_score_list.append(coherence_output.sum())
+
+                    assert len(coherence_score_list) == num_candidates + 1
+                    coherence_score_list_all.append(
+                        (label, coherence_score_list))
+
+                num_label = len(eval_input_list_all)
+                coherence_score_matrix = np.ndarray(
+                    shape=(num_label, num_candidates + 1))
+                row_idx = 0
+                for label, coherence_score_list in coherence_score_list_all:
+                    coherence_score_matrix[row_idx, :] = np.array(
+                        coherence_score_list)
+                    row_idx += 1
+
+                for column_idx in range(1, num_candidates):
+                    max_coherence_score_idx = \
+                        coherence_score_matrix[:, column_idx].argmax()
+                    for row_idx in range(num_label):
+                        if row_idx != max_coherence_score_idx:
+                            coherence_score_matrix[row_idx, column_idx] = -1.0
+
                 for row_idx in range(num_label):
-                    if row_idx != max_coherence_score_idx:
-                        coherence_score_matrix[row_idx, column_idx] = -1.0
+                    assert coherence_score_list_all[row_idx][0] == \
+                           rich_predicate.imp_args[row_idx].label
+                    rich_predicate.imp_args[row_idx].set_coherence_score_list(
+                        coherence_score_matrix[row_idx, :])
 
-            for row_idx in range(num_label):
-                assert coherence_score_list_all[row_idx][0] == \
-                       rich_predicate.imp_args[row_idx].label
-                rich_predicate.imp_args[row_idx].set_coherence_score_list(
-                    coherence_score_matrix[row_idx, :])
+        pbar.close()
 
         print 'Predicates with no context events:'
         for pred_idx in exclude_pred_idx_list:
