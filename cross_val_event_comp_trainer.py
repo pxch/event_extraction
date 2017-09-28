@@ -70,8 +70,7 @@ for i in range(opts.num_splits):
     log.info(
         'Loading indexed corpus from: {}, with batch_size={}, '
         'use_salience={}, salience_features={}'.format(
-            opts.indexed_corpus, opts.batch_size, use_salience,
-            salience_features))
+            training_path, opts.batch_size, use_salience, salience_features))
     corpus_it = PairTuningCorpusIterator(
         training_path, batch_size=opts.batch_size,
         use_salience=use_salience, salience_features=salience_features)
@@ -86,8 +85,7 @@ for i in range(opts.num_splits):
     log.info(
         'Loading validation indexed corpus from: {}, with batch_size={}, '
         'use_salience={}, salience_features={}'.format(
-            opts.indexed_corpus, opts.batch_size, use_salience,
-            salience_features))
+            validation_path, opts.batch_size, use_salience, salience_features))
     val_corpus_it = PairTuningCorpusIterator(
         validation_path, batch_size=opts.batch_size,
         use_salience=use_salience, salience_features=salience_features)
