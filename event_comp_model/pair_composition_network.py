@@ -38,7 +38,7 @@ class PairCompositionNetwork(object):
             self.event_vector_network.layer_sizes[-1] * 2 + 1
 
         self.num_salience_features = 0
-        self.salience_features = []
+        self.salience_features = None
         if self.use_salience:
             assert salience_features is not None
             self.salience_features = salience_features
@@ -143,10 +143,10 @@ class PairCompositionNetwork(object):
         input_replacements = dict(zip(self.triple_inputs[4:8],
                                       self.triple_inputs[8:12]))
         # Replace arg_idx_input with neg_arg_idx_input
-        input_replacements[self.triple_inputs[-4]] = self.triple_inputs[-3]
+        input_replacements[self.triple_inputs[12]] = self.triple_inputs[13]
         # Replace salience_input with neg_salience_input
         if self.use_salience:
-            input_replacements[self.triple_inputs[-2]] = self.triple_inputs[-1]
+            input_replacements[self.triple_inputs[14]] = self.triple_inputs[15]
 
         coherence_b = theano.clone(self.prediction, replace=input_replacements)
 
