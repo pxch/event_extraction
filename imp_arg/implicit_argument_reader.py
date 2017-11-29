@@ -390,13 +390,16 @@ class ImplicitArgumentReader(object):
             for output_type in output_type_list:
                 fout_dict[output_type].close()
 
-    def compute_coherence_score(self, event_comp_model, use_max_score=True):
+    def compute_coherence_score(self, event_comp_model, use_max_score=True,
+            missing_labels_mapping=None):
         assert len(self.all_rich_predicates) > 0
 
-        assert len(event_comp_model) == 1 or \
-            len(event_comp_model) == self.n_splits
+        if type(event_comp_model) == list:
+            assert len(event_comp_model) == self.n_splits
+            word2vec_model = event_comp_model[0].word2vec
+        else:
+            word2vec_model = event_comp_model.word2vec
 
-        word2vec_model = event_comp_model[0].word2vec
         self.get_index(word2vec_model)
         context_input_list_mapping = \
             self.get_context_input_list_mapping(word2vec_model)
@@ -410,7 +413,16 @@ class ImplicitArgumentReader(object):
             for pred_idx in self.train_test_folds[fold_idx][1]:
                 pbar.update(1)
                 rich_predicate = self.all_rich_predicates[pred_idx]
-                if len(rich_predicate.imp_args == 0):
+                if len(rich_predicate.imp_args) == 0:
+                    continue
+
+                if missing_labels_mapping is not None:
+                    missing_labels = missing_labels_mapping[
+                        str(self.all_predicates[pred_idx].pred_pointer)]
+                else:
+                    missing_labels = None
+
+                if missing_labels is not None and len(missing_labels) == 0:
                     continue
 
                 context_input_list = \
@@ -421,12 +433,12 @@ class ImplicitArgumentReader(object):
                     exclude_pred_idx_list.append(pred_idx)
                     continue
 
-                if len(event_comp_model) == 0:
-                    pair_composition_network = \
-                        event_comp_model[0].pair_composition_network
-                else:
+                if type(event_comp_model) == list:
                     pair_composition_network = \
                         event_comp_model[fold_idx].pair_composition_network
+                else:
+                    pair_composition_network = \
+                        event_comp_model.pair_composition_network
 
                 coherence_fn = pair_composition_network.coherence_fn
                 use_salience = pair_composition_network.use_salience
@@ -447,7 +459,7 @@ class ImplicitArgumentReader(object):
 
                 eval_input_list_all = \
                     rich_predicate.get_eval_input_list_all(
-                        include_salience=True)
+                        include_salience=True, missing_labels=missing_labels)
 
                 num_candidates = rich_predicate.num_candidates
 
@@ -530,13 +542,26 @@ class ImplicitArgumentReader(object):
                     for row_idx in range(num_label):
                         if row_idx != max_coherence_score_idx:
                             coherence_score_matrix[row_idx, column_idx] = -1.0
+                '''
+                max_coherence_score_idx_list = []
+                for row_idx in range(num_label):
+                    max_coherence_score_idx_list.append(
+                        coherence_score_matrix[row_idx, 1:].argmax())
+                '''
 
+                label_list = [label for label, _ in coherence_score_list_all]
+                for imp_arg in rich_predicate.imp_args:
+                    if imp_arg.label in label_list:
+                        row_idx = label_list.index(imp_arg.label)
+                        imp_arg.set_coherence_score_list(
+                            coherence_score_matrix[row_idx, :])
+                '''
                 for row_idx in range(num_label):
                     assert coherence_score_list_all[row_idx][0] == \
                            rich_predicate.imp_args[row_idx].label
                     rich_predicate.imp_args[row_idx].set_coherence_score_list(
                         coherence_score_matrix[row_idx, :])
-
+                '''
         pbar.close()
 
         print 'Predicates with no context events:'

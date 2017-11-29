@@ -59,9 +59,9 @@ class RichPredicate(object):
         self.num_model = 0
 
         for imp_arg in self.imp_args:
+            if imp_arg.exist:
+                self.num_gt += 1
             if imp_arg.has_coherence_score:
-                if imp_arg.exist:
-                    self.num_gt += 1
                 if imp_arg.max_coherence_score >= thres:
                     if (not comp_wo_arg) or imp_arg.max_coherence_score >= \
                             imp_arg.coherence_score_wo_arg:
@@ -89,12 +89,17 @@ class RichPredicate(object):
             self.rich_pobj.get_pos_wv() if self.rich_pobj else -1)
         return pos_input
 
-    def get_eval_input_list_all(self, include_salience=True):
+    def get_eval_input_list_all(
+            self, include_salience=True, missing_labels=None):
         pos_input = self.get_pos_input()
 
         eval_input_list_all = []
 
         for imp_arg in self.imp_args:
+            if missing_labels is not None and \
+                    imp_arg.label not in missing_labels:
+                continue
+
             eval_input_list = []
 
             arg_idx = imp_arg.get_arg_idx()
