@@ -151,6 +151,12 @@ class PairCompositionTrainer(object):
         learning_rate = self.learning_rate
         last_update_lr_iter = 0
 
+        if val_batch_iterator is not None:
+            # Compute the initial cost on the validation set
+            val_cost = PairCompositionTrainer.compute_val_cost(
+                cost_fn, val_batch_iterator)
+            log.info('Initial validation cost: {:.4f}'.format(val_cost))
+
         for i in range(iterations):
             err = 0.0
             batch_num = 0
