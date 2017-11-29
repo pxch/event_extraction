@@ -49,10 +49,11 @@ event_comp_dir_dict = {
         '20170909/fine_tuning_full/iter_7',
     '8M_training_w_salience_w_10M_mixed_no_wo_arg':
         '20170910/fine_tuning_full/iter_19',
+    '8M_training_wo_salience_w_two_args':
+        '20171127/fine_tuning_full/iter_17',
 }
 
 default_model_key = '40M_training_w_salience'
-
 
 def load_event_comp_model(model_key=default_model_key):
     if model_key not in event_comp_dir_dict:
@@ -69,3 +70,43 @@ def load_event_comp_model(model_key=default_model_key):
     print '\tDone in {:.3f} seconds'.format(elapsed)
 
     return event_comp_model
+
+event_comp_list_dir_dict = {
+    '8M_training_w_salience_w_two_args_cross_val_one_all':
+        '20170926/',
+    '8M_training_w_salience_w_two_args_cross_val_all_all':
+        '20170927/',
+    '8M_training_w_salience_w_two_args_cross_val_no_wo_arg_one_all':
+        '20170928',
+    '8M_training_w_salience_w_two_args_cross_val_no_wo_arg_all_all':
+        '20170929',
+}
+
+default_model_list_key = '8M_training_w_salience_w_two_args_cross_val_one_all'
+
+def load_event_comp_model_list(
+        model_list_key=default_model_list_key, n_splits=10):
+    if model_list_key not in event_comp_list_dir_dict:
+        model_list_key = default_model_list_key
+
+    event_comp_model_list = []
+
+    start_time = timeit.default_timer()
+
+    for i in range(10):
+        event_comp_dir = join(
+            root_dir,
+            event_comp_list_dir_dict[model_list_key],
+            str(i),
+            'fine_tuning_full')
+
+        print '\nLoading event composition model from {}'.format(
+            event_comp_dir)
+        event_comp_model_list.append(
+            EventCompositionModel.load_model(event_comp_dir))
+
+    elapsed = timeit.default_timer() - start_time
+    print '\tDone in {:.3f} seconds'.format(elapsed)
+
+    return event_comp_model_list
+
